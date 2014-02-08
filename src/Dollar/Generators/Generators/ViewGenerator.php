@@ -86,11 +86,11 @@ class ViewGenerator extends Generator {
 
         // Now, we'll add the edit and delete buttons.
         $editAndDelete = <<<EOT
-                    <td>{{ link_to_route('{$models}.edit', 'Edit', array(\${$model}->id), array('class' => 'btn btn-info')) }}</td>
                     <td>
                         {{ Form::open(array('method' => 'DELETE', 'route' => array('{$models}.destroy', \${$model}->id))) }}
                             {{ Form::submit('Delete', array('class' => 'btn btn-danger')) }}
                         {{ Form::close() }}
+                        {{ link_to_route('{$models}.edit', 'Edit', array(\${$model}->id), array('class' => 'btn btn-info')) }}
                     </td>
 EOT;
 
@@ -115,11 +115,11 @@ EOT;
             switch($type)
             {
                 case 'integer':
-                   $element = "{{ Form::input('number', '$name') }}";
+                   $element = "{{ Form::input('number', Input::old('$name'), 'array('class'=>'form-control')) }}";
                     break;
 
                 case 'text':
-                    $element = "{{ Form::textarea('$name') }}";
+                    $element = "{{ Form::textarea('$name', Input::old('$name'), array('class'=>'form-control', 'placeholder'=>'$formalName')) }}";
                     break;
 
                 case 'boolean':
@@ -127,17 +127,19 @@ EOT;
                     break;
 
                 default:
-                    $element = "{{ Form::text('$name') }}";
+                    $element = "{{ Form::text('$name', Input::old('$name'), array('class'=>'form-control', 'placeholder'=>'$formalName')) }}";
                     break;
             }
 
             // Now that we have the correct $element,
             // We can build up the HTML fragment
             $frag = <<<EOT
-        <li>
-            {{ Form::label('$name', '$formalName:') }}
-            $element
-        </li>
+        <div class="form-group">
+            {{ Form::label('$name', '$formalName:', array('class'=>'col-md-2 control-label')) }}
+            <div class="col-sm-10">
+              $element
+            </div>
+        </div>
 
 EOT;
 

@@ -4,20 +4,26 @@
 
 <h1>Create {{Model}}</h1>
 
-{{ Form::open(array('route' => '{{models}}.store')) }}
-	<ul>
-{{formElements}}
-		<li>
-			{{ Form::submit('Submit', array('class' => 'btn btn-info')) }}
-		</li>
-	</ul>
-{{ Form::close() }}
-
 @if ($errors->any())
-	<ul>
-		{{ implode('', $errors->all('<li class="error">:message</li>')) }}
-	</ul>
+	<div class="alert alert-danger">
+	    <ul>
+            {{ implode('', $errors->all('<li class="error">:message</li>')) }}
+        </ul>
+	</div>
 @endif
+
+{{ Form::open(array('route' => '{{models}}.store'), array('class' => 'form-horizontal')) }}
+
+{{formElements}}
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">&nbsp;</label>
+    <div class="col-sm-10">
+      {{ Form::submit('', array('class' => 'btn btn-lg btn-primary')) }}
+    </div>
+</div>
+
+{{ Form::close() }}
 
 @stop
 

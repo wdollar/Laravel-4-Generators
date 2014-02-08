@@ -1,6 +1,6 @@
-## Forked from JeffreyWay/Laravel-4-Generators.
+### Forked from JeffreyWay/Laravel-4-Generators.
 
-## 2/8/14: Just cloned for the purpose of switching the views over to Bootstrap 3. Integration is NOT complete.
+### 2/8/14: Just cloned for the purpose of switching the views over to Bootstrap 3. Integration is NOT complete.
 
 This Laravel 4 package provides a variety of generators to speed up your development process. These generators include:
 

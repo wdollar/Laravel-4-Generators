@@ -73,6 +73,7 @@ class ViewGenerator extends Generator {
         $models = Pluralizer::plural($model); // posts
 
         $fields = $this->cache->getFields();
+        $fields[] = 'Actions';
 
         // First, we build the table headings
         $headings = array_map(function($field) {
@@ -87,7 +88,7 @@ class ViewGenerator extends Generator {
         // Now, we'll add the edit and delete buttons.
         $editAndDelete = <<<EOT
                     <td>
-                        {{ Form::open(array('method' => 'DELETE', 'route' => array('{$models}.destroy', \${$model}->id))) }}
+                        {{ Form::open(array('style' => 'display: inline-block;', 'method' => 'DELETE', 'route' => array('{$models}.destroy', \${$model}->id))) }}
                             {{ Form::submit('Delete', array('class' => 'btn btn-danger')) }}
                         {{ Form::close() }}
                         {{ link_to_route('{$models}.edit', 'Edit', array(\${$model}->id), array('class' => 'btn btn-info')) }}

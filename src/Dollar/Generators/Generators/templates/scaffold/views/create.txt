@@ -2,17 +2,21 @@
 
 @section('main')
 
-<h1>Create {{Model}}</h1>
+<div class="row">
+    <div class="col-md-10 col-md-offset-2">
+        <h1>Create {{Model}}</h1>
 
-@if ($errors->any())
-	<div class="alert alert-danger">
-	    <ul>
-            {{ implode('', $errors->all('<li class="error">:message</li>')) }}
-        </ul>
-	</div>
-@endif
+        @if ($errors->any())
+        	<div class="alert alert-danger">
+        	    <ul>
+                    {{ implode('', $errors->all('<li class="error">:message</li>')) }}
+                </ul>
+        	</div>
+        @endif
+    </div>
+</div>
 
-{{ Form::open(array('route' => '{{models}}.store'), array('class' => 'form-horizontal')) }}
+{{ Form::open(array('route' => '{{models}}.store', 'class' => 'form-horizontal')) }}
 
 {{formElements}}
 

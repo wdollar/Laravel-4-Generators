@@ -73,7 +73,6 @@ class ViewGenerator extends Generator {
         $models = Pluralizer::plural($model); // posts
 
         $fields = $this->cache->getFields();
-        $fields[] = 'Actions';
 
         // First, we build the table headings
         $headings = array_map(function($field) {

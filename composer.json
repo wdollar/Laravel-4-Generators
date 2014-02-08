@@ -1,16 +1,23 @@
 {
-    "name": "way/generators",
-    "description": "Laravel 4 Generators",
-    "keywords": ["laravel", "generators", "artisan"],
+    "name": "dollar/generators",
+    "description": "Laravel 4 Generators w/ Bootstrap 3",
+    "keywords": ["laravel", "generators", "artisan", "bootstrap", "scaffold"],
     "authors": [
         {
             "name": "Jeffrey Way",
-            "email": "jeffrey@jeffrey-way.com"
+            "email": "jeffrey@jeffrey-way.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Wes Dollar",
+            "email": "github@wesdollar.com",
+            "role": "Contributor"
         }
     ],
     "require": {
         "php": ">=5.3.0",
-        "mustache/mustache": "2.4.*"
+        "mustache/mustache": "2.4.*",
+        "twbs/bootstrap": "v3.1.0"
     },
     "require-dev": {
         "mockery/mockery": "0.8.*",
@@ -20,10 +27,10 @@
     },
     "autoload": {
         "psr-0": {
-            "Way\\Generators": "src/"
+            "Dollar\\Generators": "src/"
         },
         "classmap": [
-            "src/Way/Generators/Generators"
+            "src/Dollar/Generators/Generators"
         ]
     },
      "extra": {

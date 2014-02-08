@@ -1,4 +1,4 @@
-<?php namespace Way\Generators;
+<?php namespace Dollar\Generators;
 
 use Illuminate\Filesystem\Filesystem as File;
 

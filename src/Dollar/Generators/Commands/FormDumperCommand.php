@@ -1,6 +1,6 @@
-<?php namespace Way\Generators\Commands;
+<?php namespace Dollar\Generators\Commands;
 
-use Way\Generators\Generators\FormDumperGenerator;
+use Dollar\Generators\Generators\FormDumperGenerator;
 use Illuminate\Console\Command;
 use Mustache_Engine as Mustache;
 use Illuminate\Support\Pluralizer;

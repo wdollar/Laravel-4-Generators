@@ -1,6 +1,6 @@
 <?php
 
-use Way\Generators\Commands\ScaffoldGeneratorCommand;
+use Dollar\Generators\Commands\ScaffoldGeneratorCommand;
 use Symfony\Component\Console\Tester\CommandTester;
 use Mockery as m;
 

@@ -1,6 +1,6 @@
 <?php
 
-use Way\Generators\Generators\ControllerGenerator;
+use Dollar\Generators\Generators\ControllerGenerator;
 use Mockery as m;
 
 class ControllerGeneratorTest extends PHPUnit_Framework_TestCase {

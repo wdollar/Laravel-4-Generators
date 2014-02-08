@@ -1,6 +1,6 @@
 <?php
 
-namespace Way\Generators\Generators;
+namespace Dollar\Generators\Generators;
 
 class MigrationGenerator extends Generator {
 

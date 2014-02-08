@@ -1,6 +1,6 @@
-Forked from JeffreyWay/Laravel-4-Generators.
+## Forked from JeffreyWay/Laravel-4-Generators.
 
-2/8/14: Just cloned for the purpose of switching the views over to Bootstrap 3.
+## 2/8/14: Just cloned for the purpose of switching the views over to Bootstrap 3. Integration is NOT complete.
 
 This Laravel 4 package provides a variety of generators to speed up your development process. These generators include:
 
@@ -21,11 +21,11 @@ This Laravel 4 package provides a variety of generators to speed up your develop
 
 ## Installation
 
-Begin by installing this package through Composer. Edit your project's `composer.json` file to require `way/generators`.
+Begin by installing this package through Composer. Edit your project's `composer.json` file to require `dollar/generators`.
 
 	"require": {
 		"laravel/framework": "4.0.*",
-		"way/generators": "dev-master"
+		"dollar/generators": "dev-master"
 	},
 	"minimum-stability" : "dev"
 
@@ -35,7 +35,7 @@ Next, update Composer from the Terminal:
 
 Once this operation completes, the final step is to add the service provider. Open `app/config/app.php`, and add a new item to the providers array.
 
-    'Way\Generators\GeneratorsServiceProvider'
+    'Dollar\Generators\GeneratorsServiceProvider'
 
 That's it! You're all set to go. Run the `artisan` command from the Terminal to see the new `generate` commands.
 

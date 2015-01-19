@@ -22,8 +22,9 @@
         "mockery/mockery": "0.8.*",
         "illuminate/support": "~4",
         "illuminate/console": "~4",
-        "illuminate/filesystem": "~4"
-    },
+        "illuminate/filesystem": "~4",
+        "doctrine/dbal": "~2.3"
+   },
     "autoload": {
         "psr-0": {
             "Dollar\\Generators": "src/"

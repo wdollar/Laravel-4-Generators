@@ -1,6 +1,6 @@
 <?php
 
-use Dollar\Generators\Generators\ModelGenerator;
+use Vsch\Generators\Generators\ModelGenerator;
 use Mockery as m;
 
 class ModelGeneratorTest extends PHPUnit_Framework_TestCase {

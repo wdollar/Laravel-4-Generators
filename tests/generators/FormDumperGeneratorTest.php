@@ -1,6 +1,6 @@
 <?php
 
-use Dollar\Generators\Generators\FormDumperGenerator;
+use Vsch\Generators\Generators\FormDumperGenerator;
 use Illuminate\Filesystem\Filesystem as File;
 use Mockery as m;
 use Mustache_Engine as Mustache;

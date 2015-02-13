@@ -1,5 +1,5 @@
 {
-    "name": "dollar/generators",
+    "name": "vsch/generators",
     "description": "Laravel 4 Generators w/ Bootstrap 3",
     "keywords": ["laravel", "generators", "artisan", "bootstrap", "scaffold"],
     "authors": [
@@ -12,29 +12,35 @@
             "name": "Wes Dollar",
             "email": "github@wesdollar.com",
             "role": "Contributor"
+        },
+        {
+            "name": "Vladimir Schneider",
+            "email": "vladimir.schneider@gmail.com",
+            "role": "Contributor"
         }
     ],
     "require": {
-        "php": ">=5.3.0",
+        "php": ">=5.4.0",
         "mustache/mustache": "2.4.*"
     },
     "require-dev": {
         "mockery/mockery": "0.8.*",
-        "illuminate/support": "~4",
-        "illuminate/console": "~4",
-        "illuminate/filesystem": "~4"
+        "illuminate/support": "4.2.*",
+        "illuminate/console": "4.2.*",
+        "illuminate/filesystem": "~4",
+        "doctrine/dbal": "~2.3"
     },
     "autoload": {
         "psr-0": {
-            "Dollar\\Generators": "src/"
+            "Vsch\\Generators": "src/"
         },
         "classmap": [
-            "src/Dollar/Generators/Generators"
+            "src/Vsch/Generators/Generators"
         ]
     },
-     "extra": {
+    "extra": {
         "branch-alias": {
-            "dev-master": "1.0-dev"
+            "dev-master": "1.2.5-dev"
         }
     },
     "minimum-stability": "stable"

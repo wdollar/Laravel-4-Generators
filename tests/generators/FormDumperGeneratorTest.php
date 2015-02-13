@@ -1,6 +1,6 @@
 <?php
 
-use Dollar\Generators\Generators\FormDumperGenerator;
+use Vsch\Generators\Generators\FormDumperGenerator;
 use Illuminate\Filesystem\Filesystem as File;
 use Mockery as m;
 use Mustache_Engine as Mustache;
@@ -58,7 +58,7 @@ class FormDumperGeneratorTest extends PHPUnit_Framework_TestCase {
 
     protected function getPartialMock()
     {
-        $form = m::mock('Way\Generators\Generators\FormDumperGenerator', array(new File, new Mustache))->makePartial();
+        $form = m::mock('Vsch\Generators\Generators\FormDumperGenerator', array(new File, new Mustache))->makePartial();
 
         $form->shouldReceive('getTableInfo')
              ->once()

@@ -11,6 +11,7 @@ This package had the following modifications to Wes Dollar's package:
 - Now you can do a:
 
     php artisan config:publish vsch/generators
+    
 To have the config/ and config/templates added under your project's app/config/packages/vsch/generators directory. For your very own copy of the templates that will not be overwritten by a package update. You do not need to modify the config/generators.php file unless you want your templates directory somewhere other than the default location.
 
 You only need to keep the template files that you want to modify. Any files not found in your app's config/packages/.../template directory will fallback to using the package versions.

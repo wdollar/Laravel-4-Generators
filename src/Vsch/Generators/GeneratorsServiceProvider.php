@@ -1,5 +1,6 @@
 <?php namespace Vsch\Generators;
 
+use Illuminate\Support\Facades\Config;
 use Vsch\Generators\Commands;
 use Vsch\Generators\Generators;
 use Vsch\Generators\Cache;
@@ -14,7 +15,50 @@ class GeneratorsServiceProvider extends ServiceProvider {
 	 */
 	protected $defer = false;
 
-	/**
+    /**
+     * @param string $file    partial file path for the template.
+     *                        search for it in the package directory config
+     *                        if not found in our template directory. If the file path is an
+     *                        empty string then return the base template path in the configuration
+     *                        for the package. NOTE: this path may not contain all the template files,
+     *                        only the one's the user decided to override.
+     *
+     * @return string          returns the name in the base template path, if not found in the package path.
+     *
+     */
+    public static
+    function getTemplatePath($file = '')
+    {
+        $packagePath = Config::get('generators::generators.templates', '');
+        $hardPath = __DIR__ . '/../../config/templates/';
+
+        if (is_null($file) || $file === '')
+        {
+            return $packagePath ? $packagePath[0]: $hardPath;
+        }
+
+        // we search
+        $searchPath = [];
+        if ($packagePath) $searchPath = array_merge($searchPath, $packagePath);
+        $searchPath[] = $hardPath;
+
+        foreach ($searchPath as $path)
+        {
+            $path = str_finish($path, "/");
+            if (file_exists($path . $file)) break;
+        }
+
+        // even if not found we return its base path location
+        return $path . $file;
+    }
+
+    public
+    function boot()
+    {
+        $this->package('vsch/generators');
+    }
+
+    /**
 	 * Register the service provider.
 	 *
 	 * @return void

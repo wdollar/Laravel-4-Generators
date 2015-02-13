@@ -12,7 +12,7 @@ class ModelGeneratorCommandTest extends PHPUnit_Framework_TestCase {
 
     public function testGeneratesModelSuccessfully()
     {
-        $gen = m::mock('Way\Generators\Generators\ModelGenerator');
+        $gen = m::mock('Vsch\Generators\Generators\ModelGenerator');
 
         $gen->shouldReceive('make')
             ->once()
@@ -29,7 +29,7 @@ class ModelGeneratorCommandTest extends PHPUnit_Framework_TestCase {
 
     public function testAlertsUserIfModelGenerationFails()
     {
-        $gen = m::mock('Way\Generators\Generators\ModelGenerator');
+        $gen = m::mock('Vsch\Generators\Generators\ModelGenerator');
 
         $gen->shouldReceive('make')
             ->once()
@@ -46,7 +46,7 @@ class ModelGeneratorCommandTest extends PHPUnit_Framework_TestCase {
 
     public function testCanAcceptCustomPathToModelsDirectory()
     {
-        $gen = m::mock('Way\Generators\Generators\ModelGenerator');
+        $gen = m::mock('Vsch\Generators\Generators\ModelGenerator');
 
         $gen->shouldReceive('make')
             ->once()

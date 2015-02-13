@@ -13,7 +13,7 @@ class ViewGeneratorCommandTest extends PHPUnit_Framework_TestCase {
 
     public function testGeneratesView()
     {
-        $gen = m::mock('Way\Generators\Generators\ViewGenerator');
+        $gen = m::mock('Vsch\Generators\Generators\ViewGenerator');
         $gen->shouldReceive('make')
             ->once()
             ->with(app_path() . '/views/hello.blade.php', 'foo')
@@ -26,5 +26,4 @@ class ViewGeneratorCommandTest extends PHPUnit_Framework_TestCase {
 
         $this->assertEquals("Created " . app_path() . "/views/hello.blade.php\n", $tester->getDisplay());
     }
-
 }

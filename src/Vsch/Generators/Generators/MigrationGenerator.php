@@ -4,6 +4,14 @@ namespace Vsch\Generators\Generators;
 
 class MigrationGenerator extends Generator {
 
+    // just the base path
+    protected static $templatesDir;
+
+    function __construct()
+    {
+        $templates = 'migration/';
+    }
+
     /**
      * Fetch the compiled template for a migration
      *
@@ -14,7 +22,7 @@ class MigrationGenerator extends Generator {
     protected function getTemplate($template, $name)
     {
         // We begin by fetching the master migration stub.
-        $stub = $this->file->get(__DIR__.'/templates/migration/migration.txt');
+        $stub = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration.txt'));
 
         // Next, set the migration class name
         $stub = str_replace('{{name}}', \Str::studly($name), $stub);
@@ -97,31 +105,31 @@ class MigrationGenerator extends Generator {
         switch($this->action) {
             case 'add':
             case 'insert':
-                $upMethod = $this->file->get(__DIR__ . '/templates/migration/migration-up.txt');
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-up.txt'));
                 $fields = $this->fields ? $this->setFields('addColumn') : '';
                 break;
 
             case 'remove':
             case 'drop':
             case 'delete':
-                $upMethod = $this->file->get(__DIR__ . '/templates/migration/migration-up.txt');
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-up.txt'));
                 $fields = $this->fields ? $this->setFields('dropColumn') : '';
                 break;
 
             case 'pivot':
-                $upMethod = $this->file->get(__DIR__ .'/templates/migration/migration-up-pivot.txt');
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-up-pivot.txt'));
                 $fields = $this->fields ? $this->setFields('addColumn') : '';
                 break;
 
             case 'destroy':
-                $upMethod = $this->file->get(__DIR__ . '/templates/migration/migration-up-drop.txt');
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-up-drop.txt'));
                 $fields = $this->fields ? $this->setFields('dropColumn') : '';
                 break;
 
             case 'create':
             case 'make':
             default:
-                $upMethod = $this->file->get(__DIR__ . '/templates/migration/migration-up-create.txt');
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-up-create.txt'));
                 $fields = $this->fields ? $this->setFields('addColumn') : '';
                 break;
         }
@@ -144,7 +152,7 @@ class MigrationGenerator extends Generator {
           case 'add':
           case 'insert':
             // then we to remove columns in reverse
-            $downMethod = $this->file->get(__DIR__ . '/templates/migration/migration-down.txt');
+            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-down.txt'));
             $fields = $this->fields ? $this->setFields('dropColumn') : '';
             break;
 
@@ -152,13 +160,13 @@ class MigrationGenerator extends Generator {
           case 'drop':
           case 'delete':
             // then we need to add the columns in reverse
-            $downMethod = $this->file->get(__DIR__ . '/templates/migration/migration-down.txt');
+            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-down.txt'));
             $fields = $this->fields ? $this->setFields('addColumn') : '';
             break;
 
           case 'destroy':
             // then we need to create the table in reverse
-            $downMethod = $this->file->get(__DIR__ . '/templates/migration/migration-down-create.txt');
+            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-down-create.txt'));
             $fields = $this->fields ? $this->setFields('addColumn') : '';
             break;
 
@@ -166,7 +174,7 @@ class MigrationGenerator extends Generator {
           case 'make':
           default:
             // then we need to drop the table in reverse
-            $downMethod = $this->file->get(__DIR__ . '/templates/migration/migration-down-drop.txt');
+            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir . 'migration-down-drop.txt'));
             $fields = $this->fields ? $this->setFields('dropColumn') : '';
             break;
         }

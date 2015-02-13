@@ -8,7 +8,7 @@ class ModelGeneratorTest extends PHPUnit_Framework_TestCase {
 
     public function __construct()
     {
-        static::$templatesDir = __DIR__.'/../../src/Way/Generators/Generators/templates';
+        static::$templatesDir = __DIR__.'/../../src/config/templates';
     }
 
     public function tearDown()
@@ -19,7 +19,7 @@ class ModelGeneratorTest extends PHPUnit_Framework_TestCase {
     public function testCanGenerateModelUsingTemplate()
     {
         $file = m::mock('Illuminate\Filesystem\Filesystem')->makePartial();
-        $cache = m::Mock('Way\Generators\Cache');
+        $cache = m::Mock('Vsch\Generators\Cache');
 
         $file->shouldReceive('put')
              ->once()
@@ -32,7 +32,7 @@ class ModelGeneratorTest extends PHPUnit_Framework_TestCase {
     public function testCanGenerateModelUsingCustomTemplateAndNoFields()
     {
         $file = m::mock('Illuminate\Filesystem\Filesystem')->makePartial();
-        $cache = m::Mock('Way\Generators\Cache');
+        $cache = m::Mock('Vsch\Generators\Cache');
 
         $cache->shouldReceive('getFields')
               ->once()
@@ -49,7 +49,7 @@ class ModelGeneratorTest extends PHPUnit_Framework_TestCase {
     public function testCanGenerateModelUsingCustomTemplateAndFields()
     {
         $file = m::mock('Illuminate\Filesystem\Filesystem')->makePartial();
-        $cache = m::Mock('Way\Generators\Cache');
+        $cache = m::Mock('Vsch\Generators\Cache');
 
         $cache->shouldReceive('getFields')
               ->once()

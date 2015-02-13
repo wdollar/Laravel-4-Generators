@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Illuminate\Support\Pluralizer;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class MissingFieldsException extends \Exception {}
 
@@ -28,7 +29,7 @@ class ResourceGeneratorCommand extends Command {
     /**
      * Model generator instance.
      *
-     * @var Way\Generators\Generators\ResourceGenerator
+     * @var Vsch\Generators\Generators\ResourceGenerator
      */
     protected $generator;
 
@@ -82,7 +83,7 @@ class ResourceGeneratorCommand extends Command {
         $this->generateMigration();
         $this->generateSeed();
 
-        if (get_called_class() === 'Way\\Generators\\Commands\\ScaffoldGeneratorCommand')
+        if (get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand')
         {
             $this->generateTest();
         }
@@ -102,7 +103,8 @@ class ResourceGeneratorCommand extends Command {
      */
     protected function getModelTemplatePath()
     {
-        return __DIR__.'/../Generators/templates/model.txt';
+        //return self::getTemplatePath('model.txt');
+        return GeneratorsServiceProvider::getTemplatePath('model.txt');
     }
 
     /**
@@ -112,7 +114,7 @@ class ResourceGeneratorCommand extends Command {
      */
     protected function getControllerTemplatePath()
     {
-        return __DIR__.'/../Generators/templates/controller.txt';
+        return GeneratorsServiceProvider::getTemplatePath('controller.txt');
     }
 
     /**
@@ -122,7 +124,7 @@ class ResourceGeneratorCommand extends Command {
      */
     protected function getViewTemplatePath($view = 'view')
     {
-        return __DIR__."/../Generators/templates/view.txt";
+        return GeneratorsServiceProvider::getTemplatePath('view.txt');
     }
 
     /**

@@ -1,4 +1,26 @@
+### Forked from wdollar/Laravel-4-Generators-Bootstrap-3.
 ### Forked from JeffreyWay/Laravel-4-Generators.
+
+This package had the following modifications to Wes Dollar's package:
+- added a LICENSE file from Jeffery Way's original package
+- package changed to Vsch/Generators
+- Modified tests to reflect changes to implementation and the EOL that is now at the end of templates 
+- added Laravel resource directories, for now only /config is not empty
+- added config/generators.php to store the path to the template directory
+- moved templates directory to config/templates
+- Now you can do a:
+
+    php artisan config:publish vsch/generators
+To have the config/ and config/templates added under your project's app/config/packages/vsch/generators directory. For your very own copy of the templates that will not be overwritten by a package update. You do not need to modify the config/generators.php file unless you want your templates directory somewhere other than the default location.
+
+You only need to keep the template files that you want to modify. Any files not found in your app's config/packages/.../template directory will fallback to using the package versions.
+
+# Development caveats: 
+- I am currently working on this package in my project's workbench directory and not as a full fledged package. 
+- Tested by deploying with composer. That was the extent of my package installation and testing other than unit tests in the package and using it on my project.
+- This package is provided as is. I will do my best to make sure it is in working order but use it at your own discretion.
+
+# Package docs
 
 This package updates the views provided by Jeffrey Way's original works to Bootstrap 3. The original documentation from Way's works follows. The instructions have been updated to reflect any changes within this package.
 
@@ -21,11 +43,11 @@ This Laravel 4 package provides a variety of generators to speed up your develop
 
 ## Installation
 
-Begin by installing this package through Composer. Edit your project's `composer.json` file to require `dollar/generators`.
+Begin by installing this package through Composer. Edit your project's `composer.json` file to require `vsch/generators`.
 
 	"require": {
 		"laravel/framework": "4.0.*",
-		"dollar/generators": "dev-master"
+		"vsch/generators": "dev-master"
 	},
 	"minimum-stability" : "dev"
 
@@ -35,13 +57,28 @@ Next, update Composer from the Terminal:
 
 Once this operation completes, the final step is to add the service provider. Open `app/config/app.php`, and add a new item to the providers array.
 
-    'Way\Generators\GeneratorsServiceProvider'
+    'Vsch\Generators\GeneratorsServiceProvider'
 
 That's it! You're all set to go. Run the `artisan` command from the Terminal to see the new `generate` commands.
 
     php artisan
 
 > There's also a [Sublime Text plugin available](http://net.tutsplus.com/tutorials/tools-and-tips/pro-workflow-in-laravel-and-sublime-text/) to assist with the generators. Definitely use it, but not before you learn the syntax below.
+
+If you want a copy of the templates in your project's directory so that you can modify them, run the following command from the Terminal in your project directory:
+
+    php artisan config:publish vsch/generators
+    
+This will copy the /config/generate.php and /config/templates/ subdirectory to your project's config/:
+
+    config/
+        packages/
+            vsch/
+                generators/
+                    generators.php
+                    templates/
+
+You only need to keep the template files that you want to modify. Any files not found in your app's config/packages/.../template directory will fallback to using the package versions.
 
 ## Usage
 

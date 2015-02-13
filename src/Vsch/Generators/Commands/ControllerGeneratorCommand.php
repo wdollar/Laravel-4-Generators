@@ -4,6 +4,7 @@ use Vsch\Generators\Generators\ControllerGenerator;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class ControllerGeneratorCommand extends BaseGeneratorCommand {
 
@@ -24,7 +25,7 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Model generator instance.
      *
-     * @var Way\Generators\Generators\ControllerGenerator
+     * @var Vsch\Generators\Generators\ControllerGenerator
      */
     protected $generator;
 
@@ -71,7 +72,7 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand {
     {
         return array(
            array('path', null, InputOption::VALUE_OPTIONAL, 'Path to controllers directory.', app_path() . '/controllers'),
-           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', __DIR__.'/../Generators/templates/controller.txt'),
+           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('controller.txt')),
         );
     }
 

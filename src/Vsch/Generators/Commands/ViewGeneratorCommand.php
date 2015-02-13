@@ -4,6 +4,7 @@ use Vsch\Generators\Generators\ViewGenerator;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class ViewGeneratorCommand extends BaseGeneratorCommand {
 
@@ -24,7 +25,7 @@ class ViewGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Model generator instance.
      *
-     * @var Way\Generators\Generators\ViewGenerator
+     * @var Vsch\Generators\Generators\ViewGenerator
      */
     protected $generator;
 
@@ -61,7 +62,7 @@ class ViewGeneratorCommand extends BaseGeneratorCommand {
     {
         return array(
            array('path', null, InputOption::VALUE_OPTIONAL, 'Path to views directory.', app_path() . '/views'),
-           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', __DIR__.'/../Generators/templates/view.txt'),
+           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('view.txt')),
         );
     }
 

@@ -58,7 +58,7 @@ class FormDumperGeneratorTest extends PHPUnit_Framework_TestCase {
 
     protected function getPartialMock()
     {
-        $form = m::mock('Way\Generators\Generators\FormDumperGenerator', array(new File, new Mustache))->makePartial();
+        $form = m::mock('Vsch\Generators\Generators\FormDumperGenerator', array(new File, new Mustache))->makePartial();
 
         $form->shouldReceive('getTableInfo')
              ->once()

@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Illuminate\Support\Pluralizer;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class MissingTableFieldsException extends \Exception {}
 
@@ -32,7 +33,7 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getModelTemplatePath()
     {
-        return __DIR__.'/../Generators/templates/scaffold/model.txt';
+        return GeneratorsServiceProvider::getTemplatePath('scaffold/model.txt');
     }
 
     /**
@@ -42,7 +43,7 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getControllerTemplatePath()
     {
-        return __DIR__.'/../Generators/templates/scaffold/controller.txt';
+        return GeneratorsServiceProvider::getTemplatePath('scaffold/controller.txt');
     }
 
 
@@ -53,7 +54,7 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getTestTemplatePath()
     {
-        return __DIR__.'/../Generators/templates/scaffold/controller-test.txt';
+        return GeneratorsServiceProvider::getTemplatePath('scaffold/controller-test.txt');
     }
 
     /**
@@ -63,7 +64,7 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getViewTemplatePath($view = 'view')
     {
-        return __DIR__."/../Generators/templates/scaffold/views/{$view}.txt";
+        return GeneratorsServiceProvider::getTemplatePath('scaffold/views/{$view}.txt');
     }
 
 }

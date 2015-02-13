@@ -27,7 +27,7 @@ class FormDumperCommand extends BaseGeneratorCommand {
     /**
      * FormDumper generator instance.
      *
-     * @var Way\Generators\Generators\FormDumperGenerator
+     * @var Vsch\Generators\Generators\FormDumperGenerator
      */
     protected $generator;
 

@@ -4,6 +4,7 @@ use Vsch\Generators\Generators\TestGenerator;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class TestGeneratorCommand extends BaseGeneratorCommand {
 
@@ -24,7 +25,7 @@ class TestGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Test generator instance.
      *
-     * @var Way\Generators\Generators\TestGenerator
+     * @var Vsch\Generators\Generators\TestGenerator
      */
     protected $generator;
 
@@ -71,7 +72,7 @@ class TestGeneratorCommand extends BaseGeneratorCommand {
     {
         return array(
            array('path', null, InputOption::VALUE_OPTIONAL, 'Path to tests directory.', app_path() . '/tests'),
-           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', __DIR__.'/../Generators/templates/test.txt'),
+           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('test.txt')),
         );
     }
 

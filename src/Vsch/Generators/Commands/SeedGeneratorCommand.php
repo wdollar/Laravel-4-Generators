@@ -4,6 +4,7 @@ use Vsch\Generators\Generators\SeedGenerator;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class SeedGeneratorCommand extends BaseGeneratorCommand {
 
@@ -24,7 +25,7 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Model generator instance.
      *
-     * @var Way\Generators\Generators\SeedGenerator
+     * @var Vsch\Generators\Generators\SeedGenerator
      */
     protected $generator;
 
@@ -96,7 +97,7 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
     {
         return array(
             array('path', null, InputOption::VALUE_OPTIONAL, 'Path to the seeds directory.', app_path() . '/database/seeds'),
-            array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', __DIR__.'/../Generators/templates/seed.txt'),
+            array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('seed.txt')),
         );
     }
 

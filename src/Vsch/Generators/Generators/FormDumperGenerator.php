@@ -5,6 +5,7 @@ namespace Vsch\Generators\Generators;
 use Illuminate\Filesystem\Filesystem as File;
 use Illuminate\Support\Pluralizer;
 use Mustache_Engine as Mustache;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class FormDumperGenerator {
 
@@ -44,7 +45,8 @@ class FormDumperGenerator {
         $this->file = $file;
         $this->mustache = $mustache;
 
-        static::$templatePath = __DIR__.'/../Generators/templates/dump/';
+        // we only need the relative path now, the rest is in config
+        static::$templatePath = 'dump/';
     }
 
     /**
@@ -214,7 +216,7 @@ class FormDumperGenerator {
      */
     protected function getTemplate($type = 'list')
     {
-        return $this->file->get(static::$templatePath."/{$type}.txt");
+        return $this->file->get(GeneratorsServiceProvider::getTemplatePath(static::$templatePath."{$type}.txt"));
     }
 
 }

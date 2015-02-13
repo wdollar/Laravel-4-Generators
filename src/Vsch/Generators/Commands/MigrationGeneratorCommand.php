@@ -24,7 +24,7 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
     /**
      * Model generator instance.
      *
-     * @var Way\Generators\Generators\MigrationGenerator
+     * @var Vsch\Generators\Generators\MigrationGenerator
      */
     protected $generator;
 

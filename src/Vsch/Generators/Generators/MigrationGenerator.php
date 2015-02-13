@@ -2,14 +2,19 @@
 
 namespace Vsch\Generators\Generators;
 
+use Illuminate\Filesystem\Filesystem as File;
+use Vsch\Generators\GeneratorsServiceProvider;
+use Vsch\Generators\Cache;
+
 class MigrationGenerator extends Generator {
 
     // just the base path
     protected static $templatesDir;
 
-    function __construct()
+    function __construct(File $file, Cache $cache)
     {
-        $templates = 'migration/';
+        parent::__construct($file, $cache);
+        static::$templatesDir = 'migration/';
     }
 
     /**

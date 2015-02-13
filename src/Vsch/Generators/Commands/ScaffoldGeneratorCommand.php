@@ -64,7 +64,7 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getViewTemplatePath($view = 'view')
     {
-        return GeneratorsServiceProvider::getTemplatePath('scaffold/views/{$view}.txt');
+        return GeneratorsServiceProvider::getTemplatePath("scaffold/views/{$view}.txt");
     }
 
 }

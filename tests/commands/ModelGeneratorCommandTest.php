@@ -41,7 +41,7 @@ class ModelGeneratorCommandTest extends PHPUnit_Framework_TestCase {
         $tester = new CommandTester($command);
         $tester->execute(['name' => 'Foo']);
 
-        $this->assertEquals("Could not create " . app_path() . "/models/Foo.php\n", $tester->getDisplay());
+        $this->assertEquals("Could not create file, instead created " . app_path() . "/models/Foo.php.new\n", $tester->getDisplay());
     }
 
     public function testCanAcceptCustomPathToModelsDirectory()

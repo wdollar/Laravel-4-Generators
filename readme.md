@@ -1,20 +1,26 @@
+#### (License MIT)
+
 ### Forked from wdollar/Laravel-4-Generators-Bootstrap-3.
 ### Forked from JeffreyWay/Laravel-4-Generators.
 
 This package had the following modifications to Wes Dollar's package:
+
 - added a LICENSE file from Jeffery Way's original package
 - package changed to Vsch/Generators
 - Modified tests to reflect changes to implementation and the EOL that is now at the end of templates 
 - added Laravel resource directories, for now only /config is not empty
 - added config/generators.php to store the path to the template directory
 - moved templates directory to config/templates
-- Now you can do a:
+- Now you can:
 
-    php artisan config:publish vsch/generators
+    `php artisan config:publish vsch/generators`
     
-To have the config/ and config/templates added under your project's app/config/packages/vsch/generators directory. For your very own copy of the templates that will not be overwritten by a package update. You do not need to modify the config/generators.php file unless you want your templates directory somewhere other than the default location.
+To have the `config/` and `config/templates/` directories added under your project's `app/config/packages/vsch/generators` directory. 
+For your very own copy of the templates that will not be overwritten by a package update. 
+You do not need to modify the `config/generators.php` file unless you want your templates directory somewhere other than the default location.
 
-You only need to keep the template files that you want to modify. Any files not found in your app's config/packages/.../template directory will fallback to using the package versions.
+You only need to keep the template files that you want to modify. Any files not found in your app's `config/packages/.../template` 
+directory will fallback to using the package versions.
 
 # Development caveats: 
 - I am currently working on this package in my project's workbench directory and not as a full fledged package. 

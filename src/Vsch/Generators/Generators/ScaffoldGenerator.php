@@ -4,6 +4,7 @@ namespace Vsch\Generators\Generators;
 
 use Illuminate\Filesystem\Filesystem as File;
 use Illuminate\Support\Pluralizer;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class ScaffoldGenerator {
 
@@ -28,16 +29,11 @@ class ScaffoldGenerator {
      * Update app/routes.php
      *
      * @param  string $name
-     * @return void
+     * @return boolean
      */
-    public function updateRoutesFile($name)
+    public function updateRoutesFile($name, $templatePath)
     {
-        $name = strtolower(Pluralizer::plural($name));
-
-        $this->file->append(
-            app_path() . '/routes.php',
-            "\n\nRoute::resource('" . $name . "', '" . ucwords($name) . "Controller');"
-        );
+        return false;
     }
 
     /**
@@ -56,5 +52,4 @@ class ScaffoldGenerator {
             }
         }
     }
-
 }

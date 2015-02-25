@@ -49,7 +49,14 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
     {
         $name = $this->argument('name');
         $path = $this->getPath();
+
+        // common error for field types
         $fields = $this->option('fields');
+        $fields = str_replace(', ', ',', $fields);
+        $fields = str_replace(':int,', ':integer,', $fields);
+        $fields = str_replace(':bool,', ':boolean,', $fields);
+
+        $this->fields = $fields;
 
         $created = $this->generator
                         ->parse($name, $fields)

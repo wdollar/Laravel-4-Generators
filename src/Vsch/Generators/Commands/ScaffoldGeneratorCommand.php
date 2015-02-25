@@ -33,7 +33,12 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getModelTemplatePath()
     {
-        return GeneratorsServiceProvider::getTemplatePath('scaffold/model.txt');
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'model.txt');
+    }
+
+    protected function getRouteTemplatePath()
+    {
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'route.txt');
     }
 
     /**
@@ -43,7 +48,7 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getControllerTemplatePath()
     {
-        return GeneratorsServiceProvider::getTemplatePath('scaffold/controller.txt');
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'controller.txt');
     }
 
 
@@ -54,7 +59,7 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getTestTemplatePath()
     {
-        return GeneratorsServiceProvider::getTemplatePath('scaffold/controller-test.txt');
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'controller-test.txt');
     }
 
     /**
@@ -64,7 +69,17 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      */
     protected function getViewTemplatePath($view = 'view')
     {
-        return GeneratorsServiceProvider::getTemplatePath("scaffold/views/{$view}.txt");
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, "views/{$view}.txt");
     }
 
+    /**
+     * Get the default template subdir.
+     *
+     * @return array
+     */
+    protected function getDefaultTemplateSubDirs()
+    {
+        // just use templates
+        return ['scaffold', ''];
+    }
 }

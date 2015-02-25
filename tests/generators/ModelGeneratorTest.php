@@ -55,6 +55,10 @@ class ModelGeneratorTest extends PHPUnit_Framework_TestCase {
               ->once()
               ->andReturn(['title' => 'string', 'age' => 'integer']);
 
+        $cache->shouldReceive('getModelName')
+              ->once()
+              ->andReturn('foo');
+
         $file->shouldReceive('put')
              ->once()
              ->with(app_path() . '/models/Foo.php', file_get_contents(__DIR__.'/stubs/scaffold/model.txt'));

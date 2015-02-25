@@ -56,6 +56,13 @@ abstract class Generator {
         {
             return $this->file->put($this->path, $template) !== false;
         }
+        else
+        {
+            // put it as .new, and delete previous .new
+            if ($this->file->exists($this->path . ".new")) unlink($this->path . ".new");
+            if (!$this->file->exists($this->path . ".new")) $this->file->put($this->path . ".new", $template) !== false;
+            return false; // we didn't really create it
+        }
 
         return false;
     }

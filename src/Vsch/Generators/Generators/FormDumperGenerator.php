@@ -216,7 +216,7 @@ class FormDumperGenerator {
      */
     protected function getTemplate($type = 'list')
     {
-        return $this->file->get(GeneratorsServiceProvider::getTemplatePath(static::$templatePath."{$type}.txt"));
+        return $this->file->get(GeneratorsServiceProvider::getTemplatePath(static::$templatePath, "{$type}.txt"));
     }
 
 }

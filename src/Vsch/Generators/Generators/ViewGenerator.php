@@ -260,7 +260,7 @@ EOT;
                         $foreignModels = Pluralizer::plural($foreignModel);   // posts
 
                         $element = "<br>{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'input-xs btn-default', ]) }}";
-                        $elementFilter = "{{ Form::select('$name', [''] + \$$foreignModels, Input::old('$name'), ['form' => 'filter-$models', 'class' => 'input-xs btn-default', ]) }}";
+                        $elementFilter = "{{ Form::select('$name', [''] + \$$foreignModels, Input::get('$name'), ['form' => 'filter-$models', 'class' => 'input-xs btn-default', ]) }}";
 
                         $labelName = $foreignModel;
 
@@ -278,7 +278,7 @@ EOT;
                     else
                     {
                         $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('pages.$name'), ]) }}";
-                        $elementFilter = "{{ Form::input('number', '$name', Input::old('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
+                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
                     }
                     break;
 
@@ -286,18 +286,18 @@ EOT;
                     $limit = empty($limit) ? 256 : $limit;
                     $rowAttr = (int)($limit / 64) ?: 1;
                     $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('pages.$name'), 'rows'=>'$rowAttr', ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::old('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
                     break;
 
                 case 'boolean':
                     $element = "{{ Form::checkbox('$name', 1, Input::old('$name'), [$disabled, ]) }}";
-                    $elementFilter = "{{ Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::old('$name'), ['form' => 'filter-$models', 'class' => 'input-xs btn-default', ]) }}";
+                    $elementFilter = "{{ Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get('$name'), ['form' => 'filter-$models', 'class' => 'input-xs btn-default', ]) }}";
                     $useShort = true;
                     break;
 
                 default:
                     $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('pages.$name'), ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::old('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
                     break;
             }
 

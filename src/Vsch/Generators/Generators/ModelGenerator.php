@@ -68,7 +68,7 @@ class ModelGenerator extends Generator
             switch ($fields[ $field ])
             {
                 case 'boolean' : $suffix .= '|boolean'; break;
-                case 'integer' : $suffix .= '|numeric|min=?|max=?'; break;
+                case 'integer' : $suffix .= '|numeric'; break;  // |min:1|max:1000
             }
 
             // here we override for foreign keys

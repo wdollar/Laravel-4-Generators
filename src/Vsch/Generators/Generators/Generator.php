@@ -52,7 +52,29 @@ abstract class Generator {
         $this->path = $this->getPath($path);
         $template = $this->getTemplate($template, $this->name);
 
-        if (! $this->file->exists($this->path))
+        // check for migration by same name but new date, I'm tired of deleting these files
+        $filename = basename($this->path, '');
+        $name = strtolower($this->name) . '.php';
+        $fileExists = false;
+
+        if ($filename !== $name && strpos($filename, $name) !== false)
+        {
+            // must have a date prefix, we should check if a file by the same name exists and append .new to this one
+            if ($handle = opendir(dirname($path)))
+            {
+                while (false !== ($entry = readdir($handle)))
+                {
+                    if (fnmatch('*_'.$name, $entry, FNM_PERIOD))
+                    {
+                        $fileExists = true;
+                        break;
+                    }
+                }
+                closedir($handle);
+            }
+        }
+
+        if (!$fileExists && !$this->file->exists($this->path))
         {
             return $this->file->put($this->path, $template) !== false;
         }

@@ -5,8 +5,10 @@ namespace Vsch\Generators\Generators;
 use Illuminate\Filesystem\Filesystem as File;
 use Vsch\Generators\GeneratorsServiceProvider;
 use Vsch\Generators\Cache;
+use Illuminate\Support\Pluralizer;
 
-class MigrationGenerator extends Generator {
+class MigrationGenerator extends Generator
+{
 
     // just the base path
     protected static $templatesDir;
@@ -22,9 +24,11 @@ class MigrationGenerator extends Generator {
      *
      * @param  string $template Path to template
      * @param  string $name
+     *
      * @return string Compiled template
      */
-    protected function getTemplate($template, $name)
+    protected
+    function getTemplate($template, $name)
     {
         // We begin by fetching the master migration stub.
         $stub = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration.txt'));
@@ -48,10 +52,12 @@ class MigrationGenerator extends Generator {
      * Parse the migration name
      *
      * @param  string $name
-     * @param  array $fields
+     * @param  array  $fields
+     *
      * @return MigrationGenerator
      */
-    public function parse($name, $fields)
+    public
+    function parse($name, $fields)
     {
         list($action, $tableName) = $this->parseMigrationName($name);
 
@@ -63,12 +69,14 @@ class MigrationGenerator extends Generator {
     }
 
     /**
-    * Parse some_migration_name into array
-    *
-    * @param string $name
-    * @return array
-    */
-    protected function parseMigrationName($name)
+     * Parse some_migration_name into array
+     *
+     * @param string $name
+     *
+     * @return array
+     */
+    protected
+    function parseMigrationName($name)
     {
         // create_users_table
         // add_user_id_to_posts_table
@@ -97,44 +105,46 @@ class MigrationGenerator extends Generator {
             : implode('_', $pieces);
 
         // For example: ['add', 'posts']
-        return array($action, $tableName);
+        return array( $action, $tableName );
     }
 
     /**
-    * Grab up method stub and replace template vars
-    *
-    * @return string
-    */
-    protected function getUpStub()
+     * Grab up method stub and replace template vars
+     *
+     * @return string
+     */
+    protected
+    function getUpStub()
     {
-        switch($this->action) {
+        switch ($this->action)
+        {
             case 'add':
             case 'insert':
-                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir , 'migration-up.txt'));
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-up.txt'));
                 $fields = $this->fields ? $this->setFields('addColumn') : '';
                 break;
 
             case 'remove':
             case 'drop':
             case 'delete':
-                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir , 'migration-up.txt'));
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-up.txt'));
                 $fields = $this->fields ? $this->setFields('dropColumn') : '';
                 break;
 
             case 'pivot':
-                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir , 'migration-up-pivot.txt'));
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-up-pivot.txt'));
                 $fields = $this->fields ? $this->setFields('addColumn') : '';
                 break;
 
             case 'destroy':
-                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir , 'migration-up-drop.txt'));
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-up-drop.txt'));
                 $fields = $this->fields ? $this->setFields('dropColumn') : '';
                 break;
 
             case 'create':
             case 'make':
             default:
-                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir , 'migration-up-create.txt'));
+                $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-up-create.txt'));
                 $fields = $this->fields ? $this->setFields('addColumn') : '';
                 break;
         }
@@ -147,41 +157,43 @@ class MigrationGenerator extends Generator {
     }
 
     /**
-    * Grab down method stub and replace template vars
-    *
-    * @return string
-    */
-    protected function getDownStub()
+     * Grab down method stub and replace template vars
+     *
+     * @return string
+     */
+    protected
+    function getDownStub()
     {
-        switch($this->action) {
-          case 'add':
-          case 'insert':
-            // then we to remove columns in reverse
-            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir , 'migration-down.txt'));
-            $fields = $this->fields ? $this->setFields('dropColumn') : '';
-            break;
+        switch ($this->action)
+        {
+            case 'add':
+            case 'insert':
+                // then we to remove columns in reverse
+                $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-down.txt'));
+                $fields = $this->fields ? $this->setFields('dropColumn') : '';
+                break;
 
-          case 'remove':
-          case 'drop':
-          case 'delete':
-            // then we need to add the columns in reverse
-            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-down.txt'));
-            $fields = $this->fields ? $this->setFields('addColumn') : '';
-            break;
+            case 'remove':
+            case 'drop':
+            case 'delete':
+                // then we need to add the columns in reverse
+                $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-down.txt'));
+                $fields = $this->fields ? $this->setFields('addColumn') : '';
+                break;
 
-          case 'destroy':
-            // then we need to create the table in reverse
-            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-down-create.txt'));
-            $fields = $this->fields ? $this->setFields('addColumn') : '';
-            break;
+            case 'destroy':
+                // then we need to create the table in reverse
+                $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-down-create.txt'));
+                $fields = $this->fields ? $this->setFields('addColumn') : '';
+                break;
 
-          case 'create':
-          case 'make':
-          default:
-            // then we need to drop the table in reverse
-            $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-down-drop.txt'));
-            $fields = $this->fields ? $this->setFields('dropColumn') : '';
-            break;
+            case 'create':
+            case 'make':
+            default:
+                // then we need to drop the table in reverse
+                $downMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-down-drop.txt'));
+                $fields = $this->fields ? $this->setFields('dropColumn') : '';
+                break;
         }
 
         // Replace the tableName in the template
@@ -192,39 +204,42 @@ class MigrationGenerator extends Generator {
     }
 
     /**
-    * Create a string of the Schema fields that
-    * should be inserted into the sub template.
-    *
-    * @param string $method (addColumn | dropColumn)
-    * @return string
-    */
-    protected function setFields($method = 'addColumn')
+     * Create a string of the Schema fields that
+     * should be inserted into the sub template.
+     *
+     * @param string $method (addColumn | dropColumn)
+     *
+     * @return string
+     */
+    protected
+    function setFields($method = 'addColumn')
     {
         $fields = $this->convertFieldsToArray();
 
-        $template = array_map(array($this, $method), $fields);
+        $template = array_map(array( $this, $method ), $fields);
 
         return implode("\n\t\t\t", $template);
     }
 
     /**
-    * If Schema fields are specified, parse
-    * them into an array of objects.
-    *
-    * So: name:string, age:integer
-    * Becomes: [ ((object)['name' => 'string'], (object)['age' => 'integer'] ]
-    *
-    * @returns mixed
-    */
-    protected function convertFieldsToArray()
+     * If Schema fields are specified, parse
+     * them into an array of objects.
+     *
+     * So: name:string, age:integer
+     * Becomes: [ ((object)['name' => 'string'], (object)['age' => 'integer'] ]
+     *
+     * @returns mixed
+     */
+    protected
+    function convertFieldsToArray()
     {
         $fields = $this->fields;
 
-        if ( !$fields ) return;
+        if (!$fields) return;
 
         $fields = preg_split('/, ?/', $fields);
 
-        foreach($fields as &$bit)
+        foreach ($fields as &$bit)
         {
             $columnInfo = preg_split('/ ?: ?/', $bit);
 
@@ -235,15 +250,33 @@ class MigrationGenerator extends Generator {
             // If there is a third key, then
             // the user is setting any number
             // of options
-            if ( isset($columnInfo[0]) )
+            $bit->options = '';
+            $hadUnsigned = false;
+            if (isset($columnInfo[ 0 ]))
             {
-                $bit->options = '';
-                foreach($columnInfo as $option)
+
+                foreach ($columnInfo as $option)
                 {
+                    if ($option === 'unsigned' || $option === 'unsigned()')
+                    {
+                        $hadUnsigned = true;
+                    }
+
                     $bit->options .= (str_contains($option, '('))
                         ? "->{$option}"
                         : "->{$option}()";
                 }
+            }
+            // add foreign keys
+            $name = $bit->name;
+            if (substr($name, -3) === '_id')
+            {
+                // assume foreign key
+                $fname = substr($name, 0, -3);
+                $fnames = Pluralizer::plural($fname);   // posts
+                if (!$hadUnsigned) $bit->options .= "->unsigned()";
+                $bit->options .= ";\n";
+                $bit->options .= "\t\t\t\$table->foreign('$name')->references('id')->on('$fnames')";
             }
         }
 
@@ -251,20 +284,22 @@ class MigrationGenerator extends Generator {
     }
 
     /**
-    * Return template string for adding a column
-    *
-    * @param string $field
-    * @return string
-    */
-    protected function addColumn($field)
+     * Return template string for adding a column
+     *
+     * @param string $field
+     *
+     * @return string
+     */
+    protected
+    function addColumn($field)
     {
         // Let's see if they're setting
         // a limit, like: string[50]
-        if ( str_contains($field->type, '[') )
+        if (str_contains($field->type, '['))
         {
             preg_match('/([^\[]+?)\[(\d+)\]/', $field->type, $matches);
-            $field->type = $matches[1]; // string
-            $field->limit = $matches[2]; // 50
+            $field->type = $matches[ 1 ]; // string
+            $field->limit = $matches[ 2 ]; // 50
         }
 
         // We'll start building the appropriate Schema method
@@ -280,25 +315,27 @@ class MigrationGenerator extends Generator {
             $html .= $field->options;
         }
 
-        return $html.';';
+        return $html . ';';
     }
 
     /**
-    * Return template string for dropping a column
-    *
-    * @param string $field
-    * @return string
-    */
-    protected function dropColumn($field)
+     * Return template string for dropping a column
+     *
+     * @param string $field
+     *
+     * @return string
+     */
+    protected
+    function dropColumn($field)
     {
         return "\$table->dropColumn('" . $field->name . "');";
     }
 
-    protected function getPath($path)
+    protected
+    function getPath($path)
     {
         $migrationFile = strtolower(basename($path));
 
-        return dirname($path).'/'.date('Y_m_d_His').'_'.$migrationFile;
+        return dirname($path) . '/' . date('Y_m_d_His') . '_' . $migrationFile;
     }
-
 }

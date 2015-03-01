@@ -269,7 +269,7 @@ EOT;
                         {
                             $afterElement .= "\n@if(\$op === 'create' || \$op === 'edit')";
                         }
-                        $afterElement .= "\n\t\t&nbsp;&nbsp;<a href=\"{{ URL::route('$foreignModel.create') }}\" role=\"button\" class=\"btn btn-sm btn-warning\">@lang('pages.create')</a>";
+                        $afterElement .= "\n\t\t&nbsp;&nbsp;<a href=\"{{ URL::route('$foreignModel.create') }}\" role=\"button\" class=\"btn btn-sm btn-warning\">@lang('messages.create')</a>";
                         if ($useOp)
                         {
                             $afterElement .= "\n@endif";

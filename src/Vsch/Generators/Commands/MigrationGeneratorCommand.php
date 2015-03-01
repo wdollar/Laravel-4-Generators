@@ -54,7 +54,9 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
         $fields = $this->option('fields');
         $fields = str_replace(', ', ',', $fields);
         $fields = str_replace(':int,', ':integer,', $fields);
+        $fields = str_replace(':int:', ':integer:', $fields);
         $fields = str_replace(':bool,', ':boolean,', $fields);
+        $fields = str_replace(':bool:', ':boolean:', $fields);
 
         $this->fields = $fields;
 

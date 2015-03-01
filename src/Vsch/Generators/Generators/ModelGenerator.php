@@ -55,6 +55,42 @@ class ModelGenerator extends Generator
             $this->template = str_replace('{{' . $var . '}}', $$var, $this->template);
         }
 
+        if (strpos($this->template, '{{field:unique}}') !== false)
+        {
+            $uniqueField = '';
+            foreach ($fields as $field => $type)
+            {
+                if (strpos('unique()', $type))
+                {
+                    $uniqueField = $field;
+                    break;
+                }
+            }
+            if ($uniqueField === '') $uniqueField = 'id';
+
+            $this->template = str_replace('{{field:unique}}', $uniqueField, $this->template);
+        }
+
+        if (($pos = strpos($this->template, '{{field:line}}')) !== false)
+        {
+            // grab the line that contains
+            $startPos = strrpos($this->template, "\n", -(strlen($this->template) - $pos));
+            if ($startPos === false) $startPos = -1;
+
+            $endPos = strpos($this->template, "\n", $pos);
+            if ($endPos === false) $endPos = strlen($this->template)+1;
+
+            $line = substr($this->template, $startPos+1, $endPos - $startPos - 1);
+
+            $fieldText = '';
+            foreach ($fields as $field => $type)
+            {
+                $fieldText .= str_replace('{{field:line}}', $field, $line) . "\n";
+            }
+
+            $this->template = substr($this->template, 0, $startPos+1) . $fieldText . substr($this->template, $endPos+1);
+        }
+
         $rules = array_map(function ($field) use($fields)
         {
             $suffix = '';

@@ -277,16 +277,16 @@ EOT;
                     }
                     else
                     {
-                        $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('pages.$name'), ]) }}";
-                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
+                        $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('messages.$name'), ]) }}";
+                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('messages.$name'), ]) }}";
                     }
                     break;
 
                 case 'text':
                     $limit = empty($limit) ? 256 : $limit;
                     $rowAttr = (int)($limit / 64) ?: 1;
-                    $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('pages.$name'), 'rows'=>'$rowAttr', ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
+                    $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('messages.$name'), 'rows'=>'$rowAttr', ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('messages.$name'), ]) }}";
                     break;
 
                 case 'boolean':
@@ -296,8 +296,8 @@ EOT;
                     break;
 
                 default:
-                    $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('pages.$name'), ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('pages.$name'), ]) }}";
+                    $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('messages.$name'), ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('messages.$name'), ]) }}";
                     break;
             }
 
@@ -311,7 +311,7 @@ EOT;
             {
                 $frag = <<<EOT
             <label>
-                  $element @lang('pages.$labelName')
+                  $element @lang('messages.$labelName')
                   &nbsp;&nbsp;
             </label>$afterElement
 EOT;
@@ -323,7 +323,7 @@ EOT;
                 // We can build up the HTML fragment
                 $frag = <<<EOT
         <div class="form-group">
-            {{ Form::label('$name', trans('pages.$labelName') . ':') }}
+            {{ Form::label('$name', trans('messages.$labelName') . ':') }}
               $element$afterElement
         </div>
 

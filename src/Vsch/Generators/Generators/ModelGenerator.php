@@ -55,7 +55,8 @@ class ModelGenerator extends Generator
             $this->template = str_replace('{{' . $var . '}}', $$var, $this->template);
         }
 
-        if (strpos($this->template, '{{relations}}') !== false)
+        $relationsModel = '';
+        if (strpos($this->template, '{{relations') !== false)
         {
             $relations = '';
             foreach ($fields as $field => $type)
@@ -68,6 +69,8 @@ class ModelGenerator extends Generator
                     $fname = substr($name, 0, -3); // post
                     $Fname = ucwords($fname);   // Post
 
+                    if ($relationsModel !== '') $relationsModel .= ", ";
+                    $relationsModel .= "'$fname'";
                     $relations .= <<<PHP
     /**
      * @return \\Illuminate\\Database\\Eloquent\\Relations\\Relation
@@ -82,6 +85,7 @@ PHP;
                 }
             }
             $this->template = str_replace('{{relations}}', $relations, $this->template);
+            $this->template = str_replace('{{relations:model}}', $relationsModel, $this->template);
         }
 
         if (strpos($this->template, '{{field:unique}}') !== false)
@@ -89,7 +93,7 @@ PHP;
             $uniqueField = '';
             foreach ($fields as $field => $type)
             {
-                if (strpos('unique()', $type))
+                if (strpos($type, 'unique') !== false)
                 {
                     $uniqueField = $field;
                     break;

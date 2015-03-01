@@ -50,9 +50,38 @@ class ModelGenerator extends Generator
         $Models = ucwords($models);             // Posts
         $Model = Pluralizer::singular($Models); // Post
 
-        foreach (['model', 'models', 'Models', 'Model', 'className'] as $var)
+        foreach ([ 'model', 'models', 'Models', 'Model', 'className' ] as $var)
         {
             $this->template = str_replace('{{' . $var . '}}', $$var, $this->template);
+        }
+
+        if (strpos($this->template, '{{relations}}') !== false)
+        {
+            $relations = '';
+            foreach ($fields as $field => $type)
+            {
+                // add foreign keys
+                $name = $field;
+                if (substr($name, -3) === '_id')
+                {
+                    // assume foreign key
+                    $fname = substr($name, 0, -3); // post
+                    $Fname = ucwords($fname);   // Post
+
+                    $relations .= <<<PHP
+    /**
+     * @return \\Illuminate\\Database\\Eloquent\\Relations\\Relation
+     */
+    public
+    function $fname()
+    {
+        return \$this->belongsTo('$Fname', '$field', 'id');
+    }
+
+PHP;
+                }
+            }
+            $this->template = str_replace('{{relations}}', $relations, $this->template);
         }
 
         if (strpos($this->template, '{{field:unique}}') !== false)
@@ -78,9 +107,9 @@ class ModelGenerator extends Generator
             if ($startPos === false) $startPos = -1;
 
             $endPos = strpos($this->template, "\n", $pos);
-            if ($endPos === false) $endPos = strlen($this->template)+1;
+            if ($endPos === false) $endPos = strlen($this->template) + 1;
 
-            $line = substr($this->template, $startPos+1, $endPos - $startPos - 1);
+            $line = substr($this->template, $startPos + 1, $endPos - $startPos - 1);
 
             $fieldText = '';
             foreach ($fields as $field => $type)
@@ -88,23 +117,29 @@ class ModelGenerator extends Generator
                 $fieldText .= str_replace('{{field:line}}', $field, $line) . "\n";
             }
 
-            $this->template = substr($this->template, 0, $startPos+1) . $fieldText . substr($this->template, $endPos+1);
+            $this->template = substr($this->template, 0, $startPos + 1) . $fieldText . substr($this->template, $endPos + 1);
         }
 
-        $rules = array_map(function ($field) use($fields)
+        $rules = array_map(function ($field) use ($fields)
         {
             $suffix = '';
             switch ($field)
             {
-                case 'email' : $suffix .= '|email'; break;
+                case 'email' :
+                    $suffix .= '|email';
+                    break;
                 default:
-                break;
+                    break;
             }
 
             switch ($fields[ $field ])
             {
-                case 'boolean' : $suffix .= '|boolean'; break;
-                case 'integer' : $suffix .= '|numeric'; break;  // |min:1|max:1000
+                case 'boolean' :
+                    $suffix .= '|boolean';
+                    break;
+                case 'integer' :
+                    $suffix .= '|numeric';
+                    break;  // |min:1|max:1000
             }
 
             // here we override for foreign keys

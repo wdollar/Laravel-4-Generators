@@ -5,6 +5,8 @@
 
 This package had the following modifications to Wes Dollar's package:
 
+### Version 1.2.6
+
 - fix test generator to handle camel case model names instead of forcing lowercase
 - fix migration generator to convert camel case to snake case on model names instead of using camel case
 - fix database seeder generator to handle camel case model names instead of forcing lowercase

@@ -5,12 +5,94 @@
 
 This package had the following modifications to Wes Dollar's package:
 
-- added a LICENSE file from Jeffery Way's original package
+- fix test generator to handle camel case model names instead of forcing lowercase
+- fix migration generator to convert camel case to snake case on model names instead of using camel case
+- fix database seeder generator to handle camel case model names instead of forcing lowercase
+- if a generated file exists in the project all generators will not create a file with .new appended to the name instead of doing nothing. That way you can change the template or field list, generate a new version and user file diff to merge in the desired changes.
+
+#### Migration Generator
+
+- if a migration file exists that matches generated name except for the date prefix then .new is appended to the name instead of crating a new migration. multiple runs don't create multiple migrations that create the same table.
+- auto recognized foreign keys will have `->unsigned()` added to column creation line, and a foreign index on the foreign model.
+
+    `$table->foreign('{{field}}')->references('id')->on('{{fnames}}')`
+
+with `{{fnames}}` being the foreign model name (lowercase, plural) and `{{field}}` is the original field name. For a field named user_id it will look like:
+
+    $table->foreign('user_id')->references('id')->on('users')
+
+#### Resource Generator
+
+- resource routes are now added to the `routes.php` file above the line `// Generators:insert new routes here`, it must have no leading or trailing spaces, if not found then the route is appended to the end of the file.
+- if a resource route already exists the file is not modified.
+
+
+#### Model Generator
+
+- add autocorrect on field types:
+    int => integer
+    bool => boolean
+  
+- add `{{field:unique}}` to expand to the first model field that had a :unique type option, or `id` if one was not found.
+ 
+- add `{{field:line}}` will repeat the template line(s) containing it for every field in the model replacing the marker with the field name. Useful for generating per field custom code in the template.
+  
+- add auto recognition of foreign keys based on field type being integer and field name ending in `_id`, the foreign model name is the field name before the `_id` suffix. Now these fields are declared `->unsigned()->unique()` and a foreign key entry is made in the migration. Additionally extra template expansions are recognized in the template file for model.txt and controller.txt:  
+  
+  `{{relations}}` is expanded to: 
+  
+    public
+    function {{fname}}()
+    {
+        return $this->belongsTo('{{Fname}}', '{{field}}', 'id');
+    }
+
+  with `{{fname}}` being the foreign model name (lowercase) and `{{Fname}}` is the same capitalized, `{{field}}` is the original field name. For a field named user_id it will look like:
+  
+    public
+    function user()
+    {
+        return $this->belongsTo('User', 'user_id', 'id');
+    }
+
+  `{{relations:model}}`, `{{relations:models}}`, `{{relations:Model}}`, `{{relations:Models}}` are expanded to the foreign model name or names correspondingly cased (ie. user, users, User, Users). as a list of strings. Your custom templates you can create functions that have a list of foreign model names. intended use is to include a `->with({{relations:model}})` in the template for eager loading of relationships. 
+  
+#### View Generator
+
+- add markers to expand in the view templates
+-- `{{formElements:readonly}}` same as formElements but all form elements are marked readonly or disabled
+-- `{{formElements:nobool}}` all form elements for non-boolean fields (no checkboxes)
+-- `{{formElements:nobool:readonly}}` combo of nobool and readonly
+-- `{{formElements:bool}}` only checkboxes
+-- `{{formElements:bool:readonly}}` only checkboxes, readonly
+-- `{{formElements:op}}` form elements whose readonly status is determined by a variable passed to `View::make` named `$op`, if `$op === 'view'` then fields are readonly.
+-- `{{formElements:bool:op}}`
+-- `{{formElements:nobool:op}}`
+-- `{{formElements:filters}}` produce form elements that are selects for filtering the actual elements. These go into the same table as the model data, but all have `form="form-filter"` attribute. So you can place them anywhere in the page.
+-- `{{headings:lang}}` produce table headings but wrap the field names in `@lang('messages.{{field}}')` where `{{field}}` is the name of the fields. Use it if you need to localize table header row for different languages.
+-- `{{fields:nobuttons}}` produce fields for the table but no buttons for edit, delete. Use if you have your own buttons in the template.
+
+- string fields longer than 64 characters are now mapped to \<textarea\>, except for fields named: email, name, password or password_confirmation.
+
+- integer fields whose name ends in `_id` are assumed to be foreign keys:
+-- use \<select\> for their input, with the list of options passed to the `View::make` in `$models` (ie. field named `user_id` will look for its list in `$users` variable.) 
+-- Fields generated for filters will have an empty option added for no filtering selection.
+-- create button is added with a `URL::route` to `'models.create'` (ie. field named user_id, will have a route to 'users.create'
+  
+### First mods after fork from wdollar/Laravel-4-Generators-Bootstrap-3.
+  
+- add a LICENSE file from Jeffery Way's original package
+
 - package changed to Vsch/Generators
+
 - Modified tests to reflect changes to implementation and the EOL that is now at the end of templates 
-- added Laravel resource directories, for now only /config is not empty
-- added config/generators.php to store the path to the template directory
-- moved templates directory to config/templates
+
+- add Laravel resource directories, for now only /config is not empty
+
+- add config/generators.php to store the path to the template directory
+
+- move templates directory to config/templates
+
 - Now you can:
 
     `php artisan config:publish vsch/generators`

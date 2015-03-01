@@ -213,7 +213,7 @@ class ResourceGeneratorCommand extends Command
         }
 
         $this->call('generate:test', array(
-                'name' => Pluralizer::plural(strtolower($this->model)) . 'Test',
+                'name' => Pluralizer::plural(strtolower(substr($this->model, 0, 1)) . substr($this->model,1)) . 'Test',
                 '--template' => $this->getTestTemplatePath(),
                 '--path' => app_path() . '/tests/controllers'
             ));
@@ -287,7 +287,7 @@ class ResourceGeneratorCommand extends Command
     protected
     function generateMigration()
     {
-        $name = 'create_' . Pluralizer::plural($this->model) . '_table';
+        $name = 'create_' . snake_case(Pluralizer::plural($this->model)) . '_table';
 
         $this->call('generate:migration', array(
                 'name' => $name,
@@ -299,7 +299,7 @@ class ResourceGeneratorCommand extends Command
     function generateSeed()
     {
         $this->call('generate:seed', array(
-                'name' => Pluralizer::plural(strtolower($this->model))
+                'name' => Pluralizer::plural(strtolower(substr($this->model, 0, 1)) . substr($this->model,1)),
             ));
     }
 

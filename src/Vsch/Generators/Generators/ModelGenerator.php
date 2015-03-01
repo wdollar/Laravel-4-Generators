@@ -85,7 +85,15 @@ PHP;
                 }
             }
             $this->template = str_replace('{{relations}}', $relations, $this->template);
+
+            $relationsModels = Pluralizer::plural($relationsModel);   // posts
+            $RelationsModels = ucwords($relationsModel);             // Posts
+            $RelationsModel = Pluralizer::singular($relationsModel); // Post
+
             $this->template = str_replace('{{relations:model}}', $relationsModel, $this->template);
+            $this->template = str_replace('{{relations:models}}', $relationsModels, $this->template);
+            $this->template = str_replace('{{relations:Model}}', $RelationsModel, $this->template);
+            $this->template = str_replace('{{relations:Models}}', $RelationsModels, $this->template);
         }
 
         if (strpos($this->template, '{{field:unique}}') !== false)
@@ -104,7 +112,7 @@ PHP;
             $this->template = str_replace('{{field:unique}}', $uniqueField, $this->template);
         }
 
-        if (($pos = strpos($this->template, '{{field:line}}')) !== false)
+        while (($pos = strpos($this->template, '{{field:line}}')) !== false)
         {
             // grab the line that contains
             $startPos = strrpos($this->template, "\n", -(strlen($this->template) - $pos));

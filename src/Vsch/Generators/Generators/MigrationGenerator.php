@@ -254,7 +254,6 @@ class MigrationGenerator extends Generator
             $hadUnsigned = false;
             if (isset($columnInfo[ 0 ]))
             {
-
                 foreach ($columnInfo as $option)
                 {
                     if ($option === 'unsigned' || $option === 'unsigned()')

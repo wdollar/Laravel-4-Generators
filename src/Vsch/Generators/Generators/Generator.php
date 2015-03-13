@@ -85,8 +85,6 @@ abstract class Generator {
             if (!$this->file->exists($this->path . ".new")) $this->file->put($this->path . ".new", $template) !== false;
             return false; // we didn't really create it
         }
-
-        return false;
     }
 
     /**

@@ -37,26 +37,28 @@ class ResourceGenerator
     public
     function updateRoutesFile($name, $templatePath)
     {
-        $model = strtolower($name);  // post
-        $models = Pluralizer::plural($model);   // posts
-        $Models = ucwords($models);             // Posts
-        $Model = Pluralizer::singular($Models); // Post
+        $modelVars = GeneratorsServiceProvider::getModelVars($name);
 
         $routes = file_get_contents(app_path() . '/routes.php');
 
+        $newRouteDefault = 'Route::resource(\'{{models}}\', \'{{Models}}Controller\');' . "\n";
         if ($this->file->exists($templatePath))
         {
             $newRoute = file_get_contents($templatePath);
         }
         else
         {
-            $newRoute = 'Route::resource(\'{{models}}\', \'{{Models}}Controller\');' . "\n";
+            $newRoute = $newRouteDefault;
         }
 
-        $newRoute = str_replace('{{model}}', $model, $newRoute);
-        $newRoute = str_replace('{{models}}', $models, $newRoute);
-        $newRoute = str_replace('{{Model}}', $Model, $newRoute);
-        $newRoute = str_replace('{{Models}}', $Models, $newRoute);
+        $newRoute = GeneratorsServiceProvider::replaceModelVars($newRoute, $modelVars);
+        $newRouteDefault = GeneratorsServiceProvider::replaceModelVars($newRouteDefault, $modelVars);
+
+        if (str_contains($routes, $newRouteDefault) && !str_contains($routes, $newRoute))
+        {
+            if (substr($newRoute, -1) === "\n") $newRoute = substr($newRoute, 0, -1);
+            $newRoute = '// ' . str_replace("\n", "\n// ", $newRoute) . "\n";
+        }
 
         if (!str_contains($routes, $newRoute))
         {

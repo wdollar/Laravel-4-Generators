@@ -29,10 +29,10 @@ class BaseGeneratorCommand extends Command {
      */
     protected function printResult($successful, $path)
     {
-        // TODO: figure out why it return a value only in one case???
         if ($successful)
         {
-            return $this->info("Created {$path}");
+            $this->info("Created {$path}");
+            return;
         }
 
         $this->error("Could not create file, instead created {$path}.new");

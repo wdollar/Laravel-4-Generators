@@ -1,0 +1,16 @@
+<?php
+
+return array(
+
+    /*
+     * translations for {{Model}} field names
+     *
+     */
+
+    '{{model}}' => '{{model}}',
+    'create-{{model}}' => 'create-{{model}}',
+    'edit-{{model}}' => 'edit-{{model}}',
+    'view-{{model}}' => 'view-{{model}}',
+    'delete-{{model}}' => 'delete-{{model}}',
+    {{translations:line}}
+);

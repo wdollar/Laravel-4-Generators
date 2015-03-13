@@ -3,6 +3,7 @@
 namespace Vsch\Generators\Generators;
 
 use Illuminate\Support\Pluralizer;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class ModelGenerator extends Generator
 {
@@ -40,25 +41,23 @@ class ModelGenerator extends Generator
     protected
     function getScaffoldedModel($className)
     {
+        // TODO: needs to pull unique from field definition into rules
         if (!$fields = $this->cache->getFields())
         {
             return str_replace('{{rules}}', '', $this->template);
         }
 
-        $model = $this->cache->getModelName();  // post
-        $models = Pluralizer::plural($model);   // posts
-        $Models = ucwords($models);             // Posts
-        $Model = Pluralizer::singular($Models); // Post
+        $template = $this->template;
+        $modelVars = GeneratorsServiceProvider::getModelVars($this->cache->getModelName());
 
-        foreach ([ 'model', 'models', 'Models', 'Model', 'className' ] as $var)
-        {
-            $this->template = str_replace('{{' . $var . '}}', $$var, $this->template);
-        }
+        // Replace template vars
+        $this->template = GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
 
-        $relationsModel = '';
+        $relationModelList = [];
         if (strpos($this->template, '{{relations') !== false)
         {
             $relations = '';
+            $fname = '';
             foreach ($fields as $field => $type)
             {
                 // add foreign keys
@@ -69,8 +68,7 @@ class ModelGenerator extends Generator
                     $fname = substr($name, 0, -3); // post
                     $Fname = ucwords($fname);   // Post
 
-                    if ($relationsModel !== '') $relationsModel .= ", ";
-                    $relationsModel .= "'$fname'";
+                    $relationModelList[] = $fname;
                     $relations .= <<<PHP
     /**
      * @return \\Illuminate\\Database\\Eloquent\\Relations\\Relation
@@ -84,16 +82,31 @@ class ModelGenerator extends Generator
 PHP;
                 }
             }
+
             $this->template = str_replace('{{relations}}', $relations, $this->template);
 
-            $relationsModels = Pluralizer::plural($relationsModel);   // posts
-            $RelationsModels = ucwords($relationsModel);             // Posts
-            $RelationsModel = Pluralizer::singular($relationsModel); // Post
+            if ($fname)
+            {
+                $relationsVars = [];
+                foreach ($relationModelList as $relationModel)
+                {
+                    $relationModelVars = GeneratorsServiceProvider::getModelVars($relationModel);
+                    foreach ($relationModelVars as $relationModel => $relationModelVar)
+                    {
+                        // append
+                        if (array_key_exists($relationModel, $relationsVars))
+                        {
+                            $relationsVars[$relationModel] .= ", '$relationModelVar'";
+                        }
+                        else
+                        {
+                            $relationsVars[$relationModel] = "'$relationModelVar'";
+                        }
+                    }
+                }
 
-            $this->template = str_replace('{{relations:model}}', $relationsModel, $this->template);
-            $this->template = str_replace('{{relations:models}}', $relationsModels, $this->template);
-            $this->template = str_replace('{{relations:Model}}', $RelationsModel, $this->template);
-            $this->template = str_replace('{{relations:Models}}', $RelationsModels, $this->template);
+                $this->template = GeneratorsServiceProvider::replaceModelVars($this->template, $relationsVars, '{{relations:', '}}');
+            }
         }
 
         if (strpos($this->template, '{{field:unique}}') !== false)
@@ -112,47 +125,50 @@ PHP;
             $this->template = str_replace('{{field:unique}}', $uniqueField, $this->template);
         }
 
-        while (($pos = strpos($this->template, '{{field:line}}')) !== false)
+        $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{field:line}}', function ($line, $fieldVar) use ($fields)
         {
-            // grab the line that contains
-            $startPos = strrpos($this->template, "\n", -(strlen($this->template) - $pos));
-            if ($startPos === false) $startPos = -1;
-
-            $endPos = strpos($this->template, "\n", $pos);
-            if ($endPos === false) $endPos = strlen($this->template) + 1;
-
-            $line = substr($this->template, $startPos + 1, $endPos - $startPos - 1);
-
             $fieldText = '';
             foreach ($fields as $field => $type)
             {
-                $fieldText .= str_replace('{{field:line}}', $field, $line) . "\n";
+                $fieldText .= str_replace($fieldVar, $field, $line) . "\n";
             }
+            if ($fieldText === '') $fieldText = "''";
+            return $fieldText;
+        });
 
-            $this->template = substr($this->template, 0, $startPos + 1) . $fieldText . substr($this->template, $endPos + 1);
-        }
-
-        $rules = array_map(function ($field) use ($fields)
+        $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields)
         {
-            $suffix = '';
-            switch ($field)
+            $fieldText = '';
+            foreach ($fields as $field => $type)
             {
-                case 'email' :
-                    $suffix .= '|email';
-                    break;
-                default:
-                    break;
+                if (preg_match('/\bboolean\b/', $type) !== false)
+                {
+                    $fieldText .= str_replace($fieldVar, $field, $line) . "\n";
+                }
+            }
+            return $fieldText;
+        });
+
+        $rules = [];
+        $guarded = [];
+        $hidden = [];
+        $notrail = [];
+        $fieldText = '';
+
+        foreach ($fields as $field => $type)
+        {
+            if ($field !== 'id')
+            {
+                if ($fieldText) $fieldText .= ', ';
+                $fieldText .= $field . ":" . $type;
             }
 
-            switch ($fields[ $field ])
-            {
-                case 'boolean' :
-                    $suffix .= '|boolean';
-                    break;
-                case 'integer' :
-                    $suffix .= '|numeric';
-                    break;  // |min:1|max:1000
-            }
+            $ruleBits = [];
+            if ($field === 'email') $ruleBits[] = 'email';
+            if (str_contains($type, ['boolean'])) array_unshift($ruleBits, 'boolean');
+            if (str_contains($type, ['integer'])) $ruleBits[] = 'numeric';
+
+            if (!str_contains($type, ['nullable', 'hidden', 'guarded'])) $ruleBits[] = 'required';
 
             // here we override for foreign keys
             if (substr($field, strlen($field) - 3) === '_id')
@@ -160,21 +176,21 @@ PHP;
                 // assume foreign key
                 $foreignModel = substr($field, 0, strlen($field) - 3);
                 $foreignModels = Pluralizer::plural($foreignModel);   // posts
-                $suffix = "|numeric|exists:$foreignModels,id";
+                $ruleBits[] = "exists:$foreignModels,id";
             }
 
-            return "'$field' => 'required$suffix'";
-        }, array_keys($fields));
-
-        $fieldText = '';
-        foreach ($fields as $field => $type)
-        {
-            if ($field == 'id') continue;
-            if ($fieldText) $fieldText .= ', ';
-            $fieldText .= $field . ":" . $type;
+            $rules[$field] = "'$field' => '" . implode('|', $ruleBits) . "'";
+            if (strpos($type, 'hidden') !== false) $hidden[] = "'$field'";
+            if (strpos($type, 'guarded') !== false) $guarded[] = "'$field'";
+            if (strpos($type, 'notrail') !== false) $notrail[] = "'$field'";
         }
-        $this->template = str_replace('{{fields}}', $fieldText, $this->template);
 
-        return str_replace('{{rules}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $rules) . PHP_EOL . "\t", $this->template);
+        $this->template = str_replace('{{fields}}', $fieldText, $this->template);
+        $this->template = str_replace('{{rules}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $rules) . PHP_EOL . "\t", $this->template);
+        $this->template = str_replace('{{hidden}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $hidden) . PHP_EOL . "\t", $this->template);
+        $this->template = str_replace('{{guarded}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $guarded) . PHP_EOL . "\t", $this->template);
+        $this->template = str_replace('{{notrail}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $notrail) . PHP_EOL . "\t", $this->template);
+
+        return $this->template;
     }
 }

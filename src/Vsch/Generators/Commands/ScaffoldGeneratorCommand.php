@@ -36,6 +36,18 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'model.txt');
     }
 
+    /**
+     * Get the path to the template for a model.
+     *
+     * @return string
+     */
+    protected
+    function getTranslationsTemplatePath()
+    {
+        //return self::getTemplatePath('model.txt');
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'translations.txt');
+    }
+
     protected function getRouteTemplatePath()
     {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'route.txt');

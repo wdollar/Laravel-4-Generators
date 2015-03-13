@@ -256,6 +256,8 @@ class MigrationGenerator extends Generator
             {
                 foreach ($columnInfo as $option)
                 {
+                    if (GeneratorsServiceProvider::isFieldHintOption($option)) continue;
+
                     if ($option === 'unsigned' || $option === 'unsigned()')
                     {
                         $hadUnsigned = true;
@@ -266,6 +268,7 @@ class MigrationGenerator extends Generator
                         : "->{$option}()";
                 }
             }
+
             // add foreign keys
             $name = $bit->name;
             if (substr($name, -3) === '_id')

@@ -3,6 +3,7 @@
 namespace Vsch\Generators\Generators;
 
 use Illuminate\Support\Pluralizer;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class TestGenerator extends Generator {
 
@@ -15,18 +16,10 @@ class TestGenerator extends Generator {
      */
     protected function getTemplate($template, $className)
     {
-        $model = $this->cache->getModelName();  // post
-        $models = Pluralizer::plural($model);   // posts
-        $Models = ucwords($models);             // Posts
-        $Model = Pluralizer::singular($Models); // Post
-
         $template = $this->file->get($template);
-
-        foreach(array('model', 'models', 'Models', 'Model', 'className') as $var)
-        {
-            $template = str_replace('{{'.$var.'}}', $$var, $template);
-        }
-
+        $name = $this->cache->getModelName();
+        $modelVars = GeneratorsServiceProvider::getModelVars($name);
+        $template = GeneratorsServiceProvider::replaceModelVars($template, $modelVars);
         return $template;
     }
 

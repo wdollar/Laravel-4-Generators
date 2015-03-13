@@ -5,12 +5,51 @@
 
 This package had the following modifications to Wes Dollar's package:
 
+### Version 1.2.7
+
+- fix trailing spaces caused field types not to be properly recognized
+- fix fields for migration were taken from options passed to resource generator and not the fixed up ones by the resource. ie. int => integer, bool => boolean
+- add index view generator for resource generates a foreign model reference name for the foreign id field.
+- add `{{field:line}}` to controller generator 
+- add `{{field:line:bool}}` to controller and model generator, expands line only for boolean fields  
+- add translations generator to scaffolding and resource generator, which will create files in each subdirectory of app/lang with the name {{model}}.php (all lowercase) that will contain an array of `'{{field}}' => '{{field}}',` scaffold for localizing field names.
+- fixed resource generator model name case changing to handle camelCase, instead of lowercasing the model and then capitalizing it. now blockedEmail will be BlockedEmails instead of Blockedemails.
+- resource generator now will add a commented out version of the resource route definition if a resource definition for that resource already exists but does not match the new one.
+- add all variations of case and separators to view, model, controller generators which handle camelCaseModel names consistently. Got tired of adding new ones as the need arose.
+-- this applies to {{relations:modelVar}} where modelVar is one of the fields below. This is replaced by a quoted, comma separated list of all the foreign relationship models for the current model.
+-- for a model named camelCaseModel these will be:
+
+| field | replaced with |
+| :---- |:------ |
+| {{camelModel}}    |      camelCaseModel    |
+| {{camelModels}}   |      camelCaseModels   |
+| {{CamelModel}}    |      CamelCaseModel    |
+| {{CamelModels}}   |      CamelCaseModels   |
+| {{model}}         |      camelcasemodel    |
+| {{models}}        |      camelcasemodels   |
+| {{MODEL}}         |      CAMELCASEMODEL    |
+| {{MODELS}}        |      CAMELCASEMODELS   |
+| {{Model}}         |      CamelCaseModel    |
+| {{Models}}        |      CamelCaseModels   |
+| {{snake_model}}   |      camel_case_model  |
+| {{snake_models}}  |      camel_case_models |
+| {{Snake_Model}}   |      Camel_Case_Model  |
+| {{Snake_Models}}  |      Camel_Case_Models |
+| {{SNAKE_MODEL}}   |      CAMEL_CASE_MODEL  |
+| {{SNAKE_MODELS}}  |      CAMEL_CASE_MODELS |
+| {{dash-model}}    |      camel-case-model  |
+| {{dash-models}}   |      camel-case-models |
+| {{Dash-Model}}    |      Camel-Case-Model  |
+| {{Dash-Models}}   |      Camel-Case-Models |
+| {{DASH-MODEL}}    |      CAMEL-CASE-MODEL  |
+| {{DASH-MODELS}}   |      CAMEL-CASE-MODELS |    
+
 ### Version 1.2.6
 
 - fix test generator to handle camel case model names instead of forcing lowercase
 - fix migration generator to convert camel case to snake case on model names instead of using camel case
 - fix database seeder generator to handle camel case model names instead of forcing lowercase
-- if a generated file exists in the project all generators will not create a file with .new appended to the name instead of doing nothing. That way you can change the template or field list, generate a new version and user file diff to merge in the desired changes.
+- if a generated file exists in the project all generators will now create a file with .new appended to the name instead of doing nothing. That way you can change the template or field list, generate a new version and user file diff to merge in the desired changes.
 
 #### Migration Generator
 

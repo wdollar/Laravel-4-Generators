@@ -73,10 +73,10 @@ class ResourceGeneratorCommand extends Command
         $this->model = Pluralizer::singular($this->argument('name'));
 
         // common error for field types
-        $fields = $this->option('fields');
-        $fields = str_replace(', ', ',', $fields);
-        $fields = str_replace(':int,', ':integer,', $fields);
-        $fields = str_replace(':bool,', ':boolean,', $fields);
+        $fields = trim($this->option('fields'));
+        $fields = preg_replace('/\s*,\s*/', ',', $fields);
+        $fields = preg_replace('/:int\b/', ':integer', $fields);
+        $fields = preg_replace('/:bool\b/', ':boolean', $fields);
 
         $this->fields = $fields;
 
@@ -115,6 +115,7 @@ class ResourceGeneratorCommand extends Command
         $this->generateViews();
         $this->generateMigration();
         $this->generateSeed();
+        $this->generateTranslations();
 
         if (get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand')
         {
@@ -139,6 +140,18 @@ class ResourceGeneratorCommand extends Command
     {
         //return self::getTemplatePath('model.txt');
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'model.txt');
+    }
+
+    /**
+     * Get the path to the template for a model.
+     *
+     * @return string
+     */
+    protected
+    function getTranslationsTemplatePath()
+    {
+        //return self::getTemplatePath('model.txt');
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'translations.txt');
     }
 
     protected function getRouteTemplatePath()
@@ -180,6 +193,21 @@ class ResourceGeneratorCommand extends Command
         $this->call('generate:model', array(
                 'name' => $this->model,
                 '--template' => $this->getModelTemplatePath()
+            ));
+    }
+
+    /**
+     * Call generate:translations
+     *
+     * @return void
+     */
+    protected
+    function generateTranslations()
+    {
+        // For now, this is just the regular model template
+        $this->call('generate:translations', array(
+                'name' => $this->model,
+                '--template' => $this->getTranslationsTemplatePath()
             ));
     }
 
@@ -291,7 +319,7 @@ class ResourceGeneratorCommand extends Command
 
         $this->call('generate:migration', array(
                 'name' => $name,
-                '--fields' => $this->option('fields')
+                '--fields' => $this->fields,
             ));
     }
 

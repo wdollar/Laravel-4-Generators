@@ -3,6 +3,7 @@
 namespace Vsch\Generators\Generators;
 
 use Illuminate\Support\Pluralizer;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class ViewGenerator extends Generator
 {
@@ -41,79 +42,74 @@ class ViewGenerator extends Generator
     protected
     function getScaffoldedTemplate($name)
     {
-        $model = $this->cache->getModelName();  // post
-        $models = Pluralizer::plural($model);   // posts
-        $Models = ucwords($models);             // Posts
-        $Model = Pluralizer::singular($Models); // Post
-        $useLang = false;
+        $modelVars = GeneratorsServiceProvider::getModelVars($this->cache->getModelName());
+        $camelModel = $modelVars['camelModel'];
 
+        // Replace template vars in view
+        $this->template = GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
+
+        $useLang = false;
         // Create and Edit views require form elements
         if (str_contains($this->template, '{{formElements}}'))
         {
-            $formElements = $this->makeFormElements(false, false, false, false);
+            $formElements = $this->makeFormElements($modelVars, false, false, false, false);
             $this->template = str_replace('{{formElements}}', $formElements, $this->template);
         }
 
         if (str_contains($this->template, '{{formElements:readonly}}'))
         {
-            $formElements = $this->makeFormElements(true, false, false);
+            $formElements = $this->makeFormElements($modelVars, true, false, false);
             $this->template = str_replace('{{formElements:readonly}}', $formElements, $this->template);
         }
 
         // no booleans
         if (str_contains($this->template, '{{formElements:nobool}}'))
         {
-            $formElements = $this->makeFormElements(false, false, true);
+            $formElements = $this->makeFormElements($modelVars, false, false, true);
             $this->template = str_replace('{{formElements:nobool}}', $formElements, $this->template);
         }
 
         if (str_contains($this->template, '{{formElements:nobool:readonly}}'))
         {
-            $formElements = $this->makeFormElements(true, false, true);
+            $formElements = $this->makeFormElements($modelVars, true, false, true);
             $this->template = str_replace('{{formElements:nobool:readonly}}', $formElements, $this->template);
         }
 
         // only booleans
         if (str_contains($this->template, '{{formElements:bool}}'))
         {
-            $formElements = $this->makeFormElements(false, true, false);
+            $formElements = $this->makeFormElements($modelVars, false, true, false);
             $this->template = str_replace('{{formElements:bool}}', $formElements, $this->template);
         }
 
         if (str_contains($this->template, '{{formElements:bool:readonly}}'))
         {
-            $formElements = $this->makeFormElements(true, true, false);
+            $formElements = $this->makeFormElements($modelVars, true, true, false);
             $this->template = str_replace('{{formElements:bool:readonly}}', $formElements, $this->template);
         }
 
         if (str_contains($this->template, '{{formElements:op}}'))
         {
-            $formElements = $this->makeFormElements(false, false, false, true);
+            $formElements = $this->makeFormElements($modelVars, false, false, false, true);
             $this->template = str_replace('{{formElements:op}}', $formElements, $this->template);
         }
 
         if (str_contains($this->template, '{{formElements:bool:op}}'))
         {
-            $formElements = $this->makeFormElements(false, true, false, true);
+            $formElements = $this->makeFormElements($modelVars, false, true, false, true);
             $this->template = str_replace('{{formElements:bool:op}}', $formElements, $this->template);
         }
 
         if (str_contains($this->template, '{{formElements:nobool:op}}'))
         {
-            $formElements = $this->makeFormElements(false, false, true, true);
+            $formElements = $this->makeFormElements($modelVars, false, false, true, true);
             $this->template = str_replace('{{formElements:nobool:op}}', $formElements, $this->template);
         }
 
         if (str_contains($this->template, '{{formElements:filters}}'))
         {
-            $formElements = $this->makeFormElements(false, false, false, false, $models);
+            $formElements = $this->makeFormElements($modelVars, false, false, false, false, true);
             $this->template = str_replace('{{formElements:filters}}', $formElements, $this->template);
-        }
-
-        // Replace template vars in view
-        foreach ([ 'model', 'models', 'Models', 'Model' ] as $var)
-        {
-            $this->template = str_replace('{{' . $var . '}}', $$var, $this->template);
         }
 
         // And finally create the table rows
@@ -126,7 +122,7 @@ class ViewGenerator extends Generator
         {
         }
 
-        list($headings, $fields, $editAndDeleteLinks) = $this->makeTableRows($model, $useLang);
+        list($headings, $fields, $editAndDeleteLinks) = $this->makeTableRows($camelModel, $useLang);
         $this->template = str_replace('{{headings}}', implode(PHP_EOL . "\t\t\t\t", $headings), $this->template);
         $this->template = str_replace('{{fields}}', implode(PHP_EOL . "\t\t\t\t\t", $fields) . PHP_EOL . $editAndDeleteLinks, $this->template);
         $this->template = str_replace('{{fields:nobuttons}}', implode(PHP_EOL . "\t\t\t\t\t", $fields) . PHP_EOL, $this->template);
@@ -149,13 +145,14 @@ class ViewGenerator extends Generator
         $models = Pluralizer::plural($model); // posts
 
         $fields = $this->cache->getFields();
+        $fields = GeneratorsServiceProvider::filterFieldHavingOption($fields, 'hidden');
 
         // First, we build the table headings
         if ($useLang)
         {
-            $headings = array_map(function ($field) use ($models)
+            $headings = array_map(function ($field) use ($model)
             {
-                return '<th>@lang(\'' . $models . '.' . $field . '\')</th>';
+                return '<th>@lang(\'' . strtolower($model) . '.' . $field . '\')</th>';
             }, array_keys($fields));
         }
         else
@@ -167,8 +164,26 @@ class ViewGenerator extends Generator
         }
 
         // And then the rows, themselves
-        $fields = array_map(function ($field) use ($model)
+        $fields = array_map(function ($field) use ($model, $fields)
         {
+            $options = explode(':', $fields[$field], 2);
+            $type = $options[0];
+            $options = count($options) > 1 ? $options[1] : '';
+
+            if (strpos($options, 'hidden') !== false)
+            {
+                unset($fields[$field]);
+                return null;
+            }
+
+            if ($type === 'integer')
+            {
+                if (substr($field, strlen($field) - 3) === '_id')
+                {
+                    $foreignModel = substr($field, 0, -3);
+                    return "<td>{{{ \$$model->$field . ':' . \$$model->{$foreignModel}->name }}}</td>";
+                }
+            }
             return "<td>{{{ \$$model->$field }}}</td>";
         }, array_keys($fields));
 
@@ -182,60 +197,76 @@ class ViewGenerator extends Generator
                     </td>
 EOT;
 
-        return [ $headings, $fields, $editAndDelete ];
+        return [$headings, $fields, $editAndDelete];
     }
 
     /**
      * Add Laravel methods, as string,
      * for the fields
      *
+     * @param string $modelVars
+     *
      * @param bool   $disable
      *
      * @param bool   $onlyBoolean
      * @param bool   $noBoolean
      * @param bool   $useOp
-     * @param string $models
      *
      * @return string
      * @internal param $model
      */
     public
-    function makeFormElements($disable = false, $onlyBoolean = false, $noBoolean = false, $useOp = false, $models = '')
+    function makeFormElements($modelVars, $disable = false, $onlyBoolean = false, $noBoolean = false, $useOp = false, $filterRows = false)
     {
-        $formMethods = [ ];
-        $filterRows = !empty($models);
+        $formMethods = [];
+        $fields = $this->cache->getFields();
+        $models = $modelVars['models'];
+        $model = $modelVars['model'];
+        $narrowText = " input-narrow";
 
-        if ($useOp)
+        foreach ($fields as $name => $type)
         {
-            $readonly = '$op === \'view\' ? \'readonly\' : \'\',';
-            $disabled = '$op === \'view\' ? \'disabled\' : \'\'';
-        }
-        else
-        {
-            $readonly = $disable ? "'readonly', " : '';
-            $disabled = $disable ? "'disabled', " : '';
-        }
+            list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($type);
 
-        foreach ($this->cache->getFields() as $name => $type)
-        {
-            $formalName = ucwords($name);
+            if (strpos($options, 'hidden') !== false) continue;
+            if (strpos($options, 'guarded') !== false)
+            {
+                if ($useOp)
+                {
+                    $readonly = true ? "'readonly', " : '';
+                    $disabled = true ? "'disabled', " : '';
+                }
+                else
+                {
+                    $readonly = $disable ? "'readonly', " : '';
+                    $disabled = $disable ? "'disabled', " : '';
+                }
+            }
+            else
+            {
+                if ($useOp)
+                {
+                    $readonly = 'isViewOp($op) ? \'readonly\' : \'\',';
+                    $disabled = 'isViewOp($op) ? \'disabled\' : \'\'';
+                }
+                else
+                {
+                    $readonly = $disable ? "'readonly', " : '';
+                    $disabled = $disable ? "'disabled', " : '';
+                }
+            }
+
             $limit = null;
             $useShort = false;
 
             if (str_contains($type, '['))
             {
                 preg_match('/([^\[]+?)\[(\d+)\]/', $type, $matches);
-                $type = $matches[ 1 ]; // string
-                $limit = $matches[ 2 ]; // 50
+                $type = $matches[1]; // string
+                $limit = $matches[2]; // 50
             }
 
-            if ($type === 'string' && $limit > 64 && !array_key_exists($name, [
-                            'email' => '',
-                            'name' => '',
-                            'password' => '',
-                            'password_confirmation' => ''
-                   ])
-            )
+            if (preg_match('/\btextarea\b/', $options))
             {
                 // treat it as text with multiple rows
                 $type = 'text';
@@ -248,28 +279,30 @@ EOT;
 
             $labelName = $name;
             $afterElement = '';
+            $wrapRow = true;
+
+            $inputNarrow = ($type === 'integer' || ($type === 'string' && $limit < 32)) ? $narrowText : '';
 
             switch ($type)
             {
                 case 'integer':
-
                     if (substr($name, strlen($name) - 3) === '_id')
                     {
                         // assume foreign key
                         $foreignModel = substr($name, 0, strlen($name) - 3);
                         $foreignModels = Pluralizer::plural($foreignModel);   // posts
 
-                        $element = "<br>{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'input-xs btn-default', ]) }}";
-                        $elementFilter = "{{ Form::select('$name', [''] + \$$foreignModels, Input::get('$name'), ['form' => 'filter-$models', 'class' => 'input-xs btn-default', ]) }}";
+                        $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control col-sm-2', ]) }}";
+                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
 
                         $labelName = $foreignModel;
 
                         $afterElement = "";
                         if ($useOp)
                         {
-                            $afterElement .= "\n@if(\$op === 'create' || \$op === 'edit')";
+                            $afterElement .= "\n\t</div>\n@if(\$op === 'create' || \$op === 'edit')";
                         }
-                        $afterElement .= "\n\t\t&nbsp;&nbsp;<a href=\"{{ URL::route('$foreignModel.create') }}\" role=\"button\" class=\"btn btn-sm btn-warning\">@lang('messages.create')</a>";
+                        $afterElement .= "\n\tdiv class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignModels.create')\" @linkAsButton('warning')>@lang('messages.create')</a>";
                         if ($useOp)
                         {
                             $afterElement .= "\n@endif";
@@ -277,27 +310,28 @@ EOT;
                     }
                     else
                     {
-                        $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('messages.$name'), ]) }}";
-                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('messages.$name'), ]) }}";
+                        $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
                     }
                     break;
 
                 case 'text':
                     $limit = empty($limit) ? 256 : $limit;
                     $rowAttr = (int)($limit / 64) ?: 1;
-                    $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('messages.$name'), 'rows'=>'$rowAttr', ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('messages.$name'), ]) }}";
+                    $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('$model.$name'), 'rows'=>'$rowAttr', ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
                     break;
 
                 case 'boolean':
-                    $element = "{{ Form::checkbox('$name', 1, Input::old('$name'), [$disabled, ]) }}";
-                    $elementFilter = "{{ Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get('$name'), ['form' => 'filter-$models', 'class' => 'input-xs btn-default', ]) }}";
+                    $element = "{{ Form::checkbox('$name', 1, Input::old('$name'), [$disabled]) }}";
+                    $elementFilter = "{{ Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get('$name'), ['form' => 'filter-$models', 'class' => 'form-control', ]) }}";
                     $useShort = true;
                     break;
 
+                case 'string':
                 default:
-                    $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('messages.$name'), ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control input-xs', 'placeholder'=>trans('messages.$name'), ]) }}";
+                    $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
                     break;
             }
 
@@ -309,28 +343,54 @@ EOT;
             }
             elseif ($useShort)
             {
-                $frag = <<<EOT
+                if ($wrapRow)
+                {
+                    $frag = <<<EOT
+        <div class="row">
+                <label>
+                      $element @lang('$model.$labelName')
+                      &nbsp;&nbsp;
+                </label>$afterElement
+        </div>
+EOT;
+                }
+                else
+                {
+                    $frag = <<<EOT
             <label>
-                  $element @lang('messages.$labelName')
+                  $element @lang('$model.$labelName')
                   &nbsp;&nbsp;
             </label>$afterElement
 EOT;
+                }
             }
             else
             {
+                if ($wrapRow)
+                {
+                    $frag = <<<EOT
+        <div class="row">
+            <div class="form-group col-sm-3">
+                {{ Form::label('$name', trans('$model.$labelName') . ':') }}
+                  $element$afterElement
+            </div>
+        </div>
 
-                // Now that we have the correct $element,
-                // We can build up the HTML fragment
-                $frag = <<<EOT
+EOT;
+                }
+                else
+                {
+                    $frag = <<<EOT
         <div class="form-group">
-            {{ Form::label('$name', trans('messages.$labelName') . ':') }}
+            {{ Form::label('$name', trans('$model.$labelName') . ':') }}
               $element$afterElement
         </div>
 
 EOT;
+                }
             }
 
-            $formMethods[ ] = $frag;
+            $formMethods[] = $frag;
         }
 
         return implode(PHP_EOL, $formMethods);

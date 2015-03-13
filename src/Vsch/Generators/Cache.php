@@ -54,7 +54,7 @@ class Cache {
         foreach($fields as $pair)
         {
             list($key, $val) = preg_split('/ ?: ?/', $pair, 2);
-            $arrayFields[$key] = $val;
+            $arrayFields[$key] = trim($val);
         }
 
         return $this->file->put($path, json_encode($arrayFields));

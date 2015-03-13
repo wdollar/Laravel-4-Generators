@@ -5,6 +5,7 @@ use Vsch\Generators\Commands;
 use Vsch\Generators\Generators;
 use Vsch\Generators\Cache;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Pluralizer;
 
 class GeneratorsServiceProvider extends ServiceProvider
 {
@@ -56,24 +57,152 @@ class GeneratorsServiceProvider extends ServiceProvider
             {
                 foreach ($files as $file)
                 {
-                    $path = str_finish($path, "/") . str_finish($file, "/");
-                    if (!(is_null($suffix) || $suffix === '')) $path .= str_finish($suffix, "/");
-                    if (is_dir($path)) break 2;
+                    if ($file === '/') $file = '';
+                    $trypath = str_finish($path, "/") . ($file !== '' ? str_finish($file, "/") : '');
+                    if (!(is_null($suffix) || $suffix === '')) $trypath .= str_finish($suffix, "/");
+                    if (is_dir($trypath))
+                    {
+                        $path = $trypath;
+                        break 2;
+                    }
                 }
             }
             else
             {
                 foreach ($files as $file)
                 {
-                    $path = str_finish($path, "/") . $file;
-                    if (!(is_null($suffix) || $suffix === '')) $path .= $suffix;
-                    if (file_exists($path)) break 2;
+                    if ($file === '/') $file = '';
+                    $trypath = str_finish($path, "/") . $file;
+                    if (!(is_null($suffix) || $suffix === '')) $trypath .= $suffix;
+                    if (file_exists($trypath))
+                    {
+                        $path = $trypath;
+                        break 2;
+                    }
                 }
             }
         }
 
         // even if not found we return its base path location
         return $path;
+    }
+
+    public static
+    function getModelVars($modelName)
+    {
+        $camelModel = $modelName;  // blockedEmail
+        $camelModels = Pluralizer::plural($camelModel);  // blockedEmails
+        $CamelModel = strtoupper(substr($camelModel, 0, 1)) . substr($camelModel, 1);  // blockedEmail
+        $CamelModels = strtoupper(substr($camelModels, 0, 1)) . substr($camelModels, 1);  // blockedEmail
+        $model = strtolower($camelModel);                                 // blockedemail
+        $models = strtolower($camelModels);                       // blockedemails
+        $MODEL = strtoupper($camelModel);                                 // blockedemail
+        $MODELS = strtoupper($camelModels);                       // blockedemails
+        $Model = strtoupper(substr($camelModel, 0, 1)) . substr($camelModel, 1);    // BlockedEmail
+        $Models = strtoupper(substr($camelModels, 0, 1)) . substr($camelModels, 1);    // BlockedEmail
+        $snake_model = snake_case($camelModel);
+        $snake_models = snake_case($camelModels);
+        $Snake_Model = str_replace(' ', '_', ucwords(snake_case($camelModel, ' ')));
+        $Snake_Models = str_replace(' ', '_', ucwords(snake_case($camelModels, ' ')));
+        $SNAKE_MODEL = strtoupper($snake_model);
+        $SNAKE_MODELS = strtoupper($snake_models);
+        $dash_model = snake_case($camelModel, '-');
+        $dash_models = snake_case($camelModels, '-');
+        $DASH_MODEL = strtoupper($dash_model);
+        $DASH_MODELS = strtoupper($dash_models);
+        $Dash_Model = str_replace(' ', '-', ucwords(snake_case($camelModel, ' ')));
+        $Dash_Models = str_replace(' ', '-', ucwords(snake_case($camelModels, ' ')));
+        $modelVars = [
+            'camelModel' => $camelModel,
+            'camelModels' => $camelModels,
+            'CamelModel' => $CamelModel,
+            'CamelModels' => $CamelModels,
+            'model' => $model,
+            'models' => $models,
+            'MODEL' => $MODEL,
+            'MODELS' => $MODELS,
+            'Model' => $Model,
+            'Models' => $Models,
+            'snake_model' => $snake_model,
+            'snake_models' => $snake_models,
+            'Snake_Model' => $Snake_Model,
+            'Snake_Models' => $Snake_Models,
+            'SNAKE_MODEL' => $SNAKE_MODEL,
+            'SNAKE_MODELS' => $SNAKE_MODELS,
+            'dash-model' => $dash_model,
+            'dash-models' => $dash_models,
+            'Dash-Model' => $Dash_Model,
+            'Dash-Models' => $Dash_Models,
+            'DASH-MODEL' => $DASH_MODEL,
+            'DASH-MODELS' => $DASH_MODELS,
+        ];
+
+        return $modelVars;
+    }
+
+    public static
+    function replaceModelVars($text, $modelVars, $varPrefix = '{{', $varSuffix = '}}')
+    {
+        $vars = array_keys($modelVars);
+        array_walk($vars, function (&$var) use ($varPrefix, $varSuffix)
+        {
+            $var = $varPrefix . $var . $varSuffix;
+        });
+
+        $text = str_replace($vars, array_values($modelVars), $text);
+        return $text;
+    }
+
+    public static
+    function replaceTemplateLines($template, $fieldKey, \Closure $closure)
+    {
+        while (($pos = strpos($template, $fieldKey)) !== false)
+        {
+            // grab the line that contains
+            $startPos = strrpos($template, "\n", -(strlen($template) - $pos));
+            if ($startPos === false) $startPos = -1;
+
+            $endPos = strpos($template, "\n", $pos);
+            if ($endPos === false) $endPos = strlen($template) + 1;
+
+            $line = substr($template, $startPos + 1, $endPos - $startPos - 1);
+            $line = str_replace('{{line:eol}}', "\n", $line);
+
+            $fieldValue = $closure($line, $fieldKey);
+
+            $template = substr($template, 0, $startPos + 1) . $fieldValue . substr($template, $endPos + 1);
+        }
+
+        return $template;
+    }
+
+    public static
+    function isFieldHintOption($option)
+    {
+        return array_search($option, ['hidden', 'guarded', 'notrail', 'textarea',]) !== false;
+    }
+
+    public static
+    function fieldTypeOptions($typeText)
+    {
+        $options = explode(':', $typeText, 2);
+        $type = $options[0];
+        $options = count($options) > 1 ? $options[1] : '';
+        return array($type, $options);
+    }
+
+    public static
+    function filterFieldHavingOption($fields, $optionName)
+    {
+        $keep = [];
+        foreach ($fields as $name => $typeText)
+        {
+            list($type, $options) = self::fieldTypeOptions($typeText);
+            $exp = "/\b${optionName}\b/";
+            if (preg_match($exp, $options)) continue;
+            $keep[$name] = $typeText;
+        }
+        return $keep;
     }
 
     public
@@ -96,12 +225,13 @@ class GeneratorsServiceProvider extends ServiceProvider
         $this->registerResourceGenerator();
         $this->registerScaffoldGenerator();
         $this->registerViewGenerator();
+        $this->registerTranslationsGenerator();
         $this->registerMigrationGenerator();
         $this->registerPivotGenerator();
         $this->registerSeedGenerator();
         $this->registerFormDumper();
 
-        $this->commands('generate.model', 'generate.controller', 'generate.test', 'generate.scaffold', 'generate.resource', 'generate.view', 'generate.migration', 'generate.seed', 'generate.form', 'generate.pivot');
+        $this->commands('generate.model', 'generate.translations', 'generate.controller', 'generate.test', 'generate.scaffold', 'generate.resource', 'generate.view', 'generate.migration', 'generate.seed', 'generate.form', 'generate.pivot');
     }
 
     /**
@@ -118,6 +248,23 @@ class GeneratorsServiceProvider extends ServiceProvider
             $generator = new Generators\ModelGenerator($app['files'], $cache);
 
             return new Commands\ModelGeneratorCommand($generator);
+        });
+    }
+
+    /**
+     * Register generate:translations
+     *
+     * @return Commands\ModelGeneratorCommand
+     */
+    protected
+    function registerTranslationsGenerator()
+    {
+        $this->app['generate.translations'] = $this->app->share(function ($app)
+        {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\TranslationsGenerator($app['files'], $cache);
+
+            return new Commands\TranslationsGeneratorCommand($generator);
         });
     }
 

@@ -2,7 +2,12 @@
 
 namespace Vsch\Generators\Generators;
 
+use Illuminate\Support\Pluralizer;
+use Vsch\Generators\GeneratorsServiceProvider;
+
 class SeedGenerator extends Generator {
+
+    protected $template;
 
     /**
      * Fetch the compiled template for a seed
@@ -14,11 +19,12 @@ class SeedGenerator extends Generator {
     protected function getTemplate($template, $className)
     {
         $this->template = $this->file->get($template);
-        $models = strtolower(str_replace('TableSeeder', '', $className));
+        $name = Pluralizer::singular(str_replace('TableSeeder', '', $className));
+        $modelVars = GeneratorsServiceProvider::getModelVars($name);
 
         $this->template = str_replace('{{className}}', $className, $this->template);
 
-        return str_replace('{{models}}', $models, $this->template);
+        return GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
     }
 
     /**

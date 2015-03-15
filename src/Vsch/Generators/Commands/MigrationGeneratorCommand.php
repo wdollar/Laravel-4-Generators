@@ -4,6 +4,7 @@ use Vsch\Generators\Generators\MigrationGenerator;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class MigrationGeneratorCommand extends BaseGeneratorCommand
 {
@@ -52,11 +53,7 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
 
         // common error for field types
         $fields = $this->option('fields');
-        $fields = str_replace(', ', ',', $fields);
-        $fields = str_replace(':int,', ':integer,', $fields);
-        $fields = str_replace(':int:', ':integer:', $fields);
-        $fields = str_replace(':bool,', ':boolean,', $fields);
-        $fields = str_replace(':bool:', ':boolean:', $fields);
+        $fields = GeneratorsServiceProvider::mapFieldTypes($fields);
 
         $this->fields = $fields;
 

@@ -246,8 +246,8 @@ EOT;
             {
                 if ($useOp)
                 {
-                    $readonly = 'isViewOp($op) ? \'readonly\' : \'\',';
-                    $disabled = 'isViewOp($op) ? \'disabled\' : \'\'';
+                    $readonly = 'isViewOp($op) ? \'readonly\' : null,';
+                    $disabled = 'isViewOp($op) ? \'disabled\' : null';
                 }
                 else
                 {
@@ -279,25 +279,37 @@ EOT;
 
             $labelName = $name;
             $afterElement = '';
+            $afterElementFilter = '';
             $wrapRow = true;
 
-            $inputNarrow = ($type === 'integer' || ($type === 'string' && $limit < 32)) ? $narrowText : '';
+            $inputNarrow = (GeneratorsServiceProvider::isFieldIntegral($type) || ($type === 'string' && $limit < 32)) ? $narrowText : '';
 
             switch ($type)
             {
-                case 'integer':
+                case  'mediumInteger':
+                case  'smallInteger':
+                case  'tinyInteger':
+                    $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                    $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                    break;
+
+                case 'bigInteger':
+                case  'integer':
                     if (substr($name, strlen($name) - 3) === '_id')
                     {
                         // assume foreign key
+                        $afterElement = "";
+
                         $foreignModel = substr($name, 0, strlen($name) - 3);
                         $foreignModels = Pluralizer::plural($foreignModel);   // posts
 
-                        $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control col-sm-2', ]) }}";
-                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                        $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) }}";
+                        $element .= "\n{{ Form::text('$foreignModel', param('$model') ? param('$model')->$${foreignModel}->name, ['data-vsch_completion'=>'$foreignModels:name;id:$name','class' => 'form-control', ]) }}";
+                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:name;id:$name','class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
+                        $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['id=>'$name']) }}";
 
                         $labelName = $foreignModel;
 
-                        $afterElement = "";
                         if ($useOp)
                         {
                             $afterElement .= "\n\t</div>\n@if(\$op === 'create' || \$op === 'edit')";
@@ -328,6 +340,23 @@ EOT;
                     $useShort = true;
                     break;
 
+                case 'date':
+                case 'dateTime':
+                    $element = <<<HTML
+<div class="input-group input-group-sm date">
+    {{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}
+    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
+</div>
+HTML;
+                    $elementFilter = <<<HTML
+<div class="input-group date">
+    {{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}
+    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
+</div>
+HTML;
+                    break;
+
+                case 'time':
                 case 'string':
                 default:
                     $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
@@ -339,6 +368,7 @@ EOT;
             {
                 $frag = <<<EOT
             <td>$elementFilter</td>
+            $afterElementFilter
 EOT;
             }
             elseif ($useShort)

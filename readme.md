@@ -27,10 +27,10 @@ This package had the following modifications to Wes Dollar's package:
 | {{CamelModels}}   |      CamelCaseModels   |
 | {{model}}         |      camelcasemodel    |
 | {{models}}        |      camelcasemodels   |
-| {{MODEL}}         |      CAMELCASEMODEL    |
-| {{MODELS}}        |      CAMELCASEMODELS   |
 | {{Model}}         |      CamelCaseModel    |
 | {{Models}}        |      CamelCaseModels   |
+| {{MODEL}}         |      CAMELCASEMODEL    |
+| {{MODELS}}        |      CAMELCASEMODELS   |
 | {{snake_model}}   |      camel_case_model  |
 | {{snake_models}}  |      camel_case_models |
 | {{Snake_Model}}   |      Camel_Case_Model  |
@@ -43,6 +43,12 @@ This package had the following modifications to Wes Dollar's package:
 | {{Dash-Models}}   |      Camel-Case-Models |
 | {{DASH-MODEL}}    |      CAMEL-CASE-MODEL  |
 | {{DASH-MODELS}}   |      CAMEL-CASE-MODELS |    
+| {{space model}}   |      camel case model  |
+| {{space models}}  |      camel case models |
+| {{Space Model}}   |      Camel Case Model  |
+| {{Space Models}}  |      Camel Case Models |
+| {{SPACE MODEL}}   |      CAMEL CASE MODEL  |
+| {{SPACE MODELS}}  |      CAMEL CASE MODELS |    
 
 ### Version 1.2.6
 

@@ -74,9 +74,7 @@ class ResourceGeneratorCommand extends Command
 
         // common error for field types
         $fields = trim($this->option('fields'));
-        $fields = preg_replace('/\s*,\s*/', ',', $fields);
-        $fields = preg_replace('/:int\b/', ':integer', $fields);
-        $fields = preg_replace('/:bool\b/', ':boolean', $fields);
+        $fields = GeneratorsServiceProvider::mapFieldTypes($fields);
 
         $this->fields = $fields;
 

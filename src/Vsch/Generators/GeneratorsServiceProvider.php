@@ -94,24 +94,35 @@ class GeneratorsServiceProvider extends ServiceProvider
         $camelModels = Pluralizer::plural($camelModel);  // blockedEmails
         $CamelModel = strtoupper(substr($camelModel, 0, 1)) . substr($camelModel, 1);  // blockedEmail
         $CamelModels = strtoupper(substr($camelModels, 0, 1)) . substr($camelModels, 1);  // blockedEmail
+
         $model = strtolower($camelModel);                                 // blockedemail
         $models = strtolower($camelModels);                       // blockedemails
+        $Model = $CamelModel;
+        $Models = $CamelModels;
         $MODEL = strtoupper($camelModel);                                 // blockedemail
         $MODELS = strtoupper($camelModels);                       // blockedemails
-        $Model = strtoupper(substr($camelModel, 0, 1)) . substr($camelModel, 1);    // BlockedEmail
-        $Models = strtoupper(substr($camelModels, 0, 1)) . substr($camelModels, 1);    // BlockedEmail
+
         $snake_model = snake_case($camelModel);
         $snake_models = snake_case($camelModels);
         $Snake_Model = str_replace(' ', '_', ucwords(snake_case($camelModel, ' ')));
         $Snake_Models = str_replace(' ', '_', ucwords(snake_case($camelModels, ' ')));
         $SNAKE_MODEL = strtoupper($snake_model);
         $SNAKE_MODELS = strtoupper($snake_models);
-        $dash_model = snake_case($camelModel, '-');
-        $dash_models = snake_case($camelModels, '-');
-        $DASH_MODEL = strtoupper($dash_model);
-        $DASH_MODELS = strtoupper($dash_models);
-        $Dash_Model = str_replace(' ', '-', ucwords(snake_case($camelModel, ' ')));
-        $Dash_Models = str_replace(' ', '-', ucwords(snake_case($camelModels, ' ')));
+
+        $dash_model = str_replace('_', '-', $snake_model);
+        $dash_models = str_replace('_', '-', $snake_models);
+        $Dash_Model = str_replace('_', '-', $Snake_Model);
+        $Dash_Models = str_replace('_', '-', $Snake_Models);
+        $DASH_MODEL = str_replace('_', '-', $SNAKE_MODEL);
+        $DASH_MODELS = str_replace('_', '-', $SNAKE_MODELS);
+
+        $space_model = str_replace('-', ' ', $dash_model);
+        $space_models = str_replace('-', ' ', $dash_models);
+        $Space_Model = str_replace('-', ' ', $Dash_Model);
+        $Space_Models = str_replace('-', ' ', $Dash_Models);
+        $SPACE_MODEL = str_replace('-', ' ', $DASH_MODEL);
+        $SPACE_MODELS = str_replace('-', ' ', $DASH_MODELS);
+
         $modelVars = [
             'camelModel' => $camelModel,
             'camelModels' => $camelModels,
@@ -135,6 +146,12 @@ class GeneratorsServiceProvider extends ServiceProvider
             'Dash-Models' => $Dash_Models,
             'DASH-MODEL' => $DASH_MODEL,
             'DASH-MODELS' => $DASH_MODELS,
+            'space model' => $space_model,
+            'space models' => $space_models,
+            'Space Model' => $Space_Model,
+            'Space Models' => $Space_Models,
+            'SPACE MODEL' => $SPACE_MODEL,
+            'SPACE MODELS' => $SPACE_MODELS,
         ];
 
         return $modelVars;
@@ -203,6 +220,50 @@ class GeneratorsServiceProvider extends ServiceProvider
             $keep[$name] = $typeText;
         }
         return $keep;
+    }
+
+    public static
+    function mapFieldTypes($fields)
+    {
+        $fields = preg_replace('/,\s+/', ',', $fields);
+        $fields = preg_replace('/\bint\b/', 'integer', $fields);
+        $fields = preg_replace('/\btinyint\b/', 'tinyInteger', $fields);
+        $fields = preg_replace('/\bsmallint\b/', 'smallInteger', $fields);
+        $fields = preg_replace('/\bmedint\b/', 'mediumInteger', $fields);
+        $fields = preg_replace('/\bmediumint\b/', 'mediumInteger', $fields);
+        $fields = preg_replace('/\bbigint\b/', 'bigInteger', $fields);
+        $fields = preg_replace('/\bbool\b/', 'boolean', $fields);
+        $fields = preg_replace('/\bdatetime\b/', 'dateTime', $fields);
+        return $fields;
+    }
+
+    public static
+    function isFieldBoolean($typeText)
+    {
+        //$table->boolean('confirmed')
+        list($type, $options) = self::fieldTypeOptions($typeText);
+        return $type === 'boolean';
+    }
+
+    public static
+    function isFieldIntegral($typeText)
+    {
+        //$table->bigInteger('votes')
+        //$table->integer('votes')
+        //$table->mediumInteger('numbers')
+        //$table->smallInteger('votes')
+        //$table->tinyInteger('numbers')
+        list($type, $options) = self::fieldTypeOptions($typeText);
+        return array_search($type, ['bigInteger', 'integer', 'mediumInteger', 'smallInteger', 'tinyInteger']) !== false;
+    }
+
+    public static
+    function isFieldNumeric($typeText) {
+        //$table->decimal('amount', 5, 2)
+        //$table->double('column', 15, 8)
+        //$table->float('amount')
+        list($type, $options) = self::fieldTypeOptions($typeText);
+        return array_search($type, ['decimal', 'double', 'float',]) !== false || self::isFieldIntegral($typeText);
     }
 
     public

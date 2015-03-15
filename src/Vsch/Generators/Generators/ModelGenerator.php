@@ -136,12 +136,12 @@ PHP;
             return $fieldText;
         });
 
-        $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields)
+        $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields, $modelVars)
         {
             $fieldText = '';
             foreach ($fields as $field => $type)
             {
-                if (preg_match('/\bboolean\b/', $type) !== false)
+                if (GeneratorsServiceProvider::isFieldBoolean($type))
                 {
                     $fieldText .= str_replace($fieldVar, $field, $line) . "\n";
                 }
@@ -165,10 +165,14 @@ PHP;
 
             $ruleBits = [];
             if ($field === 'email') $ruleBits[] = 'email';
-            if (str_contains($type, ['boolean'])) array_unshift($ruleBits, 'boolean');
-            if (str_contains($type, ['integer'])) $ruleBits[] = 'numeric';
+            if (GeneratorsServiceProvider::isFieldBoolean($type)) array_unshift($ruleBits, 'boolean');
+            if (GeneratorsServiceProvider::isFieldNumeric($type)) $ruleBits[] = 'numeric';
 
             if (!str_contains($type, ['nullable', 'hidden', 'guarded'])) $ruleBits[] = 'required';
+            if (str_contains($type, ['unique']))
+            {
+                $ruleBits[] = "unique:{$modelVars['snake_models']},$field,{{id}}";
+            }
 
             // here we override for foreign keys
             if (substr($field, strlen($field) - 3) === '_id')

@@ -37,9 +37,11 @@ class TranslationsGenerator extends Generator
                 {
                     // add the foreign model translation
                     $foreignName = strtolower(substr($field, 0, -3));
-                    $fieldText .= str_replace($fieldVar, "'$foreignName' => '$foreignName',", $line) . "\n";
+                    $foreignNameText = ucwords(str_replace('_', ' ', $foreignName));
+                    $fieldText .= str_replace($fieldVar, "'$foreignName' => '$foreignNameText',", $line) . "\n";
                 }
-                $fieldText .= str_replace($fieldVar, "'$field' => '$field',", $line) . "\n";
+                $fieldNameTrans =ucwords(str_replace('_', ' ', $field));
+                $fieldText .= str_replace($fieldVar, "'$field' => '$fieldNameTrans',", $line) . "\n";
             }
             return $fieldText;
         });

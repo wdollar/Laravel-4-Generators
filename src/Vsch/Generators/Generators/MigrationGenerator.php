@@ -241,7 +241,7 @@ class MigrationGenerator extends Generator
 
         foreach ($fields as &$bit)
         {
-            $columnInfo = preg_split('/ ?: ?/', $bit);
+            $columnInfo = trimArr(preg_split('/ ?: ?/', $bit));
 
             $bit = new \StdClass;
             $bit->name = array_shift($columnInfo);

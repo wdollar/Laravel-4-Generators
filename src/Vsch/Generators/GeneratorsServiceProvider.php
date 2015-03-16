@@ -246,6 +246,31 @@ class GeneratorsServiceProvider extends ServiceProvider
     }
 
     public static
+    function getFieldRuleType($typeText)
+    {
+
+        $ruleType = '';
+        list($type, $options) = self::fieldTypeOptions($typeText);
+
+        if (!str_contains($options, ['hidden', 'guarded']))
+        {
+            if (GeneratorsServiceProvider::isFieldBoolean($typeText)) $ruleType = 'boolean';
+            elseif (GeneratorsServiceProvider::isFieldNumeric($typeText)) $ruleType = 'numeric';
+            else
+            {
+                $ruleTypes = ['date' => 'date'];
+
+                if (array_key_exists($type, $ruleTypes))
+                {
+                    $ruleType = $ruleTypes[$type];
+                }
+            }
+        }
+
+        return $ruleType;
+    }
+
+    public static
     function isFieldIntegral($typeText)
     {
         //$table->bigInteger('votes')
@@ -258,7 +283,8 @@ class GeneratorsServiceProvider extends ServiceProvider
     }
 
     public static
-    function isFieldNumeric($typeText) {
+    function isFieldNumeric($typeText)
+    {
         //$table->decimal('amount', 5, 2)
         //$table->double('column', 15, 8)
         //$table->float('amount')

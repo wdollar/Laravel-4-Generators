@@ -163,27 +163,38 @@ PHP;
                 $fieldText .= $field . ":" . $type;
             }
 
-            $ruleBits = [];
-            if ($field === 'email') $ruleBits[] = 'email';
-            if (GeneratorsServiceProvider::isFieldBoolean($type)) array_unshift($ruleBits, 'boolean');
-            if (GeneratorsServiceProvider::isFieldNumeric($type)) $ruleBits[] = 'numeric';
-
-            if (!str_contains($type, ['nullable', 'hidden', 'guarded'])) $ruleBits[] = 'required';
-            if (str_contains($type, ['unique']))
+            if (!str_contains($type, ['hidden', 'guarded']))
             {
-                $ruleBits[] = "unique:{$modelVars['snake_models']},$field,{{id}}";
+                $ruleBits = [];
+
+                if ($field === 'email')array_unshift($ruleBits, 'email');
+                $ruleType = GeneratorsServiceProvider::getFieldRuleType($type);
+                if ($ruleType) array_unshift($ruleBits, $ruleType);
+
+                if (!GeneratorsServiceProvider::isFieldBoolean($type) && !str_contains($type, [
+                        'nullable',
+                        'hidden',
+                        'guarded'
+                    ])
+                ) $ruleBits[] = 'required';
+
+                if (str_contains($type, ['unique']))
+                {
+                    $ruleBits[] = "unique:{$modelVars['snake_models']},$field,{{id}}";
+                }
+
+                // here we override for foreign keys
+                if (substr($field, strlen($field) - 3) === '_id')
+                {
+                    // assume foreign key
+                    $foreignModel = substr($field, 0, strlen($field) - 3);
+                    $foreignModels = Pluralizer::plural($foreignModel);   // posts
+                    $ruleBits[] = "exists:$foreignModels,id";
+                }
+
+                $rules[$field] = "'$field' => '" . implode('|', $ruleBits) . "'";
             }
 
-            // here we override for foreign keys
-            if (substr($field, strlen($field) - 3) === '_id')
-            {
-                // assume foreign key
-                $foreignModel = substr($field, 0, strlen($field) - 3);
-                $foreignModels = Pluralizer::plural($foreignModel);   // posts
-                $ruleBits[] = "exists:$foreignModels,id";
-            }
-
-            $rules[$field] = "'$field' => '" . implode('|', $ruleBits) . "'";
             if (strpos($type, 'hidden') !== false) $hidden[] = "'$field'";
             if (strpos($type, 'guarded') !== false) $guarded[] = "'$field'";
             if (strpos($type, 'notrail') !== false) $notrail[] = "'$field'";

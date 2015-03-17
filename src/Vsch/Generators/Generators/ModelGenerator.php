@@ -153,6 +153,7 @@ PHP;
         $guarded = [];
         $hidden = [];
         $notrail = [];
+        $notrailonly = [];
         $fieldText = '';
 
         foreach ($fields as $field => $type)
@@ -167,7 +168,7 @@ PHP;
             {
                 $ruleBits = [];
 
-                if ($field === 'email')array_unshift($ruleBits, 'email');
+                if ($field === 'email') array_unshift($ruleBits, 'email');
                 $ruleType = GeneratorsServiceProvider::getFieldRuleType($type);
                 if ($ruleType) array_unshift($ruleBits, $ruleType);
 
@@ -195,9 +196,10 @@ PHP;
                 $rules[$field] = "'$field' => '" . implode('|', $ruleBits) . "'";
             }
 
-            if (strpos($type, 'hidden') !== false) $hidden[] = "'$field'";
-            if (strpos($type, 'guarded') !== false) $guarded[] = "'$field'";
-            if (strpos($type, 'notrail') !== false) $notrail[] = "'$field'";
+            if (preg_match('/\bnotrail\b/', $type)) $notrail[] = "'$field'";
+            if (preg_match('/\bhidden\b/', $type)) $hidden[] = "'$field'";
+            if (preg_match('/\bguarded\b/', $type)) $guarded[] = "'$field'";
+            if (preg_match('/\bnotrailonly\b/', $type)) $notrailonly[] = "'$field'";
         }
 
         $this->template = str_replace('{{fields}}', $fieldText, $this->template);
@@ -205,6 +207,7 @@ PHP;
         $this->template = str_replace('{{hidden}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $hidden) . PHP_EOL . "\t", $this->template);
         $this->template = str_replace('{{guarded}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $guarded) . PHP_EOL . "\t", $this->template);
         $this->template = str_replace('{{notrail}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $notrail) . PHP_EOL . "\t", $this->template);
+        $this->template = str_replace('{{notrailonly}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $notrailonly) . PHP_EOL . "\t", $this->template);
 
         return $this->template;
     }

@@ -5,13 +5,25 @@
 
 This package had the following modifications to Wes Dollar's package:
 
-### Version 1.2.7
+### Version 1.3.0
+
+At this point I feel that the generators are in desperate need of a rewrite to simplify and harmonize the template syntax, add more control to how code is generated. This is on a todo list.
+I am adding cludges as the need arises just to get the functionality I need for the project I am working on. It is not the best way but it is the only way on a limited time budget.
+
+#### These are specific to my use and will not work without adding some support code
+
+- change view generator -- `{{formElements:op}}` to generate elements as readonly or disabled (for checkboxes) based on a variable $op wrapped in isViewOp($op) function. That way the code that determines when the fields should be readonly can be isolated from the generator.
+- change view generator for admin.txt generates three types of fields for foreign keys: select and text. The select is populated from a variable based on the camelCaseModels foreign name. The text field and a hidden field are intended to be used together. The hidden field hold the id of the foreign model and the text field a human readable form. I use the typeahead jQuery plugin, with some server code, to resolve the human readable field to the id exected by the database. 
+
+#### These are fairly generic
 
 - fix trailing spaces caused field types not to be properly recognized
 - fix fields for migration were taken from options passed to resource generator and not the fixed up ones by the resource. ie. int => integer, bool => boolean
 - add index view generator for resource generates a foreign model reference name for the foreign id field.
-- add `{{field:line}}` to controller generator 
+- add `{{field:line}}` to controller generator, expands line for every field in the model. Replacing the placeholder with the field name. The placeholder can appear multiple times on the same line, all instances will be replaced by the field name. Intended use is to generate code needed on a per field basis. 
 - add `{{field:line:bool}}` to controller and model generator, expands line only for boolean fields  
+- add `{{field:line:nobool}}` to controller and model generator, expands line only for nonboolean fields  
+- add `{{relations:line}}` to controller and model generator, expands line only for auto-detected foreign key fields (ones ending in `_id`). The `{{relations:line}}` placeholder is removed, instead `{{relations:modelVar}}` is replaced by the foreign model name (the part before `_id`), where modelVar is one of the model case names in the table below. For example {{relations:snake_model}} will be raplaced by the snake_case foreign model name.  
 - add translations generator to scaffolding and resource generator, which will create files in each subdirectory of app/lang with the name {{model}}.php (all lowercase) that will contain an array of `'{{field}}' => '{{field}}',` scaffold for localizing field names.
 - fixed resource generator model name case changing to handle camelCase, instead of lowercasing the model and then capitalizing it. now blockedEmail will be BlockedEmails instead of Blockedemails.
 - resource generator now will add a commented out version of the resource route definition if a resource definition for that resource already exists but does not match the new one.

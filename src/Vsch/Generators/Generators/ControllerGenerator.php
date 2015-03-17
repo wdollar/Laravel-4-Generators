@@ -39,6 +39,19 @@ class ControllerGenerator extends Generator
             return $fieldText;
         });
 
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line:nobool}}', function ($line, $fieldVar) use ($fields)
+        {
+            $fieldText = '';
+            foreach ($fields as $field => $type)
+            {
+                if (!preg_match('/\bboolean\b/', $type))
+                {
+                    $fieldText .= str_replace('{{field:line:nobool}}', $field, $line) . "\n";
+                }
+            }
+            return $fieldText;
+        });
+
         $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relations:line}}', function ($line, $fieldVar) use ($fields)
         {
             // we don't need the marker

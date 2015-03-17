@@ -31,7 +31,7 @@ class TranslationsGenerator extends Generator
         $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{translations:line}}', function ($line, $fieldVar) use ($fields)
         {
             $fieldText = '';
-            foreach ($fields as $field => $type)
+            foreach ($fields + ['id'=>'integer', 'created_at'=>'datetime', 'updated_at'=>'datetime', ] as $field => $type)
             {
                 if (substr($field, -3) == '_id')
                 {

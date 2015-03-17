@@ -54,13 +54,17 @@ class ResourceGenerator
         $newRoute = GeneratorsServiceProvider::replaceModelVars($newRoute, $modelVars);
         $newRouteDefault = GeneratorsServiceProvider::replaceModelVars($newRouteDefault, $modelVars);
 
-        if (str_contains($routes, $newRouteDefault) && !str_contains($routes, $newRoute))
+        $routesNoSpaces = str_replace(['\t', ' '], '', $routes);
+        $newRouteNoSpaces = str_replace(['\t', ' '], '', $newRoute);
+        $newRouteDefaultNoSpaces = str_replace(['\t', ' '], '', $newRouteDefault);
+        if (str_contains($routesNoSpaces, $newRouteDefaultNoSpaces) && !str_contains($routesNoSpaces, $newRouteNoSpaces))
         {
             if (substr($newRoute, -1) === "\n") $newRoute = substr($newRoute, 0, -1);
             $newRoute = '// ' . str_replace("\n", "\n// ", $newRoute) . "\n";
+            $newRouteNoSpaces = str_replace(['\t', ' '], '', $newRoute);
         }
 
-        if (!str_contains($routes, $newRoute))
+        if (!str_contains($routesNoSpaces, $newRouteNoSpaces))
         {
             if (!str_contains($routes, GeneratorsServiceProvider::GENERATOR_ROUTE_TAG))
             {

@@ -57,17 +57,22 @@ abstract class Generator {
         $name = strtolower($this->name) . '.php';
         $fileExists = false;
 
-        if ($filename !== $name && strpos($filename, $name) !== false)
+        if ($filename !== $name && str_ends_with($filename, $name) !== false)
         {
             // must have a date prefix, we should check if a file by the same name exists and append .new to this one
-            if ($handle = opendir(dirname($path)))
+            if ($handle = opendir($basepath = dirname($path)))
             {
                 while (false !== ($entry = readdir($handle)))
                 {
                     if (fnmatch('*_'.$name, $entry, FNM_PERIOD))
                     {
                         $fileExists = true;
-                        break;
+                    }
+
+                    if (fnmatch('*_'.$name.'.new', $entry, FNM_PERIOD))
+                    {
+                        // delete the sucker
+                        unlink($basepath . '/' . $entry);
                     }
                 }
                 closedir($handle);
@@ -81,8 +86,7 @@ abstract class Generator {
         else
         {
             // put it as .new, and delete previous .new
-            if ($this->file->exists($this->path . ".new")) unlink($this->path . ".new");
-            if (!$this->file->exists($this->path . ".new")) $this->file->put($this->path . ".new", $template) !== false;
+            $this->file->put($this->path . ".new", $template) !== false;
             return false; // we didn't really create it
         }
     }

@@ -41,27 +41,29 @@ class ModelGenerator extends Generator
     protected
     function getScaffoldedModel($className)
     {
-        // TODO: needs to pull unique from field definition into rules
         if (!$fields = $this->cache->getFields())
         {
             return str_replace('{{rules}}', '', $this->template);
         }
 
+        // piece by piece the code is getting cleaned up
+        $fields = GeneratorsServiceProvider::splitFields(implode(',', $fields), true);
+
         $template = $this->template;
         $modelVars = GeneratorsServiceProvider::getModelVars($this->cache->getModelName());
 
         // Replace template vars
-        $this->template = GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
+        $template = GeneratorsServiceProvider::replaceModelVars($template, $modelVars);
 
         $relationModelList = [];
-        if (strpos($this->template, '{{relations') !== false)
+        if (strpos($template, '{{relations') !== false)
         {
             $relations = '';
             $fname = '';
-            foreach ($fields as $field => $type)
+            foreach ($fields as $field)
             {
                 // add foreign keys
-                $name = $field;
+                $name = $field->name;
                 if (substr($name, -3) === '_id')
                 {
                     // assume foreign key
@@ -76,14 +78,14 @@ class ModelGenerator extends Generator
     public
     function $fname()
     {
-        return \$this->belongsTo('$Fname', '$field', 'id');
+        return \$this->belongsTo('$Fname', '$name', 'id');
     }
 
 PHP;
                 }
             }
 
-            $this->template = str_replace('{{relations}}', $relations, $this->template);
+            $template = str_replace('{{relations}}', $relations, $template);
 
             if ($fname)
             {
@@ -105,45 +107,45 @@ PHP;
                     }
                 }
 
-                $this->template = GeneratorsServiceProvider::replaceModelVars($this->template, $relationsVars, '{{relations:', '}}');
+                $template = GeneratorsServiceProvider::replaceModelVars($template, $relationsVars, '{{relations:', '}}');
             }
         }
 
-        if (strpos($this->template, '{{field:unique}}') !== false)
+        if (strpos($template, '{{field:unique}}') !== false)
         {
             $uniqueField = '';
-            foreach ($fields as $field => $type)
+            foreach ($fields as $field)
             {
-                if (strpos($type, 'unique') !== false)
+                if (hasIt($field->options, 'unique', HASIT_WANT_PREFIX))
                 {
-                    $uniqueField = $field;
+                    $uniqueField = $field->name;
                     break;
                 }
             }
             if ($uniqueField === '') $uniqueField = 'id';
 
-            $this->template = str_replace('{{field:unique}}', $uniqueField, $this->template);
+            $template = str_replace('{{field:unique}}', $uniqueField, $template);
         }
 
-        $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{field:line}}', function ($line, $fieldVar) use ($fields)
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line}}', function ($line, $fieldVar) use ($fields)
         {
             $fieldText = '';
-            foreach ($fields as $field => $type)
+            foreach ($fields as $field)
             {
-                $fieldText .= str_replace($fieldVar, $field, $line) . "\n";
+                $fieldText .= str_replace($fieldVar, $field->name, $line) . "\n";
             }
             if ($fieldText === '') $fieldText = "''";
             return $fieldText;
         });
 
-        $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields, $modelVars)
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields, $modelVars)
         {
             $fieldText = '';
-            foreach ($fields as $field => $type)
+            foreach ($fields as $field)
             {
-                if (GeneratorsServiceProvider::isFieldBoolean($type))
+                if (GeneratorsServiceProvider::isFieldBoolean($field->type))
                 {
-                    $fieldText .= str_replace($fieldVar, $field, $line) . "\n";
+                    $fieldText .= str_replace($fieldVar, $field->name, $line) . "\n";
                 }
             }
             return $fieldText;
@@ -154,61 +156,106 @@ PHP;
         $hidden = [];
         $notrail = [];
         $notrailonly = [];
+        $defaults = [];
         $fieldText = '';
 
-        foreach ($fields as $field => $type)
+        foreach ($fields as $field)
         {
-            if ($field !== 'id')
+            if ($field->name !== 'id')
             {
                 if ($fieldText) $fieldText .= ', ';
-                $fieldText .= $field . ":" . $type;
+                $fieldText .= $field->name . ":" . implode(':', $field->options);
             }
 
-            if (!str_contains($type, ['hidden', 'guarded']))
+            if (!hasIt($field->options, ['hidden', 'guarded'], HASIT_WANT_PREFIX))
             {
                 $ruleBits = [];
 
-                if ($field === 'email') array_unshift($ruleBits, 'email');
-                $ruleType = GeneratorsServiceProvider::getFieldRuleType($type);
+                if ($field->name === 'email') array_unshift($ruleBits, 'email');
+                $ruleType = GeneratorsServiceProvider::getFieldRuleType($field->type);
                 if ($ruleType) array_unshift($ruleBits, $ruleType);
 
-                if (!GeneratorsServiceProvider::isFieldBoolean($type) && !str_contains($type, [
+                if (!GeneratorsServiceProvider::isFieldBoolean($field->type) && !hasIt($field->options, [
                         'nullable',
                         'hidden',
                         'guarded'
-                    ])
+                    ], HASIT_WANT_PREFIX)
                 ) $ruleBits[] = 'required';
 
-                if (str_contains($type, ['unique']))
+                if (hasIt($field->options, ['unique'], HASIT_WANT_PREFIX))
                 {
-                    $ruleBits[] = "unique:{$modelVars['snake_models']},$field,{{id}}";
+                    $ruleBits[] = "unique:{$modelVars['snake_models']},$field->name,{{id}}";
+                }
+
+                if ($rule = hasIt($field->options, 'rule', HASIT_WANT_PREFIX | HASIT_WANT_VALUE))
+                {
+                    $rule = substr($rule, strlen('rule('), -1);
+                    $ruleBits[] = $rule;
+                }
+
+                if ($default = hasIt($field->options, 'default', HASIT_WANT_PREFIX | HASIT_WANT_VALUE))
+                {
+                    $default = substr($rule, strlen('default('), -1);
+                    $defaults[$field] = $default;
+                }
+                elseif (hasIt($field->options, 'nullable', HASIT_WANT_PREFIX))
+                {
+                    $defaults[$field->name] = null;
                 }
 
                 // here we override for foreign keys
-                if (substr($field, strlen($field) - 3) === '_id')
+                if (str_ends_with($field->name, '_id'))
                 {
                     // assume foreign key
-                    $foreignModel = substr($field, 0, strlen($field) - 3);
+                    $foreignModel = substr($field->name, 0, - 3);
                     $foreignModels = Pluralizer::plural($foreignModel);   // posts
                     $ruleBits[] = "exists:$foreignModels,id";
                 }
 
-                $rules[$field] = "'$field' => '" . implode('|', $ruleBits) . "'";
+                $rules[$field->name] = "'{$field->name}' => '" . implode('|', $ruleBits) . "'";
             }
 
-            if (preg_match('/\bnotrail\b/', $type)) $notrail[] = "'$field'";
-            if (preg_match('/\bhidden\b/', $type)) $hidden[] = "'$field'";
-            if (preg_match('/\bguarded\b/', $type)) $guarded[] = "'$field'";
-            if (preg_match('/\bnotrailonly\b/', $type)) $notrailonly[] = "'$field'";
+            if (hasIt($field->options, 'notrail', HASIT_WANT_PREFIX)) $notrail[] = "'{$field->name}'";
+            if (hasIt($field->options, 'hidden', HASIT_WANT_PREFIX)) $hidden[] = "'{$field->name}'";
+            if (hasIt($field->options, 'guarded', HASIT_WANT_PREFIX)) $guarded[] = "'{$field->name}'";
+            if (hasIt($field->options, 'notrailonly', HASIT_WANT_PREFIX)) $notrailonly[] = "'{$field->name}'";
         }
 
-        $this->template = str_replace('{{fields}}', $fieldText, $this->template);
-        $this->template = str_replace('{{rules}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $rules) . PHP_EOL . "\t", $this->template);
-        $this->template = str_replace('{{hidden}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $hidden) . PHP_EOL . "\t", $this->template);
-        $this->template = str_replace('{{guarded}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $guarded) . PHP_EOL . "\t", $this->template);
-        $this->template = str_replace('{{notrail}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $notrail) . PHP_EOL . "\t", $this->template);
-        $this->template = str_replace('{{notrailonly}}', PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $notrailonly) . PHP_EOL . "\t", $this->template);
+        $defaultValues = [];
+        foreach ($defaults as $field => $value)
+        {
+            if (is_null($value) || strtolower($value) === 'null')
+            {
+                $value = 'null';
+            }
+            elseif (!(GeneratorsServiceProvider::isFieldNumeric($fields[$field])
+                || GeneratorsServiceProvider::isFieldBoolean($fields[$field]))
+            )
+            {
+                $value = "'$value'";
+            }
+            $defaultValues[] = "'$field' => $value";
+        }
 
-        return $this->template;
+        $template = str_replace('{{fields}}', $fieldText, $template);
+        $template = str_replace('{{rules}}', $this->implodeOneLineExpansion($rules), $template);
+        $template = str_replace('{{hidden}}', $this->implodeOneLineExpansion($hidden), $template);
+        $template = str_replace('{{guarded}}', $this->implodeOneLineExpansion($guarded), $template);
+        $template = str_replace('{{notrail}}', $this->implodeOneLineExpansion($notrail), $template);
+        $template = str_replace('{{notrailonly}}', $this->implodeOneLineExpansion($notrailonly), $template);
+        $template = str_replace('{{defaults}}', $this->implodeOneLineExpansion($defaultValues), $template);
+
+        return $template;
+    }
+
+    /**
+     * @param $rules
+     *
+     * @return string
+     */
+    protected
+    function implodeOneLineExpansion($rules)
+    {
+        return empty($rules) ? '' : PHP_EOL . "\t\t" . implode(',' . PHP_EOL . "\t\t", $rules) . PHP_EOL . "\t";
     }
 }

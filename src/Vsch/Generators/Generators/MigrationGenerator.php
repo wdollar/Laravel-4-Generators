@@ -12,6 +12,7 @@ class MigrationGenerator extends Generator
 
     // just the base path
     protected static $templatesDir;
+    protected $tableName;
 
     function __construct(File $file, Cache $cache)
     {
@@ -105,7 +106,7 @@ class MigrationGenerator extends Generator
             : implode('_', $pieces);
 
         // For example: ['add', 'posts']
-        return array( $action, $tableName );
+        return array($action, $tableName);
     }
 
     /**
@@ -216,7 +217,7 @@ class MigrationGenerator extends Generator
     {
         $fields = $this->convertFieldsToArray();
 
-        $template = array_map(array( $this, $method ), $fields);
+        $template = array_map(array($this, $method), $fields);
 
         return implode("\n\t\t\t", $template);
     }
@@ -237,52 +238,144 @@ class MigrationGenerator extends Generator
 
         if (!$fields) return;
 
-        $fields = preg_split('/, ?/', $fields);
+        $fields = GeneratorsServiceProvider::splitFields($fields, true);
 
-        foreach ($fields as &$bit)
+        $indices = [0]; // first element is last used index number, keys are _i where i is passed from the parameters, or auto generated, _i => _n_f where n is from params and f index of the field in the fields list
+        $keyindices = $indices; // first element is last used index number, keys are _i where i is passed from the parameters, or auto generated, _i => _n_f where n is from params and f index of the field in the fields list
+        $dropIndices = [];
+        $foreignKeys = [];
+
+        $fieldIndex = 0;
+        foreach ($fields as $field)
         {
-            $columnInfo = trimArr(preg_split('/ ?: ?/', $bit));
-
-            $bit = new \StdClass;
-            $bit->name = array_shift($columnInfo);
-            $bit->type = array_shift($columnInfo);
+            $fieldIndex++;
 
             // If there is a third key, then
             // the user is setting any number
             // of options
-            $bit->options = '';
+            $options = $field->options;
+            $field->options = '';
             $hadUnsigned = false;
-            if (isset($columnInfo[ 0 ]))
+            $hadNullable = false;
+            $hadDefault = false;
+
+            foreach ($options as $option)
             {
-                foreach ($columnInfo as $option)
+                if (($isKey = strpos($option, 'keyindex') === 0) || strpos($option, 'index') === 0)
                 {
-                    if (GeneratorsServiceProvider::isFieldHintOption($option)) continue;
+                    if ($isKey) $keyIndex = &$keyindices;
+                    else $keyIndex = &$indices;
 
-                    if ($option === 'unsigned' || $option === 'unsigned()')
-                    {
-                        $hadUnsigned = true;
-                    }
-
-                    $bit->options .= (str_contains($option, '('))
-                        ? "->{$option}"
-                        : "->{$option}()";
+                    $this->processIndexOption($keyIndex, $option, $field->name, $fieldIndex);
                 }
+
+                if (GeneratorsServiceProvider::isFieldHintOption($option)) continue;
+
+                if ($option === 'unsigned' || $option === 'unsigned()')
+                {
+                    $hadUnsigned = true;
+                }
+
+                if ($option === 'nullable' || $option === 'nullable()')
+                {
+                    $hadNullable = true;
+                }
+
+                if ($option === 'default' || $option === 'default(')
+                {
+                    if ($option === 'default') $option = 'default(null)';
+                    $hadDefault = true;
+                }
+
+                $field->options .= (str_contains($option, '(')) ? "->{$option}" : "->{$option}()";
             }
 
             // add foreign keys
-            $name = $bit->name;
+            $name = $field->name;
             if (substr($name, -3) === '_id')
             {
                 // assume foreign key
                 $fname = substr($name, 0, -3);
                 $fnames = Pluralizer::plural($fname);   // posts
-                if (!$hadUnsigned) $bit->options .= "->unsigned()";
-                $bit->options .= ";\n";
-                $bit->options .= "\t\t\t\$table->foreign('$name')->references('id')->on('$fnames')";
+                if (!$hadUnsigned) $field->options .= "->unsigned()";
+                $indexName = "ixf_{$this->tableName}_{$name}_{$fnames}_id";
+                $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on('$fnames')";
+                $dropIndices[] = "\$table->dropIndex('$indexName')";
+            }
+
+            if ($hadNullable && !$hadDefault)
+            {
+                $field->options .= "->default(null)";
             }
         }
 
+        // now append the indices
+        $inds = $foreignKeys;
+        $inds = array_merge($inds, $this->generateIndex('index', $indices, $dropIndices));
+        $inds = array_merge($inds, $this->generateIndex('unique', $keyindices, $dropIndices));
+        $fields[] = [$inds, $dropIndices];
         return $fields;
+    }
+
+    private
+    function generateIndex($type, $indices, &$dropIndices)
+    {
+        // skip the auto counter
+        if (count($indices) === 1) return [];
+        array_shift($indices);
+
+        $sortedKeys = array_keys($indices);
+        sort($sortedKeys);
+        $indexTexts = [];
+        foreach ($sortedKeys as $sortedKey)
+        {
+            $sortedFieldKeys = array_keys($indices[$sortedKey]);
+            sort($sortedFieldKeys);
+            $fields = [];
+
+            foreach ($sortedFieldKeys as $sortedFieldKey)
+            {
+                $fields[$indices[$sortedKey][$sortedFieldKey]] = "'" . $indices[$sortedKey][$sortedFieldKey] . "'";
+            }
+
+            $indexName = ($type === 'unique' ? "ixk_" : "ix_") . $this->tableName . "_" . implode('_', array_keys($fields));
+            $dropIndices[] = "\$table->dropIndex('$indexName')";
+            $indexTexts[] = "\$table->$type([" . implode(',', $fields) . "], '$indexName')";
+        }
+
+        return $indexTexts;
+    }
+
+    private
+    function processIndexOption(&$indices, $option, $field, $fieldIndex)
+    {
+        $params = preg_match('/\((.*)\)/', $option, $matches) ? $matches[1] : '';
+        $i = null;
+        $n = '';
+        $f = $fieldIndex;
+        if ($params !== '')
+        {
+            $params = explode(',', $params);
+            $i = (int)$params[0];
+            $n = count($params) > 1 ? (int)$params[1] : null;
+        }
+
+        if (is_null($i))
+        {
+            // make a new one
+            $i = sprintf("%03d", ++$indices[0]) . "_";
+        }
+        else
+        {
+            if ($i > $indices[0]) $indices[0] = $i;
+            $i = sprintf("%03d", (int)$i);
+        }
+
+        $key = "_$i";
+        if (!array_key_exists($key, $indices)) $indices[$key] = [];
+        $n = sprintf("%03d", (int)$n);
+        $f = sprintf("%03d", (int)$f);
+        $indices[$key]["_{$n}_$f"] = $field;
     }
 
     /**
@@ -297,11 +390,16 @@ class MigrationGenerator extends Generator
     {
         // Let's see if they're setting
         // a limit, like: string[50]
+        if (is_array($field))
+        {
+            return implode(";\n\t\t\t", $field[0]) . ';';
+        }
+
         if (str_contains($field->type, '['))
         {
-            preg_match('/([^\[]+?)\[(\d+)\]/', $field->type, $matches);
-            $field->type = $matches[ 1 ]; // string
-            $field->limit = $matches[ 2 ]; // 50
+            preg_match('/([^\[]+?)\[(\d+(?:\,\d+)?)\]/', $field->type, $matches);
+            $field->type = $matches[1]; // string
+            $field->limit = $matches[2]; // 50 or 6,2
         }
 
         // We'll start building the appropriate Schema method
@@ -330,7 +428,7 @@ class MigrationGenerator extends Generator
     protected
     function dropColumn($field)
     {
-        return "\$table->dropColumn('" . $field->name . "');";
+        return is_array($field) ? implode(";\n\t\t\t", $field[1]) . ";" : "\$table->dropColumn('" . $field->name . "');";
     }
 
     protected

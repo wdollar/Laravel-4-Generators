@@ -7,6 +7,8 @@ use Vsch\Generators\Cache;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Pluralizer;
 
+require_once('scopedexplode.php');
+
 class GeneratorsServiceProvider extends ServiceProvider
 {
     const GENERATOR_ROUTE_TAG = '// Generators:insert new routes here';
@@ -19,14 +21,14 @@ class GeneratorsServiceProvider extends ServiceProvider
     protected $defer = false;
 
     /**
-     * @param mixed  $files   partial files path for the template.
+     * @param mixed  $files partial files path for the template.
      *                        search for it in the package directory config
      *                        if not found in our template directory. If the files path is an
      *                        empty string then return the base template path in the configuration
      *                        for the package. NOTE: this path may not contain all the template files,
      *                        only the one's the user decided to override.
      *
-     * @param string $suffix  text to append to $files or every item in $files if it is an array
+     * @param string $suffix text to append to $files or every item in $files if it is an array
      *
      * @return string returns the name in the base template path, if not found in the package path.
      *
@@ -196,15 +198,68 @@ class GeneratorsServiceProvider extends ServiceProvider
     public static
     function isFieldHintOption($option)
     {
-        return array_search($option, ['hidden', 'guarded', 'notrail', 'textarea',]) !== false;
+        $optionBare = explode('(', $option, 2)[0];
+        return array_search($optionBare, [
+            'hidden',
+            'guarded',
+            'notrail',
+            'notrailonly',
+            'textarea',
+            'index',
+            'keyindex',
+            'rule'
+        ]) !== false;
     }
 
     public static
-    function fieldTypeOptions($typeText)
+    function splitFields($fieldsText, $wantObjArray = false)
     {
-        $options = explode(':', $typeText, 2);
-        $type = $options[0];
-        $options = count($options) > 1 ? $options[1] : '';
+        $openScopes = null;
+        if ($wantObjArray)
+        {
+            $fields = scopedExplode([',', ':'], [
+                '(' => ')',
+                '[' => ']',
+                '{' => '}',
+            ], $fieldsText, null, SCOPED_EXPLODE_TRIM | SCOPED_EXPLODE_WANT_OBJ, $openScopes);
+        }
+        else
+        {
+            $fields = scopedExplode(',', [
+                '(' => ')',
+                '[' => ']',
+                '{' => '}',
+            ], $fieldsText, null, SCOPED_EXPLODE_TRIM, $openScopes);
+        }
+        return $fields;
+    }
+
+    public static
+    function fieldNameTypeOptions($fieldText, $splitOptions = false)
+    {
+        $openScopes = null;
+        $options = scopedExplode(':', [
+            '(' => ')',
+            '[' => ']',
+            '{' => '}',
+        ], $fieldText, null, SCOPED_EXPLODE_TRIM, $openScopes, $splitOptions ? null : 3);
+        $name = array_shift($options);
+        $type = array_shift($options);
+        if (!$splitOptions) $options = array_shift($options);
+        return array($name, $type, $options);
+    }
+
+    public static
+    function fieldTypeOptions($typeText, $splitOptions = false)
+    {
+        $openScopes = null;
+        $options = scopedExplode(':', [
+            '(' => ')',
+            '[' => ']',
+            '{' => '}',
+        ], $typeText, null, SCOPED_EXPLODE_TRIM, $openScopes, $splitOptions ? null : 2);
+        $type = array_shift($options);
+        if (!$splitOptions) $options = array_shift($options);
         return array($type, $options);
     }
 
@@ -243,6 +298,14 @@ class GeneratorsServiceProvider extends ServiceProvider
         //$table->boolean('confirmed')
         list($type, $options) = self::fieldTypeOptions($typeText);
         return $type === 'boolean';
+    }
+
+    public static
+    function isFieldDateTimeType($typeText)
+    {
+        //$table->boolean('confirmed')
+        list($type, $options) = self::fieldTypeOptions($typeText);
+        return str_starts_with($type, ['date', 'dateTime', 'time',]) !== false;
     }
 
     public static
@@ -289,7 +352,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         //$table->double('column', 15, 8)
         //$table->float('amount')
         list($type, $options) = self::fieldTypeOptions($typeText);
-        return array_search($type, ['decimal', 'double', 'float',]) !== false || self::isFieldIntegral($typeText);
+        return str_starts_with($type, ['decimal', 'double', 'float',]) !== false || self::isFieldIntegral($typeText);
     }
 
     public

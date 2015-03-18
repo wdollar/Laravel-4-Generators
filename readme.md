@@ -5,10 +5,52 @@
 
 This package had the following modifications to Wes Dollar's package:
 
-### Version 1.3.0
-
 At this point I feel that the generators are in desperate need of a rewrite to simplify and harmonize the template syntax, add more control to how code is generated. This is on a todo list.
-I am adding cludges as the need arises just to get the functionality I need for the project I am working on. It is not the best way but it is the only way on a limited time budget.
+I am adding cludges just to get the functionality I need for the project I am working on. It is not the best way but the only way on a limited time budget.
+
+### Version 1.3.1
+
+- rewrote field string parsing to handle nested (),[] and {}. Now field options can have comma separated parameters. 
+- add default(..) hint now adds to the `{{defaults}}` placeholder. Use in the model.txt template to create an associative array of field name to default value. This can be used to provide defaults to the form when creating and also to fill in default values and replace empty strings by nulls for numeric and date/datetime fields. More docs on the subject are in the future.
+- add rule(....) hint. Adds the stuff between parentheses to the field's rules. Some rules are added automatically. Numeric fields get `numeric`, if the field is not nullable then it gets `required`. email will get `email|unique|table:email,id,{id}` added, the `{id}` placeholder should be changed to the id of the model when it is being saved to prevent triggering a unique e-mail validation failure.
+- add index hint: index(indexdef) to create an index and keyindex(indexdef) to create a unique index, in the migration file. indexdef has the format: i,n, where i and n are integers, i is the index id, n is the position of the field in the index. If n is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
+- doc forgot to document new field types being handled in version 1.3.0 and added hints to model fields. Hints are used by the generators but stripped out of the migration file.
+hints are added as options after the field type with additional `:` separating them. Any options that do not have a `(` get () added on. This was pre-existing functionality. 
+Additionally, the generators recognize and use standard options: nullable, default to affect the generated code. Some shortcut names are added to reduce typing
+
+| shortcut type | laravel type |
+| :---- |:------ |
+| int		| integer |
+| tinyint	| tinyInteger |
+| smallint	| smallInteger |
+| medint	| mediumInteger |
+| mediumint	| mediumInteger |
+| bigint	| bigInteger |
+| bool		| boolean |
+| datetime	| dateTime |
+| decimal	| decimal, except specify the parameter as n.m instead of n,m, ie. decimal(6,2) should be given as decimal\[6.2\] |
+<br>
+
+| type(s) | effect in code |
+| :---- |:------ |
+| date, dateTime    | wraps the field in a div.form-group.date, adds a span.input-group-addon with a calendar glyphicon. If you include bootstrap-datepicker then this gives a pop-up calendar for the field  |
+| all integer types | generates a number field in views, int and bigint are treated as foreign keys if they have an \_id suffix in the field name | 
+| boolean | generates a checkbox field in views, also used for :bool and :nobool expansion placeholders | 
+<br>
+
+| hint | effect |
+| :---- |:------ |
+| hidden     | adds the field name to the `{{hidden}}` fields list placeholder |
+| guarded   | adds the field name to the `{{guarded}}` fields list placeholder |
+| notrail   | adds the field name to the `{{notrail}}` fields list placeholder |
+| notrailonly   | adds the field name to the `{{notrailonly}}` fields list placeholder |
+| textarea  | uses textarea for the field in the view generator instead of text |
+| index(indexdef) | creates a non-unique index (index) which includes the field, see notes for indexdef format |
+| keyindex  | creates a unique index which includes the field, see notes for indexdef format |
+
+Usage:  *`field_name`*`:int:hidden:guarded`, or *`field_name`*`:string[256]:textarea:notrail`
+
+### Version 1.3.0
 
 #### These are specific to my use and will not work without adding some support code
 
@@ -31,36 +73,22 @@ I am adding cludges as the need arises just to get the functionality I need for 
 -- this applies to {{relations:modelVar}} where modelVar is one of the fields below. This is replaced by a quoted, comma separated list of all the foreign relationship models for the current model.
 -- for a model named camelCaseModel these will be:
 
-| field | replaced with |
-| :---- |:------ |
-| {{camelModel}}    |      camelCaseModel    |
-| {{camelModels}}   |      camelCaseModels   |
-| {{CamelModel}}    |      CamelCaseModel    |
-| {{CamelModels}}   |      CamelCaseModels   |
-| {{model}}         |      camelcasemodel    |
-| {{models}}        |      camelcasemodels   |
-| {{Model}}         |      CamelCaseModel    |
-| {{Models}}        |      CamelCaseModels   |
-| {{MODEL}}         |      CAMELCASEMODEL    |
-| {{MODELS}}        |      CAMELCASEMODELS   |
-| {{snake_model}}   |      camel_case_model  |
-| {{snake_models}}  |      camel_case_models |
-| {{Snake_Model}}   |      Camel_Case_Model  |
-| {{Snake_Models}}  |      Camel_Case_Models |
-| {{SNAKE_MODEL}}   |      CAMEL_CASE_MODEL  |
-| {{SNAKE_MODELS}}  |      CAMEL_CASE_MODELS |
-| {{dash-model}}    |      camel-case-model  |
-| {{dash-models}}   |      camel-case-models |
-| {{Dash-Model}}    |      Camel-Case-Model  |
-| {{Dash-Models}}   |      Camel-Case-Models |
-| {{DASH-MODEL}}    |      CAMEL-CASE-MODEL  |
-| {{DASH-MODELS}}   |      CAMEL-CASE-MODELS |    
-| {{space model}}   |      camel case model  |
-| {{space models}}  |      camel case models |
-| {{Space Model}}   |      Camel Case Model  |
-| {{Space Models}}  |      Camel Case Models |
-| {{SPACE MODEL}}   |      CAMEL CASE MODEL  |
-| {{SPACE MODELS}}  |      CAMEL CASE MODELS |    
+| field | replaced with | field | replaced with |
+| :---- |:------ | :---- |:------ |
+| {{camelModel}}    |      camelCaseModel    | {{CamelModel}}    |      CamelCaseModel    | 
+| {{camelModels}}   |      camelCaseModels   | {{CamelModels}}   |      CamelCaseModels   | 
+| {{model}}         |      camelcasemodel    | {{dash-model}}    |      camel-case-model  |
+| {{models}}        |      camelcasemodels   | {{dash-models}}   |      camel-case-models |
+| {{Model}}         |      CamelCaseModel    | {{Dash-Model}}    |      Camel-Case-Model  |
+| {{Models}}        |      CamelCaseModels   | {{Dash-Models}}   |      Camel-Case-Models |
+| {{MODEL}}         |      CAMELCASEMODEL    | {{DASH-MODEL}}    |      CAMEL-CASE-MODEL  |
+| {{MODELS}}        |      CAMELCASEMODELS   | {{DASH-MODELS}}   |      CAMEL-CASE-MODELS |
+| {{snake_model}}   |      camel_case_model  | {{space model}}   |      camel case model  |
+| {{snake_models}}  |      camel_case_models | {{space models}}  |      camel case models |
+| {{Snake_Model}}   |      Camel_Case_Model  | {{Space Model}}   |      Camel Case Model  |
+| {{Snake_Models}}  |      Camel_Case_Models | {{Space Models}}  |      Camel Case Models |
+| {{SNAKE_MODEL}}   |      CAMEL_CASE_MODEL  | {{SPACE MODEL}}   |      CAMEL CASE MODEL  |
+| {{SNAKE_MODELS}}  |      CAMEL_CASE_MODELS | {{SPACE MODELS}}  |      CAMEL CASE MODELS |
 
 ### Version 1.2.6
 
@@ -71,7 +99,7 @@ I am adding cludges as the need arises just to get the functionality I need for 
 
 #### Migration Generator
 
-- if a migration file exists that matches generated name except for the date prefix then .new is appended to the name instead of crating a new migration. multiple runs don't create multiple migrations that create the same table.
+- if a migration file exists that matches generated name except for the date prefix then .new is appended to the name instead of creating a new migration. multiple runs don't create multiple migrations that create the same table.
 - auto recognized foreign keys will have `->unsigned()` added to column creation line, and a foreign index on the foreign model.
 
     `$table->foreign('{{field}}')->references('id')->on('{{fnames}}')`

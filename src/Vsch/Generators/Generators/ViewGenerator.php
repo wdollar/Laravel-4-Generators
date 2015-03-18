@@ -125,7 +125,7 @@ class ViewGenerator extends Generator
         list($headings, $fields, $editAndDeleteLinks) = $this->makeTableRows($camelModel, $useLang);
         $this->template = str_replace('{{headings}}', implode(PHP_EOL . "\t\t\t\t", $headings), $this->template);
         $this->template = str_replace('{{fields}}', implode(PHP_EOL . "\t\t\t\t\t", $fields) . PHP_EOL . $editAndDeleteLinks, $this->template);
-        $this->template = str_replace('{{fields:nobuttons}}', implode(PHP_EOL . "\t\t\t\t\t", $fields) . PHP_EOL, $this->template);
+        $this->template = str_replace('{{fields:nobuttons}}', implode(PHP_EOL . "\t\t\t\t\t", $fields), $this->template);
 
         return $this->template;
     }
@@ -166,9 +166,8 @@ class ViewGenerator extends Generator
         // And then the rows, themselves
         $fields = array_map(function ($field) use ($model, $fields)
         {
-            $options = explode(':', $fields[$field], 2);
-            $type = $options[0];
-            $options = count($options) > 1 ? $options[1] : '';
+            list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($fields[$field]);
+            $nullable = (strpos($options, 'nullable') !== false);
 
             if (strpos($options, 'hidden') !== false)
             {
@@ -181,7 +180,14 @@ class ViewGenerator extends Generator
                 if (substr($field, strlen($field) - 3) === '_id')
                 {
                     $foreignModel = substr($field, 0, -3);
-                    return "<td>{{{ \$$model->$field . ':' . \$$model->{$foreignModel}->name }}}</td>";
+                    if ($nullable)
+                    {
+                        return "<td>{{{ is_null(\$$model->$field) ? 'null' : \$$model->$field . ':' . \$$model->{$foreignModel}->id }}}</td>";
+                    }
+                    else
+                    {
+                        return "<td>{{{ \$$model->$field . ':' . \$$model->{$foreignModel}->id }}}</td>";
+                    }
                 }
             }
             return "<td>{{{ \$$model->$field }}}</td>";
@@ -229,6 +235,7 @@ EOT;
             list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($type);
 
             if (strpos($options, 'hidden') !== false) continue;
+            $nullable = (strpos($options, 'nullable') !== false);
             if (strpos($options, 'guarded') !== false)
             {
                 if ($useOp)
@@ -261,7 +268,7 @@ EOT;
 
             if (str_contains($type, '['))
             {
-                preg_match('/([^\[]+?)\[(\d+)\]/', $type, $matches);
+                preg_match('/([^\[]+?)\[(\d+)(?:\.\d+)?\]/', $type, $matches);
                 $type = $matches[1]; // string
                 $limit = $matches[2]; // 50
             }
@@ -282,7 +289,7 @@ EOT;
             $afterElementFilter = '';
             $wrapRow = true;
 
-            $inputNarrow = (GeneratorsServiceProvider::isFieldIntegral($type) || ($type === 'string' && $limit < 32)) ? $narrowText : '';
+            $inputNarrow = (GeneratorsServiceProvider::isFieldNumeric($type) || ($type === 'string' && $limit < 32)) ? $narrowText : '';
 
             switch ($type)
             {
@@ -304,9 +311,10 @@ EOT;
                         $foreignModels = Pluralizer::plural($foreignModel);   // posts
 
                         $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) }}";
-                        $element .= "\n{{ Form::text('$foreignModel', param('$model') ? param('$model')->$${foreignModel}->name, ['data-vsch_completion'=>'$foreignModels:name;id:$name','class' => 'form-control', ]) }}";
-                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:name;id:$name','class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
-                        $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['id=>'$name']) }}";
+                        $element .= "\n{{ Form::text('$foreignModel', param('$model') ? param('$model')->$${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
+                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:id;id:$name','class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
+                        $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) }}";
+                        $afterElement .= $afterElementFilter;
 
                         $labelName = $foreignModel;
 
@@ -356,6 +364,9 @@ HTML;
 HTML;
                     break;
 
+                case  'decimal':
+                case  'double':
+                case  'float':
                 case 'time':
                 case 'string':
                 default:
@@ -366,10 +377,8 @@ HTML;
 
             if ($filterRows)
             {
-                $frag = <<<EOT
-            <td>$elementFilter</td>
-            $afterElementFilter
-EOT;
+                $afterElementFilter = $afterElementFilter ? "\n".$afterElementFilter : $afterElementFilter;
+                $frag = "\t\t\t\t<td>$elementFilter</td>$afterElementFilter";
             }
             elseif ($useShort)
             {
@@ -382,6 +391,7 @@ EOT;
                       &nbsp;&nbsp;
                 </label>$afterElement
         </div>
+
 EOT;
                 }
                 else

@@ -48,15 +48,7 @@ class Cache {
         if (is_null($fields)) return;
 
         $path = $path ?: __DIR__.'/../tmp-fields.txt';
-        $fields = preg_split('/, ?/', $fields);
-        $arrayFields = array();
-
-        foreach($fields as $pair)
-        {
-            list($key, $val) = preg_split('/ ?: ?/', $pair, 2);
-            $arrayFields[$key] = trim($val);
-        }
-
+        $arrayFields = GeneratorsServiceProvider::splitFields($fields);
         return $this->file->put($path, json_encode($arrayFields));
     }
 
@@ -71,7 +63,7 @@ class Cache {
         $path = $path ?:  __DIR__.'/../tmp-fields.txt';
 
         // Have we already fetched the fields?
-        if (! is_null($this->fields))
+        if (!is_null($this->fields))
         {
             return $this->fields;
         }

@@ -27,6 +27,7 @@ class TranslationsGenerator extends Generator
         $this->template = GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
 
         $fields = $this->cache->getFields() ?: [];
+        $fields = GeneratorsServiceProvider::splitFields(implode(',', $fields), SCOPED_EXPLODE_WANT_ID_RECORD);
 
         $this->template = GeneratorsServiceProvider::replaceTemplateLines($this->template, '{{translations:line}}', function ($line, $fieldVar) use ($fields)
         {

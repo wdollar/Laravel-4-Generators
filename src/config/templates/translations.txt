@@ -7,10 +7,10 @@ return array(
      *
      */
 
-    '{{model}}' => '{{model}}',
-    'create-{{model}}' => 'create-{{model}}',
-    'edit-{{model}}' => 'edit-{{model}}',
-    'view-{{model}}' => 'view-{{model}}',
-    'delete-{{model}}' => 'delete-{{model}}',
+    '{{model}}' => '{{Space Model}}',
+    'create-{{model}}' => 'Create {{Space Model}}',
+    'edit-{{model}}' => 'Edit {{Space Model}}',
+    'view-{{model}}' => 'View {{Space Model}}',
+    'delete-{{model}}' => 'Delete {{Space Model}}',
     {{translations:line}}
 );

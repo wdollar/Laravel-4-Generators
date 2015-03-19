@@ -25,6 +25,7 @@ if (!function_exists('scopedExplode'))
      *                          [firstField=>['type'=>secondField, 'options'=>[rest of fields]]
      *                          4 - same as 3 except return object with name = firstField, type=secondField, options=rest
      *                          of fields.
+     *                          5 - same as 4 except return assoc array of objects based on the name of object
      *
      *                          NOTE: first the parts with seps are constructed by parsing the text then array types are
      *                          built from the parsed parts.
@@ -39,7 +40,8 @@ if (!function_exists('scopedExplode'))
     define('SCOPED_EXPLODE_WANT_RECORD', 1);
     define('SCOPED_EXPLODE_WANT_ID_RECORD', 2);
     define('SCOPED_EXPLODE_WANT_ID_TYPE_OPTIONS', 3);
-    define('SCOPED_EXPLODE_WANT_OBJ', 4);
+    define('SCOPED_EXPLODE_WANT_OBJ_ARRAY', 4);
+    define('SCOPED_EXPLODE_WANT_OBJ_ASSOC', 5);
     define('SCOPED_EXPLODE_DELIMS', 16);
     define('SCOPED_EXPLODE_TRIM', 32);
 
@@ -276,7 +278,7 @@ if (!function_exists('scopedExplode'))
                     }
                     break;
 
-                case SCOPED_EXPLODE_WANT_OBJ:
+                case SCOPED_EXPLODE_WANT_OBJ_ARRAY:
                     // same as above except stdobject and id is in name
                     $parts = [];
                     foreach ($records as &$record)
@@ -286,6 +288,19 @@ if (!function_exists('scopedExplode'))
                         $obj->type = array_shift($record);
                         $obj->options = $record;
                         $parts[] = $obj;
+                    }
+                    break;
+
+                case SCOPED_EXPLODE_WANT_OBJ_ASSOC:
+                    // same as above except stdobject and id is in name
+                    $parts = [];
+                    foreach ($records as &$record)
+                    {
+                        $obj = new \stdClass();
+                        $obj->name = array_shift($record);
+                        $obj->type = array_shift($record);
+                        $obj->options = $record;
+                        $parts[$obj->name] = $obj;
                     }
                     break;
 

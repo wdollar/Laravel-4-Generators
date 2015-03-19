@@ -215,13 +215,13 @@ class GeneratorsServiceProvider extends ServiceProvider
     function splitFields($fieldsText, $wantObjArray = false)
     {
         $openScopes = null;
-        if ($wantObjArray)
+        if ($wantObjArray !== false)
         {
             $fields = scopedExplode([',', ':'], [
                 '(' => ')',
                 '[' => ']',
                 '{' => '}',
-            ], $fieldsText, null, SCOPED_EXPLODE_TRIM | SCOPED_EXPLODE_WANT_OBJ, $openScopes);
+            ], $fieldsText, null, SCOPED_EXPLODE_TRIM | ($wantObjArray !== true ? $wantObjArray : SCOPED_EXPLODE_WANT_OBJ_ASSOC), $openScopes);
         }
         else
         {

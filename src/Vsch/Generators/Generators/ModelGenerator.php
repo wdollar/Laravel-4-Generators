@@ -195,8 +195,8 @@ PHP;
 
                 if ($default = hasIt($field->options, 'default', HASIT_WANT_PREFIX | HASIT_WANT_VALUE))
                 {
-                    $default = substr($rule, strlen('default('), -1);
-                    $defaults[$field] = $default;
+                    $default = substr($default, strlen('default('), -1);
+                    $defaults[$field->name] = $default;
                 }
                 elseif (hasIt($field->options, 'nullable', HASIT_WANT_PREFIX))
                 {
@@ -228,8 +228,8 @@ PHP;
             {
                 $value = 'null';
             }
-            elseif (!(GeneratorsServiceProvider::isFieldNumeric($fields[$field])
-                || GeneratorsServiceProvider::isFieldBoolean($fields[$field]))
+            elseif (!(GeneratorsServiceProvider::isFieldNumeric($fields[$field]->type)
+                || GeneratorsServiceProvider::isFieldBoolean($fields[$field]->type))
             )
             {
                 $value = "'$value'";

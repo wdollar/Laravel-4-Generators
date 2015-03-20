@@ -64,6 +64,7 @@ class TranslationsGeneratorCommand extends Command
         }
     }
 
+
     /**
      * Provide user feedback, based on success or not.
      *

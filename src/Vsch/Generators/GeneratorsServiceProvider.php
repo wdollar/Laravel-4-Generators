@@ -207,13 +207,16 @@ class GeneratorsServiceProvider extends ServiceProvider
             'textarea',
             'index',
             'keyindex',
-            'rule'
+            'rule',
+            'auto',
         ]) !== false;
     }
 
     public static
     function splitFields($fieldsText, $wantObjArray = false)
     {
+        if (is_array($fieldsText)) $fieldsText = implode(',', $fieldsText);
+
         $openScopes = null;
         if ($wantObjArray !== false)
         {

@@ -56,7 +56,7 @@ class TranslationsGeneratorCommand extends Command
         $locales = getDirs($this->option('path'), true);
         foreach ($locales as $locale)
         {
-            if ($locale === 'en')
+            if ($locale === 'en/')
             {
                 $path = $this->getPath($locale);
                 $this->printResult($this->generator->make($path, $template), $path);

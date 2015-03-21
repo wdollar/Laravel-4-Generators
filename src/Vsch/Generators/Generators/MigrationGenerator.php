@@ -392,7 +392,7 @@ class MigrationGenerator extends Generator
         // a limit, like: string[50]
         if (is_array($field))
         {
-            return implode(";\n\t\t\t", $field[0]) . ';';
+            return empty($field[0]) ? '' : implode(";\n\t\t\t", $field[0]) . ';';
         }
 
         if (str_contains($field->type, '['))
@@ -428,7 +428,7 @@ class MigrationGenerator extends Generator
     protected
     function dropColumn($field)
     {
-        return is_array($field) ? implode(";\n\t\t\t", $field[1]) . ";" : "\$table->dropColumn('" . $field->name . "');";
+        return is_array($field) ? (empty($field[1]) ? '' : implode(";\n\t\t\t", $field[1]) . ";") : "\$table->dropColumn('" . $field->name . "');";
     }
 
     protected

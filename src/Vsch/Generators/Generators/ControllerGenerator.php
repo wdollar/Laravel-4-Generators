@@ -13,7 +13,7 @@ class ControllerGenerator extends Generator
     protected
     function replaceLines($template)
     {
-        $fields = $this->cache->getFields();
+        $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_RECORD | SCOPED_EXPLODE_WANT_TEXT);
 
         $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line}}', function ($line, $fieldVar) use ($fields)
         {
@@ -107,7 +107,6 @@ PHP;
             }
 
             $template = str_replace('{{relations}}', $relations, $template);
-
             if ($foreignModel)
             {
                 $relationsVars = [];
@@ -132,6 +131,26 @@ PHP;
             }
         }
 
+        if (strpos($this->template, '{{auto}}') !== false)
+        {
+            $relations = '';
+            foreach ($fields as $field => $type)
+            {
+                $options = scopedExplode(':', ['(' => ')', '[' => ']', '{' => '}'], $type, null);
+                foreach ($options as $option)
+                {
+                    if (str_starts_with($option, 'auto'))
+                    {
+                        $auto = substr($option, 5, -1);
+                        $relations .= <<<PHP
+        \$input['$field'] = $auto;
+
+PHP;
+                    }
+                }
+            }
+            $template = str_replace('{{auto}}', $relations, $template);
+        }
         return $template;
     }
 
@@ -147,9 +166,7 @@ PHP;
     function getTemplate($template, $className)
     {
         $this->template = $this->file->get($template);
-        $resource = strtolower(Pluralizer::plural(
-            str_ireplace('Controller', '', $className)
-        ));
+        $resource = strtolower(Pluralizer::plural(str_ireplace('Controller', '', $className)));
 
         if ($this->needsScaffolding($template))
         {

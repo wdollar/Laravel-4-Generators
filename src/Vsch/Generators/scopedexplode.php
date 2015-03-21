@@ -14,18 +14,33 @@ if (!function_exists('scopedExplode'))
      * @param $close            array|string
      * @param $text             string
      * @param $limit            max # of parts, if <1 then nothing will be done
-     * @param $flags            16 - want delimiters, return is [ $text, $delim ], last part has delim of '' if no delim
+     * @param $flags            bit mask of options
+     *                          SCOPED_EXPLODE_DELIMS - want delimiters, return is [ $text, $delim ], last part has delim of '' if no delim
      *                          folowing it
-     *                          32 - trim parts of whitespace chars, trim() called without $charMask so default is used.
-     *                          1 - treat first delimiter as record separator, and second+ as field sep and return an array
+     *
+     *                          SCOPED_EXPLODE_TRIM - trim parts of whitespace chars, trim() called without $charMask so default is used.
+     *
+     *                          SCOPED_EXPLODE_WANT_TEXT - implode fields with second delimiter for trailing fields.
+     *                              SCOPED_EXPLODE_WANT_ID_RECORD - will have id => imploded text of all the fields
+     *                              SCOPED_EXPLODE_WANT_ID_TYPE_OPTIONS - will have options imploded
+     *                              SCOPED_EXPLODE_WANT_OBJ_ARRAY - will have options imploded
+     *                              SCOPED_EXPLODE_WANT_OBJ_ASSOC - will have options imploded
+     *
+     *                              to get the same functionality for WANT_RECORD, just pass in a single delimiter.
+     *
+     *                          SCOPED_EXPLODE_WANT_RECORD - treat first delimiter as record separator, and second+ as field sep and return an array
      *                          of arrays of fields.
-     *                          2 - same as above but treat the first field as record id and create an associative array
-     *                          of id to array of its fields
-     *                          3 - as 8 but treat the second field as type and return an array of
+     *
+     *                          SCOPED_EXPLODE_WANT_ID_RECORD - same as above but treat the first field as record id and create an associative array
+     *                          of id to array of its fields [firstField => [rest of fields]]
+     *
+     *                          SCOPED_EXPLODE_WANT_ID_TYPE_OPTIONS - as SCOPED_EXPLODE_WANT_ID_RECORD but treat the second field as type and return an array of
      *                          [firstField=>['type'=>secondField, 'options'=>[rest of fields]]
-     *                          4 - same as 3 except return object with name = firstField, type=secondField, options=rest
+     *
+     *                          SCOPED_EXPLODE_WANT_OBJ_ARRAY - same as SCOPED_EXPLODE_WANT_ID_TYPE_OPTIONS except return object with name = firstField, type=secondField, options=rest
      *                          of fields.
-     *                          5 - same as 4 except return assoc array of objects based on the name of object
+     *
+     *                          SCOPED_EXPLODE_WANT_OBJ_ASSOC - same as SCOPED_EXPLODE_WANT_OBJ_ARRAY except return assoc array of objects based on the name of object
      *
      *                          NOTE: first the parts with seps are constructed by parsing the text then array types are
      *                          built from the parsed parts.
@@ -44,6 +59,7 @@ if (!function_exists('scopedExplode'))
     define('SCOPED_EXPLODE_WANT_OBJ_ASSOC', 5);
     define('SCOPED_EXPLODE_DELIMS', 16);
     define('SCOPED_EXPLODE_TRIM', 32);
+    define('SCOPED_EXPLODE_WANT_TEXT', 64);
 
     function scopedExplode($delimiters, $scopes, $text, $limit = null, $flags = 0, &$openScopes = null)
     {
@@ -175,7 +191,7 @@ if (!function_exists('scopedExplode'))
                 else
                 {
                     // TODO: inform the caller that there is an close context without an open
-                    throw new \Exception("unexpected close scope $str at $pos '" . substr($text, $pos > 32 ? $pos - 32 : 0, 64) . "'");
+                    //throw new \Exception("unexpected close scope $str at $pos '" . substr($text, $pos > 32 ? $pos - 32 : 0, 64) . "'");
                 }
             }
             elseif ($regexType === $typeOpen)
@@ -237,8 +253,10 @@ if (!function_exists('scopedExplode'))
         {
             $records = [];
             $record = [];
+            $wantText = $flags & SCOPED_EXPLODE_WANT_TEXT;
 
             $recSep = $regexStrings[0];
+            $delimiter = $regexStrings[1];
 
             foreach ($parts as $part)
             {
@@ -263,7 +281,7 @@ if (!function_exists('scopedExplode'))
                     foreach ($records as &$record)
                     {
                         $id = array_shift($record);
-                        $parts[$id] = $record;
+                        $parts[$id] = $wantText ? implode($delimiter, $record) : $record;
                     }
                     break;
 
@@ -274,7 +292,7 @@ if (!function_exists('scopedExplode'))
                     {
                         $id = array_shift($record);
                         $type = array_shift($record);
-                        $parts[$id] = ['type' => $type, 'options' => $record];
+                        $parts[$id] = ['type' => $type, 'options' => $wantText ? implode($delimiter, $record) : $record];
                     }
                     break;
 
@@ -286,7 +304,7 @@ if (!function_exists('scopedExplode'))
                         $obj = new \stdClass();
                         $obj->name = array_shift($record);
                         $obj->type = array_shift($record);
-                        $obj->options = $record;
+                        $obj->options = $wantText ? implode($delimiter, $record) : $record;
                         $parts[] = $obj;
                     }
                     break;
@@ -299,7 +317,7 @@ if (!function_exists('scopedExplode'))
                         $obj = new \stdClass();
                         $obj->name = array_shift($record);
                         $obj->type = array_shift($record);
-                        $obj->options = $record;
+                        $obj->options = $wantText ? implode($delimiter, $record) : $record;
                         $parts[$obj->name] = $obj;
                     }
                     break;
@@ -331,8 +349,8 @@ if (!function_exists('hasIt'))
      *                          returns number of needles found in the haystack.
      */
 
-    define('HASIT_WANT_ALL',1);
-    define('HASIT_WANT_PREFIX',2);
+    define('HASIT_WANT_ALL', 1);
+    define('HASIT_WANT_PREFIX', 2);
     define('HASIT_WANT_VALUE', 4);
 
     function hasIt($haystack, $needles, $want = 0)

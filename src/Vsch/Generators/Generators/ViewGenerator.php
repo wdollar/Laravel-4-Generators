@@ -144,7 +144,7 @@ class ViewGenerator extends Generator
     {
         $models = Pluralizer::plural($model); // posts
 
-        $fields = $this->cache->getFields();
+        $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_RECORD | SCOPED_EXPLODE_WANT_TEXT);
         $fields = GeneratorsServiceProvider::filterFieldHavingOption($fields, 'hidden');
 
         // First, we build the table headings
@@ -225,14 +225,15 @@ EOT;
     function makeFormElements($modelVars, $disable = false, $onlyBoolean = false, $noBoolean = false, $useOp = false, $filterRows = false)
     {
         $formMethods = [];
-        $fields = $this->cache->getFields();
+        $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_TYPE_OPTIONS | SCOPED_EXPLODE_WANT_TEXT);
         $models = $modelVars['models'];
         $model = $modelVars['model'];
         $narrowText = " input-narrow";
 
-        foreach ($fields as $name => $type)
+        foreach ($fields as $name => $values)
         {
-            list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($type);
+            $type = $values['type'];
+            $options = $values['options'];
 
             if (strpos($options, 'hidden') !== false) continue;
             $nullable = (strpos($options, 'nullable') !== false);
@@ -313,7 +314,14 @@ EOT;
                         $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) }}";
                         $element .= "\n{{ Form::text('$foreignModel', param('$model') ? param('$model')->$${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
                         $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:id;id:$name','class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
-                        $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) }}";
+                        if ($filterRows)
+                        {
+                            $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) }}";
+                        }
+                        else
+                        {
+                            $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) }}";
+                        }
                         $afterElement .= $afterElementFilter;
 
                         $labelName = $foreignModel;
@@ -322,7 +330,7 @@ EOT;
                         {
                             $afterElement .= "\n\t</div>\n@if(\$op === 'create' || \$op === 'edit')";
                         }
-                        $afterElement .= "\n\tdiv class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignModels.create')\" @linkAsButton('warning')>@lang('messages.create')</a>";
+                        $afterElement .= "\n\t<div class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignModels.create')\" @linkAsButton('warning')>@lang('messages.create')</a>";
                         if ($useOp)
                         {
                             $afterElement .= "\n@endif";
@@ -377,7 +385,7 @@ HTML;
 
             if ($filterRows)
             {
-                $afterElementFilter = $afterElementFilter ? "\n".$afterElementFilter : $afterElementFilter;
+                $afterElementFilter = $afterElementFilter ? "\n" . $afterElementFilter : $afterElementFilter;
                 $frag = "\t\t\t\t<td>$elementFilter</td>$afterElementFilter";
             }
             elseif ($useShort)

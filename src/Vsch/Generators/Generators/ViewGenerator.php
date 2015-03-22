@@ -312,7 +312,7 @@ EOT;
                         $foreignModels = Pluralizer::plural($foreignModel);   // posts
 
                         $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) }}";
-                        $element .= "\n{{ Form::text('$foreignModel', param('$model') ? param('$model')->$${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
+                        $element .= "\n{{ Form::text('$foreignModel', $$model ? $$model->$${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
                         $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:id;id:$name','class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
                         if ($filterRows)
                         {
@@ -322,19 +322,19 @@ EOT;
                         {
                             $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) }}";
                         }
-                        $afterElement .= $afterElementFilter;
 
                         $labelName = $foreignModel;
 
                         if ($useOp)
                         {
-                            $afterElement .= "\n\t</div>\n@if(\$op === 'create' || \$op === 'edit')";
+                            $afterElement .= "\n\t\n@if(\$op === 'create' || \$op === 'edit')";
                         }
-                        $afterElement .= "\n\t<div class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignModels.create')\" @linkAsButton('warning')>@lang('messages.create')</a>";
+                        $afterElement .= "\n\t<div class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignModels.create')\" @linkAsButton('warning')>@lang('messages.create')</a></div>";
                         if ($useOp)
                         {
                             $afterElement .= "\n@endif";
                         }
+                        $afterElement .= $afterElementFilter;
                     }
                     else
                     {

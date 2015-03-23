@@ -1,5 +1,6 @@
 <?php namespace Vsch\Generators\Commands;
 
+use Illuminate\Support\Pluralizer;
 use Vsch\Generators\Generators\TranslationsGenerator;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -93,7 +94,7 @@ class TranslationsGeneratorCommand extends Command
     protected
     function getPath($locale)
     {
-        return $this->option('path') . '/' . $locale . strtolower($this->argument('name')) . '.php';
+        return $this->option('path') . '/' . $locale . strtolower(Pluralizer::plural($this->argument('name'))) . '.php';
     }
 
     /**

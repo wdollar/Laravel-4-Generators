@@ -150,9 +150,9 @@ class ViewGenerator extends Generator
         // First, we build the table headings
         if ($useLang)
         {
-            $headings = array_map(function ($field) use ($model)
+            $headings = array_map(function ($field) use ($models)
             {
-                return '<th>@lang(\'' . strtolower($model) . '.' . $field . '\')</th>';
+                return '<th>@lang(\'' . strtolower($models) . '.' . $field . '\')</th>';
             }, array_keys($fields));
         }
         else
@@ -197,7 +197,7 @@ class ViewGenerator extends Generator
         $editAndDelete = <<<EOT
                     <td>
                         {{ Form::open(['style' => 'display: inline-block;', 'method' => 'DELETE', 'route' => ['{$models}.destroy', \${$model}->id, ], ]) }}
-                            {{ Form::submit('Delete', ['class' => 'btn btn-danger', ]) }}
+                            {{ formSubmit('Delete', ['class' => 'btn btn-danger', ]) }}
                         {{ Form::close() }}
                         {{ link_to_route('{$models}.edit', 'Edit', array(\${$model}->id), ['class' => 'btn btn-info',]) }}
                     </td>
@@ -297,8 +297,8 @@ EOT;
                 case  'mediumInteger':
                 case  'smallInteger':
                 case  'tinyInteger':
-                    $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
-                    $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                    $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                    $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
                     break;
 
                 case 'bigInteger':
@@ -313,7 +313,7 @@ EOT;
 
                         $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) }}";
                         $element .= "\n{{ Form::text('$foreignModel', $$model ? $$model->$${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
-                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:id;id:$name','class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
+                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:id;id:$name','class'=>'form-control', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
                         if ($filterRows)
                         {
                             $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) }}";
@@ -338,16 +338,16 @@ EOT;
                     }
                     else
                     {
-                        $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
-                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                        $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
                     }
                     break;
 
                 case 'text':
                     $limit = empty($limit) ? 256 : $limit;
                     $rowAttr = (int)($limit / 64) ?: 1;
-                    $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>trans('$model.$name'), 'rows'=>'$rowAttr', ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>trans('$model.$name'), ]) }}";
+                    $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$models.$name'), 'rows'=>'$rowAttr', ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
                     break;
 
                 case 'boolean':
@@ -360,13 +360,13 @@ EOT;
                 case 'dateTime':
                     $element = <<<HTML
 <div class="input-group input-group-sm date">
-    {{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}
+    {{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
                     $elementFilter = <<<HTML
 <div class="input-group date">
-    {{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}
+    {{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
@@ -378,8 +378,8 @@ HTML;
                 case 'time':
                 case 'string':
                 default:
-                    $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>trans('$model.$name'), ]) }}";
+                    $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
                     break;
             }
 

@@ -395,7 +395,7 @@ HTML;
                     $frag = <<<EOT
         <div class="row">
                 <label>
-                      $element @lang('$model.$labelName')
+                      $element @lang('$models.$labelName')
                       &nbsp;&nbsp;
                 </label>$afterElement
         </div>
@@ -406,7 +406,7 @@ EOT;
                 {
                     $frag = <<<EOT
             <label>
-                  $element @lang('$model.$labelName')
+                  $element @lang('$models.$labelName')
                   &nbsp;&nbsp;
             </label>$afterElement
 EOT;
@@ -419,7 +419,7 @@ EOT;
                     $frag = <<<EOT
         <div class="row">
             <div class="form-group col-sm-3">
-                {{ Form::label('$name', trans('$model.$labelName') . ':') }}
+                {{ Form::label('$name', trans('$models.$labelName') . ':') }}
                   $element$afterElement
             </div>
         </div>
@@ -430,7 +430,7 @@ EOT;
                 {
                     $frag = <<<EOT
         <div class="form-group">
-            {{ Form::label('$name', trans('$model.$labelName') . ':') }}
+            {{ Form::label('$name', trans('$models.$labelName') . ':') }}
               $element$afterElement
         </div>
 

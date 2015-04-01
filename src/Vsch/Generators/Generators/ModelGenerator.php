@@ -224,7 +224,7 @@ PHP;
         $defaultValues = [];
         foreach ($defaults as $field => $value)
         {
-            if (is_null($value) || strtolower($value) === 'null')
+            if ($value === null || strtolower($value) === 'null')
             {
                 $value = 'null';
             }

@@ -360,7 +360,7 @@ class MigrationGenerator extends Generator
             $n = count($params) > 1 ? (int)$params[1] : null;
         }
 
-        if (is_null($i))
+        if ($i === null)
         {
             // make a new one
             $i = sprintf("%03d", ++$indices[0]) . "_";

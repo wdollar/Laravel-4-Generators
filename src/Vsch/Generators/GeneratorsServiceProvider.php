@@ -40,7 +40,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         $hardPath = __DIR__ . '/../../config/templates/';
         $isDir = $suffix === '/';
 
-        if ((is_null($files) || $files === '') && (is_null($suffix) || $suffix === ''))
+        if (($files === null || $files === '') && ($suffix === null || $suffix === ''))
         {
             $packagePath = str_finish($packagePath, "/");
 
@@ -61,7 +61,7 @@ class GeneratorsServiceProvider extends ServiceProvider
                 {
                     if ($file === '/') $file = '';
                     $trypath = str_finish($path, "/") . ($file !== '' ? str_finish($file, "/") : '');
-                    if (!(is_null($suffix) || $suffix === '')) $trypath .= str_finish($suffix, "/");
+                    if (!($suffix === null || $suffix === '')) $trypath .= str_finish($suffix, "/");
                     if (is_dir($trypath))
                     {
                         $path = $trypath;
@@ -75,7 +75,7 @@ class GeneratorsServiceProvider extends ServiceProvider
                 {
                     if ($file === '/') $file = '';
                     $trypath = str_finish($path, "/") . $file;
-                    if (!(is_null($suffix) || $suffix === '')) $trypath .= $suffix;
+                    if (!($suffix === null || $suffix === '')) $trypath .= $suffix;
                     if (file_exists($trypath))
                     {
                         $path = $trypath;

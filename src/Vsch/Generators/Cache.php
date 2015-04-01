@@ -45,7 +45,7 @@ class Cache {
      */
     public function fields($fields, $path = null)
     {
-        if (is_null($fields)) return;
+        if ($fields === null) return;
 
         $path = $path ?: __DIR__.'/../tmp-fields.txt';
         $arrayFields = GeneratorsServiceProvider::splitFields($fields);
@@ -63,7 +63,7 @@ class Cache {
         $path = $path ?:  __DIR__.'/../tmp-fields.txt';
 
         // Have we already fetched the fields?
-        if (!is_null($this->fields))
+        if ($this->fields !== null)
         {
             return $this->fields;
         }

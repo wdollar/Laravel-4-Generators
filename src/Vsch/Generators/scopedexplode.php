@@ -67,7 +67,7 @@ if (!function_exists('scopedExplode'))
         $delimParts = ($flags & SCOPED_EXPLODE_DELIMS) | $wantArray;
         $trimParts = $flags & SCOPED_EXPLODE_TRIM;
 
-        if (is_null($limit)) $limit = 0x0fffffff;
+        if ($limit === null) $limit = 0x0fffffff;
         if ($limit <= 1 || is_array($delimiters) && empty($delimiters) || !is_array($delimiters) && $delimiters == '')
         {
             if ($delimParts)

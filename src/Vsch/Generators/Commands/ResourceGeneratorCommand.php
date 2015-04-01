@@ -82,7 +82,7 @@ class ResourceGeneratorCommand extends Command
 
         $defaultDirs = $this->getDefaultTemplateSubDirs();
 
-        if (is_null($this->fields))
+        if ($this->fields === null)
         {
             throw new MissingFieldsException('You must specify the fields option.');
         }

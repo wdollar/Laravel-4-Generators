@@ -106,8 +106,11 @@ PHP;
                         }
                     }
                 }
-
                 $template = GeneratorsServiceProvider::replaceModelVars($template, $relationsVars, '{{relations:', '}}');
+            }
+            else
+            {
+                $template = GeneratorsServiceProvider::replaceModelVars($template, '', '{{relations:', '}}');
             }
         }
 
@@ -207,7 +210,7 @@ PHP;
                 if (str_ends_with($field->name, '_id'))
                 {
                     // assume foreign key
-                    $foreignModel = substr($field->name, 0, - 3);
+                    $foreignModel = substr($field->name, 0, -3);
                     $foreignModels = Pluralizer::plural($foreignModel);   // posts
                     $ruleBits[] = "exists:$foreignModels,id";
                 }

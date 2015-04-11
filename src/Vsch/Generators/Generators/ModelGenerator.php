@@ -107,10 +107,39 @@ PHP;
                     }
                 }
                 $template = GeneratorsServiceProvider::replaceModelVars($template, $relationsVars, '{{relations:', '}}');
+                $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relation:line}}', function ($line, $fieldVar) use ($fields)
+                {
+                    $fieldText = '';
+                    $line = str_replace($fieldVar, '', $line);
+                    foreach ($fields as $field)
+                    {
+                        // add foreign keys
+                        $name = $field->name;
+                        if (substr($name, -3) === '_id')
+                        {
+                            // assume foreign key
+                            $ModelName = studly_case(substr($name, 0, -3));
+                            $relationsVars = GeneratorsServiceProvider::getModelVars($ModelName);
+                            $fieldText .= GeneratorsServiceProvider::replaceModelVars($line, $relationsVars, '{{relation:', '}}') . "\n";
+                        }
+                    }
+                    return $fieldText;
+                });
             }
             else
             {
-                $template = GeneratorsServiceProvider::replaceModelVars($template, '', '{{relations:', '}}');
+                $emptyVars = $modelVars;
+
+                array_walk($emptyVars, function (&$val)
+                {
+                    $val = '';
+                });
+
+                $template = GeneratorsServiceProvider::replaceModelVars($template, $emptyVars, '{{relations:', '}}');
+                $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relation:line}}', function ($line, $fieldVar)
+                {
+                    return '';
+                });
             }
         }
 

@@ -303,7 +303,7 @@ class MigrationGenerator extends Generator
                 $dropIndices[] = "\$table->dropIndex('$indexName')";
             }
 
-            if ($hadNullable && !$hadDefault)
+            if ($hadNullable && !$hadDefault && !$field->type === 'text')
             {
                 $field->options .= "->default(null)";
             }

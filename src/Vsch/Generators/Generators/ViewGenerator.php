@@ -310,7 +310,7 @@ EOT;
                         $foreignModels = Pluralizer::plural($foreignModel);   // posts
 
                         $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) }}";
-                        $element .= "\n{{ Form::text('$foreignModel', $$model ? $$model->$${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
+                        $element .= "\n{{ Form::text('$foreignModel', $$model ? $$model->${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
                         $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:id;id:$name','class'=>'form-control', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
                         if ($filterRows)
                         {

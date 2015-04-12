@@ -280,8 +280,6 @@ EOT;
                 $type = 'text';
             }
 
-            // TODO: add remaining types
-            // TODO: if given disabled, genereate readonly form elements.
             if ($type === 'boolean' && $noBoolean) continue;
             if ($type !== 'boolean' && $onlyBoolean) continue;
 

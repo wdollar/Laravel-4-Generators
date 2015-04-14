@@ -25,7 +25,7 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
     /**
      * Model generator instance.
      *
-     * @var Vsch\Generators\Generators\MigrationGenerator
+     * @var \Vsch\Generators\Generators\MigrationGenerator
      */
     protected $generator;
 
@@ -73,7 +73,7 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
      */
     protected function getPath()
     {
-       return $this->option('path') . '/' . ucwords($this->argument('name')) . '.php';
+        return parent::getSrcPath('/database/migrations', '/' . ucwords($this->argument('name')) . '.php', '/migrations');
     }
 
     /**
@@ -95,10 +95,10 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
      */
     protected function getOptions()
     {
-        return array(
-            array('path', null, InputOption::VALUE_OPTIONAL, 'The path to the migrations folder', app_path() . '/database/migrations'),
+        return $this->mergeOptions(array(
+            array('path', null, InputOption::VALUE_OPTIONAL, 'The path to the migrations folder', ''),
             array('fields', null, InputOption::VALUE_OPTIONAL, 'Table fields', null)
-        );
+        ));
     }
 
 }

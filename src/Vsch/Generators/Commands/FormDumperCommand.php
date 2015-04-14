@@ -8,7 +8,8 @@ use Illuminate\Filesystem\Filesystem as File;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
-class FormDumperCommand extends BaseGeneratorCommand {
+class FormDumperCommand extends Command
+{
 
     /**
      * The console command name.
@@ -27,7 +28,7 @@ class FormDumperCommand extends BaseGeneratorCommand {
     /**
      * FormDumper generator instance.
      *
-     * @var Vsch\Generators\Generators\FormDumperGenerator
+     * @var \Vsch\Generators\Generators\FormDumperGenerator
      */
     protected $generator;
 
@@ -36,7 +37,8 @@ class FormDumperCommand extends BaseGeneratorCommand {
      *
      * @return void
      */
-    public function __construct(FormDumperGenerator $generator)
+    public
+    function __construct(FormDumperGenerator $generator)
     {
         parent::__construct();
 
@@ -48,9 +50,10 @@ class FormDumperCommand extends BaseGeneratorCommand {
      *
      * @return void
      */
-    public function fire()
+    public
+    function fire()
     {
-        if (! class_exists($model = $this->argument('model')))
+        if (!class_exists($model = $this->argument('model')))
         {
             throw new \InvalidArgumentException('Model does not exist!');
         }
@@ -67,7 +70,8 @@ class FormDumperCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getArguments()
+    protected
+    function getArguments()
     {
         return array(
             array('model', InputArgument::REQUIRED, 'Name of the model for the form.'),
@@ -79,12 +83,12 @@ class FormDumperCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getOptions()
+    protected
+    function getOptions()
     {
         return array(
             array('method', null, InputOption::VALUE_OPTIONAL, 'What operation are we doing? [create|edit]', 'create'),
             array('html', null, InputOption::VALUE_OPTIONAL, 'Which HTML element should be used?', 'ul')
         );
     }
-
 }

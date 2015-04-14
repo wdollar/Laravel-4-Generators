@@ -8,9 +8,12 @@ use Symfony\Component\Console\Input\InputArgument;
 use Illuminate\Support\Pluralizer;
 use Vsch\Generators\GeneratorsServiceProvider;
 
-class MissingTableFieldsException extends \Exception {}
+class MissingTableFieldsException extends \Exception
+{
+}
 
-class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
+class ScaffoldGeneratorCommand extends ResourceGeneratorCommand
+{
 
     /**
      * The console command name.
@@ -31,7 +34,8 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      *
      * @return string
      */
-    protected function getModelTemplatePath()
+    protected
+    function getModelTemplatePath()
     {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'model.txt');
     }
@@ -48,7 +52,8 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'translations.txt');
     }
 
-    protected function getRouteTemplatePath()
+    protected
+    function getRouteTemplatePath()
     {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'route.txt');
     }
@@ -58,18 +63,19 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      *
      * @return string
      */
-    protected function getControllerTemplatePath()
+    protected
+    function getControllerTemplatePath()
     {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'controller.txt');
     }
-
 
     /**
      * Get the path to the template for a controller.
      *
      * @return string
      */
-    protected function getTestTemplatePath()
+    protected
+    function getTestTemplatePath()
     {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'controller-test.txt');
     }
@@ -79,7 +85,8 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      *
      * @return string
      */
-    protected function getViewTemplatePath($view = 'view')
+    protected
+    function getViewTemplatePath($view = 'view')
     {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, "views/{$view}.txt");
     }
@@ -89,7 +96,8 @@ class ScaffoldGeneratorCommand extends ResourceGeneratorCommand {
      *
      * @return array
      */
-    protected function getDefaultTemplateSubDirs()
+    protected
+    function getDefaultTemplateSubDirs()
     {
         // just use templates
         return ['scaffold', ''];

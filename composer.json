@@ -2,6 +2,8 @@
     "name": "vsch/generators",
     "description": "Laravel 4 Generators w/ Bootstrap 3",
     "keywords": ["laravel", "generators", "artisan", "bootstrap", "scaffold"],
+    "homepage": "https://github.com/vsch/Laravel-4-Generators-Bootstrap-3",
+    "license": "MIT",
     "authors": [
         {
             "name": "Jeffrey Way",
@@ -15,7 +17,7 @@
         },
         {
             "name": "Vladimir Schneider",
-            "email": "vladimir.schneider@gmail.com",
+            "email": "vladimir@vladsch.com",
             "role": "Developer"
         }
     ],
@@ -37,11 +39,6 @@
         "classmap": [
             "src/Vsch/Generators/Generators"
         ]
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.3.1-dev"
-        }
     },
     "minimum-stability": "stable"
 }

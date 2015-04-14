@@ -4,7 +4,8 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
-class PivotGeneratorCommand extends BaseGeneratorCommand {
+class PivotGeneratorCommand extends BaseGeneratorCommand
+{
 
     /**
      * The console command name.
@@ -20,25 +21,28 @@ class PivotGeneratorCommand extends BaseGeneratorCommand {
      */
     protected $description = 'Generate a pivot table';
 
-    public function fire()
+    public
+    function fire()
     {
         $tables = $this->sortDesiredTables();
 
         $this->call(
             'generate:migration',
-            array(
-                'name'      => "pivot_{$tables[0]}_{$tables[1]}_table",
-                '--fields'  => implode(', ', array(
-                    "{$tables[0]}_id:integer:unsigned:index",
-                    "{$tables[1]}_id:integer:unsigned:index",
-                    "{$tables[0]}_id:foreign:references('id'):on('" . str_plural($tables[0]) . "'):onDelete('cascade')",
-                    "{$tables[1]}_id:foreign:references('id'):on('" . str_plural($tables[1]) . "'):onDelete('cascade')"
+            array_merge(parent::commonOption(),
+                array(
+                    'name' => "pivot_{$tables[0]}_{$tables[1]}_table",
+                    '--fields' => implode(', ', array(
+                        "{$tables[0]}_id:integer:unsigned:index",
+                        "{$tables[1]}_id:integer:unsigned:index",
+                        "{$tables[0]}_id:foreign:references('id'):on('" . str_plural($tables[0]) . "'):onDelete('cascade')",
+                        "{$tables[1]}_id:foreign:references('id'):on('" . str_plural($tables[1]) . "'):onDelete('cascade')"
+                    ))
                 ))
-            )
         );
     }
 
-    public function sortDesiredTables()
+    public
+    function sortDesiredTables()
     {
         $tableOne = str_singular($this->argument('tableOne'));
         $tableTwo = str_singular($this->argument('tableTwo'));
@@ -54,13 +58,13 @@ class PivotGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getArguments()
+    protected
+    function getArguments()
     {
-        return array(
+        return $this->mergeOptions(array(
             array('tableOne', InputArgument::REQUIRED, 'Name of the first table.'),
             array('tableTwo', InputArgument::REQUIRED, 'Name of the second table.')
-        );
+        ));
     }
-
 }
 

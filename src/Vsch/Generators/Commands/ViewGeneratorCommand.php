@@ -6,7 +6,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Vsch\Generators\GeneratorsServiceProvider;
 
-class ViewGeneratorCommand extends BaseGeneratorCommand {
+class ViewGeneratorCommand extends BaseGeneratorCommand
+{
 
     /**
      * The console command name.
@@ -25,20 +26,22 @@ class ViewGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Model generator instance.
      *
-     * @var Vsch\Generators\Generators\ViewGenerator
+     * @var \Vsch\Generators\Generators\ViewGenerator
      */
     protected $generator;
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct(ViewGenerator $generator)
+    public
+    function __construct(ViewGenerator $generator)
     {
         parent::__construct();
 
         $this->generator = $generator;
+    }
+
+    public
+    function getPath()
+    {
+        return parent::getSrcPath('/views');
     }
 
     /**
@@ -46,7 +49,8 @@ class ViewGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getArguments()
+    protected
+    function getArguments()
     {
         return array(
             array('name', InputArgument::REQUIRED, 'Name of the view to generate.'),
@@ -58,12 +62,12 @@ class ViewGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getOptions()
+    protected
+    function getOptions()
     {
-        return array(
-           array('path', null, InputOption::VALUE_OPTIONAL, 'Path to views directory.', app_path() . '/views'),
-           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('view.txt')),
-        );
+        return $this->mergeOptions(array(
+            array('path', null, InputOption::VALUE_OPTIONAL, 'Path to views directory.', ''),
+            array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('view.txt')),
+        ));
     }
-
 }

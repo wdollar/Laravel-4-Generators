@@ -7,7 +7,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Vsch\Generators\GeneratorsServiceProvider;
 
-class TranslationsGeneratorCommand extends Command
+class TranslationsGeneratorCommand extends BaseGeneratorCommand
 {
 
     /**
@@ -54,7 +54,7 @@ class TranslationsGeneratorCommand extends Command
     {
         $template = $this->option('template');
 
-        $locales = getDirs($this->option('path'), true);
+        $locales = getDirs($this->getPath(), true);
         foreach ($locales as $locale)
         {
             if ($locale === 'en/')
@@ -92,9 +92,9 @@ class TranslationsGeneratorCommand extends Command
      * @return string
      */
     protected
-    function getPath($locale)
+    function getPath($locale = null)
     {
-        return $this->option('path') . '/' . $locale . strtolower(Pluralizer::plural($this->argument('name'))) . '.php';
+        return parent::getSrcPath('/lang', ($locale ? '/' . $locale . strtolower(Pluralizer::plural($this->argument('name'))) . '.php' : ''));
     }
 
     /**
@@ -118,13 +118,13 @@ class TranslationsGeneratorCommand extends Command
     protected
     function getOptions()
     {
-        return array(
+        return $this->mergeOptions(array(
             array(
                 'path',
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'Path to the language translations directory.',
-                app_path() . '/lang'
+                ''
             ),
             array(
                 'template',
@@ -133,6 +133,6 @@ class TranslationsGeneratorCommand extends Command
                 'Path to template.',
                 GeneratorsServiceProvider::getTemplatePath('translations.txt')
             )
-        );
+        ));
     }
 }

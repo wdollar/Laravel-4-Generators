@@ -6,7 +6,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Vsch\Generators\GeneratorsServiceProvider;
 
-class SeedGeneratorCommand extends BaseGeneratorCommand {
+class SeedGeneratorCommand extends BaseGeneratorCommand
+{
 
     /**
      * The console command name.
@@ -25,7 +26,7 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Model generator instance.
      *
-     * @var Vsch\Generators\Generators\SeedGenerator
+     * @var \Vsch\Generators\Generators\SeedGenerator
      */
     protected $generator;
 
@@ -34,7 +35,8 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return void
      */
-    public function __construct(SeedGenerator $generator)
+    public
+    function __construct(SeedGenerator $generator)
     {
         parent::__construct();
 
@@ -46,24 +48,24 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return void
      */
-    public function fire()
+    public
+    function fire()
     {
-        $path = $this->getPath();
+        $path = $this->getPath($this->argument('name'));
         $className = basename($path, '.php');
         $template = $this->option('template');
 
         $this->printResult($this->generator->make($path, $template), $path);
 
-        if ($this->generator->updateDatabaseSeederRunMethod($className))
+        $databaseSeederPath = $this->getPath() . '/DatabaseSeeder.php';
+        if ($this->generator->updateDatabaseSeederRunMethod($databaseSeederPath, $className))
         {
-            $this->info('Updated ' . app_path() . '/database/seeds/DatabaseSeeder.php');
+            $this->info('Updated ' . $databaseSeederPath);
         }
         else
         {
-            $this->comment('Did not need to update ' . app_path() . '/database/seeds/DatabaseSeeder.php');
+            $this->comment('Did not need to update ' . $databaseSeederPath);
         }
-
-
     }
 
     /**
@@ -71,9 +73,10 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return string
      */
-    protected function getPath()
+    protected
+    function getPath($name = null)
     {
-        return $this->option('path') . '/' . ucwords($this->argument('name')) . 'TableSeeder.php';
+        return parent::getSrcPath('/database/seeds', ($name ? '/' . ucwords($name) . 'TableSeeder.php' : ''), '/seeds');
     }
 
     /**
@@ -81,7 +84,8 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getArguments()
+    protected
+    function getArguments()
     {
         return array(
             array('name', InputArgument::REQUIRED, 'Name of the model to generate.'),
@@ -93,12 +97,12 @@ class SeedGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getOptions()
+    protected
+    function getOptions()
     {
-        return array(
-            array('path', null, InputOption::VALUE_OPTIONAL, 'Path to the seeds directory.', app_path() . '/database/seeds'),
+        return $this->mergeOptions(array(
+            array('path', null, InputOption::VALUE_OPTIONAL, 'Path to the seeds directory.', ''),
             array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('seed.txt')),
-        );
+        ));
     }
-
 }

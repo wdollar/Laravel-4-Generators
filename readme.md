@@ -8,6 +8,30 @@ This package had the following modifications to Wes Dollar's package:
 At this point I feel that the generators are in desperate need of a rewrite to simplify and harmonize the template syntax, add more control to how code is generated. This is on a todo list.
 I am adding cludges just to get the functionality I need for the project I am working on. It is not the best way but the only way on a limited time budget.
 
+### Version 1.3.2
+
+- add --bench="name/package" option to all generator commands, generated code will be added to the given name/packaage in the workbench. A convenient way to scaffold models, controllers and migrations in packages on which you are working in the project workbench directory.
+- add {{relation:line}} to model generator, it will repeat the line containing this tag for every foreign relation of the model, while replacing {{relation:var_name}} where var_name is one of the field names from the [Model Vars Table](#ModelVarsTable) table below. For example:
+
+lines in the scaffold/model.txt:
+
+    public static $remote_relations = array(
+        '{{relation:snake_model}}'=>['{{relation:snake_model}}_id', 'id'],                {{relation:line}}
+    );
+
+for a model that has two foreign key fields: `sender_id` and `conversation_id` will have the following resulting code: 
+
+    public static $remote_relations = array(
+        'sender'=>['sender_id', 'id'],
+        'conversation'=>['conversation_id', 'id'],
+    );
+
+for a model that has no foreign key fields the line is omitted:
+
+    public static $remote_relations = array(
+    );
+
+
 ### Version 1.3.1
 
 - rewrote field string parsing to handle nested (),[] and {}. Now field options can have comma separated parameters. 
@@ -70,8 +94,12 @@ Usage:  *`field_name`*`:int:hidden:guarded`, or *`field_name`*`:string[256]:text
 - fixed resource generator model name case changing to handle camelCase, instead of lowercasing the model and then capitalizing it. now blockedEmail will be BlockedEmails instead of Blockedemails.
 - resource generator now will add a commented out version of the resource route definition if a resource definition for that resource already exists but does not match the new one.
 - add all variations of case and separators to view, model, controller generators which handle camelCaseModel names consistently. Got tired of adding new ones as the need arose.
--- this applies to {{relations:modelVar}} where modelVar is one of the fields below. This is replaced by a quoted, comma separated list of all the foreign relationship models for the current model.
--- for a model named camelCaseModel these will be:
+ -- this applies to {{relations:modelVar}} where modelVar is one of the fields below. This is replaced by a quoted, comma separated list of all the foreign relationship models for the current model.
+
+#### <a name="ModelVarsTable"></a>Model Vars Table
+
+for a model named `camelCaseModel` the model vars given by the field entry will be replaced with as per table.
+
 
 | field | replaced with | field | replaced with |
 | :---- |:------ | :---- |:------ |

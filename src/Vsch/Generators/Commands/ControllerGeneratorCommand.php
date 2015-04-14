@@ -6,7 +6,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Vsch\Generators\GeneratorsServiceProvider;
 
-class ControllerGeneratorCommand extends BaseGeneratorCommand {
+class ControllerGeneratorCommand extends BaseGeneratorCommand
+{
 
     /**
      * The console command name.
@@ -25,7 +26,7 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Model generator instance.
      *
-     * @var Vsch\Generators\Generators\ControllerGenerator
+     * @var \Vsch\Generators\Generators\ControllerGenerator
      */
     protected $generator;
 
@@ -34,7 +35,8 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return void
      */
-    public function __construct(ControllerGenerator $generator)
+    public
+    function __construct(ControllerGenerator $generator)
     {
         parent::__construct();
 
@@ -46,9 +48,10 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return string
      */
-    protected function getPath()
+    protected
+    function getPath()
     {
-       return $this->option('path') . '/' . ucwords($this->argument('name')) . '.php';
+        return parent::getSrcPath('/controllers', '/' . ucwords($this->argument('name')) . '.php');
     }
 
     /**
@@ -56,7 +59,8 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getArguments()
+    protected
+    function getArguments()
     {
         return array(
             array('name', InputArgument::REQUIRED, 'Name of the controller to generate.'),
@@ -68,12 +72,12 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand {
      *
      * @return array
      */
-    protected function getOptions()
+    protected
+    function getOptions()
     {
-        return array(
-           array('path', null, InputOption::VALUE_OPTIONAL, 'Path to controllers directory.', app_path() . '/controllers'),
-           array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('controller.txt')),
-        );
+        return $this->mergeOptions(array(
+            array('path', null, InputOption::VALUE_OPTIONAL, 'Path to controllers directory.', ''),
+            array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('controller.txt')),
+        ));
     }
-
 }

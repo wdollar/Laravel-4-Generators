@@ -269,9 +269,11 @@ EOT;
 
             if (str_contains($type, '['))
             {
-                preg_match('/([^\[]+?)\[(\d+)(?:\.\d+)?\]/', $type, $matches);
-                $type = $matches[1]; // string
-                $limit = $matches[2]; // 50
+                if (preg_match('/([^\[]+?)\[(\d+)(?:\,\d+)?\]/', $type, $matches))
+                {
+                    $type = $matches[1]; // string
+                    $limit = $matches[2]; // 50{,...,}
+                }
             }
 
             if (preg_match('/\btextarea\b/', $options))

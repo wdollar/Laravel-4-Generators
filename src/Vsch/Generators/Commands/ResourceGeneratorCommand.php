@@ -16,7 +16,7 @@ class TemplateNameDoesNotExist extends \Exception
 {
 }
 
-class ResourceGeneratorCommand extends Command
+class ResourceGeneratorCommand extends BaseGeneratorCommand
 {
     /**
      * The console command name.
@@ -33,7 +33,7 @@ class ResourceGeneratorCommand extends Command
     /**
      * Model generator instance.
      *
-     * @var Vsch\Generators\Generators\ResourceGenerator
+     * @var \Vsch\Generators\Generators\ResourceGenerator
      */
     protected $generator;
     /**
@@ -112,7 +112,12 @@ class ResourceGeneratorCommand extends Command
         $this->generateController();
         $this->generateViews();
         $this->generateMigration();
-        $this->generateSeed();
+
+        if (!$this->option('bench'))
+        {
+            $this->generateSeed();
+        }
+
         $this->generateTranslations();
 
         if (get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand')
@@ -120,8 +125,15 @@ class ResourceGeneratorCommand extends Command
             $this->generateTest();
         }
 
-        if ($this->generator->updateRoutesFile($this->model, $this->getRouteTemplatePath())) $this->info('Updated ' . app_path() . '/routes.php');
-        else $this->info('Did not need to update ' . app_path() . '/routes.php');
+        if (!$this->option('bench'))
+        {
+            if ($this->generator->updateRoutesFile($this->model, $this->getRouteTemplatePath())) $this->info('Updated ' . app_path() . '/routes.php');
+            else $this->info('Did not need to update ' . app_path() . '/routes.php');
+        }
+        else
+        {
+            $this->info('Running --bench option, file needs to be manually updated: ' . app_path() . '/routes.php');
+        }
 
         // We're all finished, so we
         // can delete the cache.
@@ -152,7 +164,8 @@ class ResourceGeneratorCommand extends Command
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'translations.txt');
     }
 
-    protected function getRouteTemplatePath()
+    protected
+    function getRouteTemplatePath()
     {
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'route.txt');
     }
@@ -188,10 +201,10 @@ class ResourceGeneratorCommand extends Command
     function generateModel()
     {
         // For now, this is just the regular model template
-        $this->call('generate:model', array(
-                'name' => $this->model,
-                '--template' => $this->getModelTemplatePath()
-            ));
+        $this->call('generate:model', parent::commonOptions(array(
+            'name' => $this->model,
+            '--template' => $this->getModelTemplatePath()
+        )));
     }
 
     /**
@@ -203,10 +216,10 @@ class ResourceGeneratorCommand extends Command
     function generateTranslations()
     {
         // For now, this is just the regular model template
-        $this->call('generate:translations', array(
-                'name' => $this->model,
-                '--template' => $this->getTranslationsTemplatePath()
-            ));
+        $this->call('generate:translations', parent::commonOptions(array(
+            'name' => $this->model,
+            '--template' => $this->getTranslationsTemplatePath()
+        )));
     }
 
     /**
@@ -219,10 +232,10 @@ class ResourceGeneratorCommand extends Command
     {
         $name = Pluralizer::plural($this->model);
 
-        $this->call('generate:controller', array(
-                'name' => "{$name}Controller",
-                '--template' => $this->getControllerTemplatePath()
-            ));
+        $this->call('generate:controller', parent::commonOptions(array(
+            'name' => "{$name}Controller",
+            '--template' => $this->getControllerTemplatePath()
+        )));
     }
 
     /**
@@ -233,16 +246,24 @@ class ResourceGeneratorCommand extends Command
     protected
     function generateTest()
     {
-        if (!file_exists(app_path() . '/tests/controllers'))
+        if ($this->option('bench'))
         {
-            mkdir(app_path() . '/tests/controllers');
+            $path = parent::getSrcPath('/../tests');
+            if (!file_exists($path)) mkdir($path);
+            $path = parent::getSrcPath('/../tests/controllers');
+            if (!file_exists($path)) mkdir($path);
+        }
+        else
+        {
+            $path = parent::getSrcPath('/tests/controllers');
+            if (!file_exists($path)) mkdir($path);
         }
 
-        $this->call('generate:test', array(
-                'name' => Pluralizer::plural(strtolower(substr($this->model, 0, 1)) . substr($this->model,1)) . 'Test',
-                '--template' => $this->getTestTemplatePath(),
-                '--path' => app_path() . '/tests/controllers'
-            ));
+        $this->call('generate:test', parent::commonOptions(array(
+            'name' => Pluralizer::plural(strtolower(substr($this->model, 0, 1)) . substr($this->model, 1)) . 'Test',
+            '--template' => $this->getTestTemplatePath(),
+            '--path' => $path
+        )));
     }
 
     /**
@@ -253,12 +274,12 @@ class ResourceGeneratorCommand extends Command
     protected
     function generateViews()
     {
-        $viewsDir = app_path() . '/views';
+        $viewsDir = parent::getSrcPath('/views');
         $container = $viewsDir . '/' . Pluralizer::plural($this->model);
         $layouts = $viewsDir . '/layouts';
         $adminOnlyView = false;
 
-        if (file_exists($this->getViewTemplatePath($view = 'admin')))
+        if (file_exists($this->getViewTemplatePath('admin')))
         {
             // generate only one view for create, edit, show called admin
             $views = array('index', 'admin');
@@ -298,11 +319,11 @@ class ResourceGeneratorCommand extends Command
     protected
     function generateView($view, $path)
     {
-        $this->call('generate:view', array(
-                'name' => $view,
-                '--path' => $path,
-                '--template' => $this->getViewTemplatePath($view)
-            ));
+        $this->call('generate:view', parent::commonOptions(array(
+            'name' => $view,
+            '--path' => $path,
+            '--template' => $this->getViewTemplatePath($view)
+        )));
     }
 
     /**
@@ -315,18 +336,18 @@ class ResourceGeneratorCommand extends Command
     {
         $name = 'create_' . snake_case(Pluralizer::plural($this->model)) . '_table';
 
-        $this->call('generate:migration', array(
-                'name' => $name,
-                '--fields' => $this->fields,
-            ));
+        $this->call('generate:migration', parent::commonOptions(array(
+            'name' => $name,
+            '--fields' => $this->fields,
+        )));
     }
 
     protected
     function generateSeed()
     {
-        $this->call('generate:seed', array(
-                'name' => Pluralizer::plural(strtolower(substr($this->model, 0, 1)) . substr($this->model,1)),
-            ));
+        $this->call('generate:seed', parent::commonOptions(array(
+            'name' => Pluralizer::plural(strtolower(substr($this->model, 0, 1)) . substr($this->model, 1)),
+        )));
     }
 
     /**
@@ -362,13 +383,13 @@ class ResourceGeneratorCommand extends Command
     protected
     function getOptions()
     {
-        return array(
+        return $this->mergeOptions(array(
             array(
                 'path',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'The path to the migrations folder',
-                app_path() . '/database/migrations'
+                'The path to the app directory',
+                ''
             ),
             array('fields', null, InputOption::VALUE_OPTIONAL, 'Table fields', null),
             array(
@@ -378,6 +399,6 @@ class ResourceGeneratorCommand extends Command
                 'What template sub-directory to use? [|scaffold|any-dir]',
                 $this->getDefaultTemplateSubDirs()[0]
             ),
-        );
+        ));
     }
 }

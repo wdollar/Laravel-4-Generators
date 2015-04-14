@@ -25,7 +25,7 @@ class TestGeneratorCommand extends BaseGeneratorCommand {
     /**
      * Test generator instance.
      *
-     * @var Vsch\Generators\Generators\TestGenerator
+     * @var \Vsch\Generators\Generators\TestGenerator
      */
     protected $generator;
 
@@ -48,7 +48,7 @@ class TestGeneratorCommand extends BaseGeneratorCommand {
      */
     protected function getPath()
     {
-       return $this->option('path') . '/' . studly_case($this->argument('name')) . '.php';
+       return parent::getSrcPath('/tests', '/' . studly_case($this->argument('name')) . '.php', '/../tests');
     }
 
     /**
@@ -70,10 +70,10 @@ class TestGeneratorCommand extends BaseGeneratorCommand {
      */
     protected function getOptions()
     {
-        return array(
-           array('path', null, InputOption::VALUE_OPTIONAL, 'Path to tests directory.', app_path() . '/tests'),
+        return $this->mergeOptions(array(
+           array('path', null, InputOption::VALUE_OPTIONAL, 'Path to tests directory.', ''),
            array('template', null, InputOption::VALUE_OPTIONAL, 'Path to template.', GeneratorsServiceProvider::getTemplatePath('test.txt')),
-        );
+        ));
     }
 
 }

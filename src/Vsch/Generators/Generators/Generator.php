@@ -4,6 +4,7 @@ namespace Vsch\Generators\Generators;
 
 use Vsch\Generators\Cache;
 use Illuminate\Filesystem\Filesystem as File;
+use Illuminate\Console\Command;
 
 class RequestedCacheNotFound extends \Exception {}
 
@@ -33,10 +34,34 @@ abstract class Generator {
      *
      * @param $file
      */
-    public function __construct(File $file, Cache $cache)
+    public function __construct(File $file, Cache $cache = null)
     {
         $this->file = $file;
         $this->cache = $cache;
+    }
+
+    /**
+     * @var array     options for generator
+     */
+    protected $options;
+
+    public
+    function setOptions(array $options)
+    {
+        // so that we can access options
+        $this->options = $options;
+    }
+
+    public
+    function options($key = null)
+    {
+        // so that we can access options
+        if ($key !== null)
+        {
+            return $this->options[$key];
+        }
+
+        return $this->options;
     }
 
     /**
@@ -121,7 +146,7 @@ abstract class Generator {
      * Get compiled template
      *
      * @param  string $template
-     * @param  $name Name of file
+     * @param  string $name Name of file
      * @return string
      */
     abstract protected function getTemplate($template, $name);

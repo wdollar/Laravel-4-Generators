@@ -46,6 +46,10 @@ class MigrationGenerator extends Generator
         $stub = str_replace('{{up}}', $upMethod, $stub);
         $stub = str_replace('{{down}}', $downMethod, $stub);
 
+        $prefix = $this->options('prefix');
+        $package = $this->options('bench');
+        $stub = GeneratorsServiceProvider::replacePrefixTemplate($prefix, $package, $stub);
+
         return $stub;
     }
 
@@ -242,6 +246,7 @@ class MigrationGenerator extends Generator
 
         $indices = [0]; // first element is last used index number, keys are _i where i is passed from the parameters, or auto generated, _i => _n_f where n is from params and f index of the field in the fields list
         $keyindices = $indices; // first element is last used index number, keys are _i where i is passed from the parameters, or auto generated, _i => _n_f where n is from params and f index of the field in the fields list
+        $primaryindices = $indices; // first element is last used index number, keys are _i where i is passed from the parameters, or auto generated, _i => _n_f where n is from params and f index of the field in the fields list
         $dropIndices = [];
         $foreignKeys = [];
 
@@ -261,9 +266,10 @@ class MigrationGenerator extends Generator
 
             foreach ($options as $option)
             {
-                if (($isKey = strpos($option, 'keyindex') === 0) || strpos($option, 'index') === 0)
+                if (($isPrimary = strpos($option, 'primary') === 0) || ($isKey = strpos($option, 'keyindex') === 0) || strpos($option, 'index') === 0)
                 {
-                    if ($isKey) $keyIndex = &$keyindices;
+                    if ($isPrimary) $keyIndex = &$primaryindices;
+                    elseif ($isKey) $keyIndex = &$keyindices;
                     else $keyIndex = &$indices;
 
                     $this->processIndexOption($keyIndex, $option, $field->name, $fieldIndex);
@@ -299,7 +305,7 @@ class MigrationGenerator extends Generator
                 $fnames = Pluralizer::plural($fname);   // posts
                 if (!$hadUnsigned) $field->options .= "->unsigned()";
                 $indexName = "ixf_{$this->tableName}_{$name}_{$fnames}_id";
-                $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on('$fnames')";
+                $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on({{prefix}}'$fnames')";
                 $dropIndices[] = "\$table->dropIndex('$indexName')";
             }
 
@@ -313,6 +319,7 @@ class MigrationGenerator extends Generator
         $inds = $foreignKeys;
         $inds = array_merge($inds, $this->generateIndex('index', $indices, $dropIndices));
         $inds = array_merge($inds, $this->generateIndex('unique', $keyindices, $dropIndices));
+        $inds = array_merge($inds, $this->generateIndex('primary', $primaryindices, $dropIndices));
         $fields[] = [$inds, $dropIndices];
         return $fields;
     }
@@ -338,7 +345,7 @@ class MigrationGenerator extends Generator
                 $fields[$indices[$sortedKey][$sortedFieldKey]] = "'" . $indices[$sortedKey][$sortedFieldKey] . "'";
             }
 
-            $indexName = ($type === 'unique' ? "ixk_" : "ix_") . $this->tableName . "_" . implode('_', array_keys($fields));
+            $indexName = ($type === 'primary' ? "pk_" : ($type === 'unique' ? "ixk_" : "ix_")) . $this->tableName . "_" . implode('_', array_keys($fields));
             $dropIndices[] = "\$table->dropIndex('$indexName')";
             $indexTexts[] = "\$table->$type([" . implode(',', $fields) . "], '$indexName')";
         }
@@ -438,4 +445,5 @@ class MigrationGenerator extends Generator
 
         return dirname($path) . '/' . date('Y_m_d_His') . '_' . $migrationFile;
     }
+
 }

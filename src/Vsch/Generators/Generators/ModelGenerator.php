@@ -46,10 +46,25 @@ class ModelGenerator extends Generator
             return str_replace('{{rules}}', '', $this->template);
         }
 
-        // piece by piece the code is getting cleaned up
-        $fields = GeneratorsServiceProvider::splitFields(implode(',', $fields), true);
-
         $template = $this->template;
+
+        $template = str_replace('{{__construct}}', <<<'SQL'
+    protected $table = '{{snake_models}}';
+
+    public function __construct($attributes = [])
+    {
+        {{prefixdef}}$this->table = {{prefix}}'{{snake_models}}';
+        parent::__construct($attributes);
+    }
+
+SQL
+            , $this->template);
+
+        $prefix = $this->options('prefix');
+        $package = $this->options('bench');
+        $template = GeneratorsServiceProvider::replacePrefixTemplate($prefix, $package, $template);
+
+        $fields = GeneratorsServiceProvider::splitFields(implode(',', $fields), true);
         $modelVars = GeneratorsServiceProvider::getModelVars($this->cache->getModelName());
 
         // Replace template vars

@@ -50,6 +50,7 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
     {
         $name = $this->argument('name');
         $path = $this->getPath();
+        $this->generator->setOptions($this->option());
 
         // common error for field types
         $fields = $this->option('fields');

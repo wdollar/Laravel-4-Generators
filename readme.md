@@ -10,10 +10,12 @@ I am adding cludges just to get the functionality I need for the project I am wo
 
 ### Version 1.3.2
 
-- add --bench="name/package" option to all generator commands, generated code will be added to the given name/packaage in the workbench. A convenient way to scaffold models, controllers and migrations in packages on which you are working in the project workbench directory.
-- add {{relation:line}} to model generator, it will repeat the line containing this tag for every foreign relation of the model, while replacing {{relation:var_name}} where var_name is one of the field names from the [Model Vars Table](#ModelVarsTable) table below. For example:
+- add `--bench="name/package"` option to all generator commands, generated code will be added to the given name/packaage in the workbench. A convenient way to scaffold models, controllers and migrations in packages on which you are working in the project workbench directory.
+- add `--prefix="prefix_"` option to migration and model generator commands, generated code will be add a prefix to the table names of the model. Additionally, with --bench option the prefix will be taken from the package's `config.table_prefix` configuration via `\Config::get('package::config.table_prefix','')`. `--prefix` option has precedence over `--bench`. If non-empty `--prefix` is specified then it will be used instead of the package config setting, for both the model and the migration files.
+- add primary(n,m) field definition. This is the same as index(n,m) and keyindex(n,m) but will create a primary index for the fields. See: [index hint](#IndexHint)
+- add `{{relation:line}}` to model generator, it will repeat the line containing this tag for every foreign relation of the model, while replacing {{relation:var_name}} where var_name is one of the field names from the [Model Vars Table](#ModelVarsTable) table below. For example:
 
-lines in the scaffold/model.txt:
+lines in model.txt:
 
     public static $remote_relations = array(
         '{{relation:snake_model}}'=>['{{relation:snake_model}}_id', 'id'],                {{relation:line}}
@@ -31,13 +33,19 @@ for a model that has no foreign key fields the line is omitted:
     public static $remote_relations = array(
     );
 
-
 ### Version 1.3.1
 
 - rewrote field string parsing to handle nested (),[] and {}. Now field options can have comma separated parameters. 
 - add default(..) hint now adds to the `{{defaults}}` placeholder. Use in the model.txt template to create an associative array of field name to default value. This can be used to provide defaults to the form when creating and also to fill in default values and replace empty strings by nulls for numeric and date/datetime fields. More docs on the subject are in the future.
 - add rule(....) hint. Adds the stuff between parentheses to the field's rules. Some rules are added automatically. Numeric fields get `numeric`, if the field is not nullable then it gets `required`. email will get `email|unique|table:email,id,{id}` added, the `{id}` placeholder should be changed to the id of the model when it is being saved to prevent triggering a unique e-mail validation failure.
-- add index hint: index(indexdef) to create an index and keyindex(indexdef) to create a unique index, in the migration file. indexdef has the format: i,n, where i and n are integers, i is the index id, n is the position of the field in the index. If n is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
+- add <a name="IndexHint"></a>index hint: index(indexdef) to create an index and keyindex(indexdef) to create a unique index, in the migration file. indexdef has the format: i,n, where i and n are integers, i is the index id, n is the position of the field in the index. If n is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
+
+
+    user_name:string[24]:keyindex(1,1), city:string[32]:index(2,2), state:string[32]:index(2,1) 
+
+will create a table with two indices: unique index on user_name and a non-unique index on state,city.
+
+<br>
 - doc forgot to document new field types being handled in version 1.3.0 and added hints to model fields. Hints are used by the generators but stripped out of the migration file.
 hints are added as options after the field type with additional `:` separating them. Any options that do not have a `(` get () added on. This was pre-existing functionality. 
 Additionally, the generators recognize and use standard options: nullable, default to affect the generated code. Some shortcut names are added to reduce typing

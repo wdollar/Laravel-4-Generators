@@ -57,6 +57,7 @@ class FormDumperCommand extends Command
         {
             throw new \InvalidArgumentException('Model does not exist!');
         }
+        $this->generator->setOptions($this->option());
 
         $this->generator->make(
             $model,

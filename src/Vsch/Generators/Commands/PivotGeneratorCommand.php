@@ -24,6 +24,7 @@ class PivotGeneratorCommand extends BaseGeneratorCommand
     public
     function fire()
     {
+        $this->generator->setOptions($this->option());
         $tables = $this->sortDesiredTables();
 
         $this->call(

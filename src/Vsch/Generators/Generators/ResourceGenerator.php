@@ -28,6 +28,30 @@ class ResourceGenerator
     }
 
     /**
+     * @var array     options for generator
+     */
+    protected $options;
+
+    public
+    function setOptions(array $options)
+    {
+        // so that we can access options
+        $this->options = $options;
+    }
+
+    public
+    function options($key = null)
+    {
+        // so that we can access options
+        if ($key !== null)
+        {
+            return $this->options[$key];
+        }
+
+        return $this->options;
+    }
+
+    /**
      * Update app/routes.php
      *
      * @param  string $name
@@ -98,5 +122,19 @@ class ResourceGenerator
                 $this->file->makeDirectory($folderPath);
             }
         }
+    }
+
+    /**
+     * Get compiled template
+     *
+     * @param  string $template
+     * @param  string $name Name of file
+     *
+     * @return string
+     */
+    protected
+    function getTemplate($template, $name)
+    {
+        return '';
     }
 }

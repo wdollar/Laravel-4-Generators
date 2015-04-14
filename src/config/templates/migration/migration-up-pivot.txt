@@ -1,8 +1,7 @@
 	public function up()
 	{
-		Schema::create('{{tableName}}', function(Blueprint $table) {
+	 	{{prefixdef}}Schema::create({{prefix}}'{{tableName}}', function(Blueprint $table) {{use}}{
 			$table->increments('id');
 			{{methods}}
 		});
 	}
-

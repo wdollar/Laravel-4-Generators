@@ -41,7 +41,7 @@ class ViewGeneratorCommand extends BaseGeneratorCommand
     public
     function getPath()
     {
-        return parent::getSrcPath('/views');
+        return parent::getSrcPath('/views', '/' . strtolower($this->argument('name')) . '.blade.php');
     }
 
     /**

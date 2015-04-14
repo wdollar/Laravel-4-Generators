@@ -19,6 +19,7 @@ class BaseGeneratorCommand extends Command
     {
         $path = $this->getPath();
         $template = $this->option('template');
+        $this->generator->setOptions($this->option());
 
         $this->printResult($this->generator->make($path, $template), $path);
     }
@@ -129,6 +130,7 @@ class BaseGeneratorCommand extends Command
     {
         return array(
             array('bench', null, InputOption::VALUE_OPTIONAL, 'workbench package name for which to generate controller', ''),
+            array('prefix', null, InputOption::VALUE_OPTIONAL, 'table prefix for migrations', ''),
         );
     }
 }

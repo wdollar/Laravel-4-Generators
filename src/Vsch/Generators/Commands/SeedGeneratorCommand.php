@@ -51,6 +51,7 @@ class SeedGeneratorCommand extends BaseGeneratorCommand
     public
     function fire()
     {
+        $this->generator->setOptions($this->option());
         $path = $this->getPath($this->argument('name'));
         $className = basename($path, '.php');
         $template = $this->option('template');

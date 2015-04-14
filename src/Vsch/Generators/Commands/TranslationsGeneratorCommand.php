@@ -52,6 +52,7 @@ class TranslationsGeneratorCommand extends BaseGeneratorCommand
     public
     function fire()
     {
+        $this->generator->setOptions($this->option());
         $template = $this->option('template');
 
         $locales = getDirs($this->getPath(), true);

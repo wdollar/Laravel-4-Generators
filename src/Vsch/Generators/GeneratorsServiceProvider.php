@@ -207,6 +207,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             'textarea',
             'index',
             'keyindex',
+            'primary',
             'rule',
             'auto',
         ]) !== false;
@@ -356,6 +357,52 @@ class GeneratorsServiceProvider extends ServiceProvider
         //$table->float('amount')
         list($type, $options) = self::fieldTypeOptions($typeText);
         return str_starts_with($type, ['decimal', 'double', 'float',]) !== false || self::isFieldIntegral($typeText);
+    }
+
+    /**
+     * @param $prefix
+     * @param $package
+     * @param $template
+     *
+     * @return mixed
+     */
+    public static
+    function replacePrefixTemplate($prefix, $package, $template)
+    {
+        if (!$prefix && !$package)
+        {
+            $template = str_replace(['{{prefixdef}}', '{{prefix}}', '{{use}}'], '', $template);
+            return $template;
+        }
+        elseif ($prefix)
+        {
+            $template = str_replace([
+                '{{prefixdef}}',
+                '{{prefix}}',
+                '{{use}}'
+            ], [
+                '$prefix = \'' . $prefix . '\'' . "\n\t\t",
+                '$prefix.',
+                'use ($prefix) ',
+            ], $template);
+            return $template;
+        }
+        elseif ($package)
+        {
+            $package = explode('/', $package, 2)[1];
+
+            $template = str_replace([
+                '{{prefixdef}}',
+                '{{prefix}}',
+                '{{use}}'
+            ], [
+                '$prefix = \Config::get(\'' . $package . '::config.table_prefix\', \'\');' . "\n\t\t",
+                '$prefix.',
+                'use ($prefix) ',
+            ], $template);
+            return $template;
+        }
+        return $template;
     }
 
     public

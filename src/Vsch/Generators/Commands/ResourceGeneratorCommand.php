@@ -68,6 +68,7 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
     public
     function fire()
     {
+        $this->generator->setOptions($this->option());
         // Scaffolding should always begin with the singular
         // form of the now.
         $this->model = Pluralizer::singular($this->argument('name'));

@@ -7,7 +7,8 @@ use Illuminate\Support\Pluralizer;
 use Mustache_Engine as Mustache;
 use Vsch\Generators\GeneratorsServiceProvider;
 
-class FormDumperGenerator {
+class FormDumperGenerator
+{
 
     /**
      * DB table info
@@ -35,12 +36,37 @@ class FormDumperGenerator {
     protected static $templatePath;
 
     /**
+     * @var array     options for generator
+     */
+    protected $options;
+
+    public
+    function setOptions(array $options)
+    {
+        // so that we can access options
+        $this->options = $options;
+    }
+
+    public
+    function options($key = null)
+    {
+        // so that we can access options
+        if ($key !== null)
+        {
+            return $this->options[$key];
+        }
+
+        return $this->options;
+    }
+
+    /**
      * Dump a new form
      *
      * @param File     $file
      * @param Mustache $mustache
      */
-    public function __construct(File $file, Mustache $mustache)
+    public
+    function __construct(File $file, Mustache $mustache)
     {
         $this->file = $file;
         $this->mustache = $mustache;
@@ -51,12 +77,15 @@ class FormDumperGenerator {
 
     /**
      * Create the form
+     *
      * @param  string $model
      * @param  string $method
      * @param  string $element
+     *
      * @return void
      */
-    public function make($model, $method, $element)
+    public
+    function make($model, $method, $element)
     {
         $this->tableInfo = $this->getTableInfo($model);
 
@@ -75,9 +104,11 @@ class FormDumperGenerator {
      * Print the output to the console
      *
      * @param  string $output
+     *
      * @return void
      */
-    public function printOutput($output)
+    public
+    function printOutput($output)
     {
         print_r($output);
     }
@@ -87,9 +118,11 @@ class FormDumperGenerator {
      * table, minus non-essentials.
      *
      * @param string $table
+     *
      * @return array
      */
-    protected function getModelAttributes($table)
+    protected
+    function getModelAttributes($table)
     {
         $names = array_keys($table);
 
@@ -103,26 +136,31 @@ class FormDumperGenerator {
      * @param  string $method  [description]
      * @param  string $model   [description]
      * @param  string $element [description]
+     *
      * @return string
      */
-    protected function render($type = 'list', $method, $model, $element)
+    protected
+    function render($type = 'list', $method, $model, $element)
     {
         $template = $this->getTemplate($type);
 
         return $this->mustache->render($template, array(
             'formElements' => $this->getFormElements($type, $element),
-            'element'      => $element,
-            'formOpen'     => $this->getFormOpen($method, $model)
+            'element' => $element,
+            'formOpen' => $this->getFormOpen($method, $model)
         ));
     }
 
     /**
      * Generate form open string
+     *
      * @param  string $method
      * @param  string $model
+     *
      * @return string
      */
-    protected function getFormOpen($method, $model)
+    protected
+    function getFormOpen($method, $model)
     {
         $models = Pluralizer::plural($model);
 
@@ -136,10 +174,13 @@ class FormDumperGenerator {
 
     /**
      * Fetch Doctrine table info
+     *
      * @param  string $model
+     *
      * @return object
      */
-    public function getTableInfo($model)
+    public
+    function getTableInfo($model)
     {
         $table = Pluralizer::plural($model);
 
@@ -150,17 +191,19 @@ class FormDumperGenerator {
      * Calculate correct Formbuilder method
      *
      * @param  string $name
+     *
      * @return string
      */
-    public function getInputType($name)
+    public
+    function getInputType($name)
     {
         $dataType = $this->tableInfo[$name]->getType()->getName();
 
         $lookup = array(
-            'string'  => 'text',
-            'float'   => 'text',
-            'date'    => 'text',
-            'text'    => 'textarea',
+            'string' => 'text',
+            'float' => 'text',
+            'date' => 'text',
+            'text' => 'textarea',
             'boolean' => 'checkbox'
         );
 
@@ -174,15 +217,17 @@ class FormDumperGenerator {
      *
      * @param  string $type
      * @param  string $element
+     *
      * @return string
      */
-    protected function getFormElements($type = 'list', $element)
+    protected
+    function getFormElements($type = 'list', $element)
     {
         $form = array();
         $template = $this->getTemplate("{$type}-block");
         $attributes = $this->getModelAttributes($this->tableInfo);
 
-        foreach($attributes as $name)
+        foreach ($attributes as $name)
         {
             $form[] = $this->renderElement($template, $element, $name);
         }
@@ -196,15 +241,17 @@ class FormDumperGenerator {
      * @param  string $block
      * @param  string $element
      * @param  string $name
+     *
      * @return string
      */
-    protected function renderElement($block, $element, $name)
+    protected
+    function renderElement($block, $element, $name)
     {
         return $this->mustache->render($block, array(
-            'element'   => $element,
-            'name'      => $name,
-            'type'      => $this->getInputType($name),
-            'label'     => str_replace('_', ' ', ucwords($name)) . ':'
+            'element' => $element,
+            'name' => $name,
+            'type' => $this->getInputType($name),
+            'label' => str_replace('_', ' ', ucwords($name)) . ':'
         ));
     }
 
@@ -212,11 +259,12 @@ class FormDumperGenerator {
      * Get a form template by name
      *
      * @param  string $type
+     *
      * @return string
      */
-    protected function getTemplate($type = 'list')
+    protected
+    function getTemplate($type = 'list')
     {
         return $this->file->get(GeneratorsServiceProvider::getTemplatePath(static::$templatePath, "{$type}.txt"));
     }
-
 }

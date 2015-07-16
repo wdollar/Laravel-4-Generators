@@ -10,15 +10,18 @@ I am adding cludges just to get the functionality I need for the project I am wo
 
 ### Version 1.3.2
 
-- add `--bench="name/package"` option to all generator commands, generated code will be added to the given name/packaage in the workbench. A convenient way to scaffold models, controllers and migrations in packages on which you are working in the project workbench directory.
-- add `--prefix="prefix_"` option to migration and model generator commands, generated code will be add a prefix to the table names of the model. Additionally, with --bench option the prefix will be taken from the package's `config.table_prefix` configuration via `\Config::get('package::config.table_prefix','')`. `--prefix` option has precedence over `--bench`. If non-empty `--prefix` is specified then it will be used instead of the package config setting, for both the model and the migration files.
-- add primary(n,m) field definition. This is the same as index(n,m) and keyindex(n,m) but will create a primary index for the fields. See: [index hint](#IndexHint)
-- add `{{relation:line}}` to model generator, it will repeat the line containing this tag for every foreign relation of the model, while replacing {{relation:var_name}} where var_name is one of the field names from the [Model Vars Table](#ModelVarsTable) table below. For example:
+- add `--bench="name/package"` option to all generator commands, generated code will be added to the given name/package in the workbench. A convenient way to scaffold models, controllers and migrations in packages on which you are working in the project workbench directory.
+
+- add `--prefix="prefix_"` option to migration and model generator commands, generated code will add a prefix to the table names of the model. Additionally, with --bench option the prefix will be taken from the package's `config.table_prefix` configuration via `\Config::get('package::config.table_prefix','')`. `--prefix` option has precedence over `--bench`. If non-empty `--prefix` is specified then it will be used instead of the package config setting, for both the model and the migration files.
+
+- add `primary(n,m)` field definition. This is the same as `index(n,m)` and `keyindex(n,m)` but will create a primary index for the fields. See: [index hint](#IndexHint)
+
+- add `{{relation:line}}` to model generator, it will repeat the line containing this tag for every foreign relation of the model, while replacing `{{relation:var_name}}` where `var_name` is one of the field names from the [Model Vars Table](#ModelVarsTable) table below. For example:
 
 lines in model.txt:
 
     public static $remote_relations = array(
-        '{{relation:snake_model}}'=>['{{relation:snake_model}}_id', 'id'],                {{relation:line}}
+        {{relation:line}}'{{relation:snake_model}}'=>['{{relation:snake_model}}_id', 'id'],
     );
 
 for a model that has two foreign key fields: `sender_id` and `conversation_id` will have the following resulting code: 
@@ -36,7 +39,9 @@ for a model that has no foreign key fields the line is omitted:
 ### Version 1.3.1
 
 - rewrote field string parsing to handle nested (),[] and {}. Now field options can have comma separated parameters. 
+
 - add default(..) hint now adds to the `{{defaults}}` placeholder. Use in the model.txt template to create an associative array of field name to default value. This can be used to provide defaults to the form when creating and also to fill in default values and replace empty strings by nulls for numeric and date/datetime fields. More docs on the subject are in the future.
+
 - add rule(....) hint. Adds the stuff between parentheses to the field's rules. Some rules are added automatically. Numeric fields get `numeric`, if the field is not nullable then it gets `required`. email will get `email|unique|table:email,id,{id}` added, the `{id}` placeholder should be changed to the id of the model when it is being saved to prevent triggering a unique e-mail validation failure.
 - add <a name="IndexHint"></a>index hint: index(indexdef) to create an index and keyindex(indexdef) to create a unique index, in the migration file. indexdef has the format: i,n, where i and n are integers, i is the index id, n is the position of the field in the index. If n is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
 
@@ -45,7 +50,6 @@ for a model that has no foreign key fields the line is omitted:
 
 will create a table with two indices: unique index on user_name and a non-unique index on state,city.
 
-<br>
 - doc forgot to document new field types being handled in version 1.3.0 and added hints to model fields. Hints are used by the generators but stripped out of the migration file.
 hints are added as options after the field type with additional `:` separating them. Any options that do not have a `(` get () added on. This was pre-existing functionality. 
 Additionally, the generators recognize and use standard options: nullable, default to affect the generated code. Some shortcut names are added to reduce typing
@@ -61,14 +65,14 @@ Additionally, the generators recognize and use standard options: nullable, defau
 | bool		| boolean |
 | datetime	| dateTime |
 | decimal	| decimal, except specify the parameter as n.m instead of n,m, ie. decimal(6,2) should be given as decimal\[6.2\] |
-<br>
+
 
 | type(s) | effect in code |
 | :---- |:------ |
 | date, dateTime    | wraps the field in a div.form-group.date, adds a span.input-group-addon with a calendar glyphicon. If you include bootstrap-datepicker then this gives a pop-up calendar for the field  |
 | all integer types | generates a number field in views, int and bigint are treated as foreign keys if they have an \_id suffix in the field name | 
 | boolean | generates a checkbox field in views, also used for :bool and :nobool expansion placeholders | 
-<br>
+
 
 | hint | effect |
 | :---- |:------ |
@@ -87,22 +91,33 @@ Usage:  *`field_name`*`:int:hidden:guarded`, or *`field_name`*`:string[256]:text
 #### These are specific to my use and will not work without adding some support code
 
 - change view generator -- `{{formElements:op}}` to generate elements as readonly or disabled (for checkboxes) based on a variable $op wrapped in isViewOp($op) function. That way the code that determines when the fields should be readonly can be isolated from the generator.
+
 - change view generator for admin.txt generates three types of fields for foreign keys: select and text. The select is populated from a variable based on the camelCaseModels foreign name. The text field and a hidden field are intended to be used together. The hidden field hold the id of the foreign model and the text field a human readable form. I use the typeahead jQuery plugin, with some server code, to resolve the human readable field to the id exected by the database. 
 
 #### These are fairly generic
 
 - fix trailing spaces caused field types not to be properly recognized
+
 - fix fields for migration were taken from options passed to resource generator and not the fixed up ones by the resource. ie. int => integer, bool => boolean
+
 - add index view generator for resource generates a foreign model reference name for the foreign id field.
+
 - add `{{field:line}}` to controller generator, expands line for every field in the model. Replacing the placeholder with the field name. The placeholder can appear multiple times on the same line, all instances will be replaced by the field name. Intended use is to generate code needed on a per field basis. 
+
 - add `{{field:line:bool}}` to controller and model generator, expands line only for boolean fields  
+
 - add `{{field:line:nobool}}` to controller and model generator, expands line only for nonboolean fields  
+
 - add `{{relations:line}}` to controller and model generator, expands line only for auto-detected foreign key fields (ones ending in `_id`). The `{{relations:line}}` placeholder is removed, instead `{{relations:modelVar}}` is replaced by the foreign model name (the part before `_id`), where modelVar is one of the model case names in the table below. For example {{relations:snake_model}} will be raplaced by the snake_case foreign model name.  
+
 - add translations generator to scaffolding and resource generator, which will create files in each subdirectory of app/lang with the name {{model}}.php (all lowercase) that will contain an array of `'{{field}}' => '{{field}}',` scaffold for localizing field names.
+
 - fixed resource generator model name case changing to handle camelCase, instead of lowercasing the model and then capitalizing it. now blockedEmail will be BlockedEmails instead of Blockedemails.
+
 - resource generator now will add a commented out version of the resource route definition if a resource definition for that resource already exists but does not match the new one.
+
 - add all variations of case and separators to view, model, controller generators which handle camelCaseModel names consistently. Got tired of adding new ones as the need arose.
- -- this applies to {{relations:modelVar}} where modelVar is one of the fields below. This is replaced by a quoted, comma separated list of all the foreign relationship models for the current model.
+This applies to `{{relations:modelVar}}` where modelVar is one of the fields below. This is replaced by a quoted, comma separated list of all the foreign relationship models for the current model.
 
 #### <a name="ModelVarsTable"></a>Model Vars Table
 

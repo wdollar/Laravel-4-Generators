@@ -1,6 +1,6 @@
 {
     "name": "vsch/generators",
-    "description": "Laravel Scaffold Generators w/ Bootstrap 3",
+    "description": "Laravel Scaffold Generators",
     "keywords": ["laravel", "generators", "artisan", "bootstrap", "scaffold"],
     "homepage": "https://github.com/vsch/generators",
     "license": "MIT",
@@ -26,21 +26,19 @@
         "mustache/mustache": "2.4.*"
     },
     "require-dev": {
-        "mockery/mockery": "0.8.*",
+        "mockery/mockery": "0.9.*",
         "illuminate/support": "5.0.x|5.1.x",
         "illuminate/console": "5.0.x|5.1.x",
         "illuminate/filesystem": "5.0.x|5.1.x",
         "doctrine/dbal": "~2.3",
-        "phpunit/phpunit": "~4.0",
+        "phpunit/phpunit": "~4",
         "phpspec/phpspec": "~2.1"
     },
     "autoload": {
         "classmap": [
-            "src/Generators",
-            "src/Commands"
         ],
         "psr-4": {
-            "Vsch\\Generators": "src/"
+            "Vsch\\Generators\\": "src/"
         }
     },
     "minimum-stability": "stable"

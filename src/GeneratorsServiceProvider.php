@@ -7,7 +7,7 @@ use Vsch\Generators\Cache;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Pluralizer;
 
-require_once('scopedexplode.php');
+require_once(__DIR__ . '/../Support/scopedexplode.php');
 
 class GeneratorsServiceProvider extends ServiceProvider
 {
@@ -37,7 +37,7 @@ class GeneratorsServiceProvider extends ServiceProvider
     function getTemplatePath($files = null, $suffix = '')
     {
         $packagePath = Config::get('generators::generators.templates', '');
-        $hardPath = __DIR__ . '/../../config/templates/';
+        $hardPath = __DIR__ . '/../config/templates/';
         $isDir = $suffix === '/';
 
         if (($files === null || $files === '') && ($suffix === null || $suffix === ''))

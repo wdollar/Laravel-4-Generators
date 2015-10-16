@@ -23,16 +23,9 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
     protected $description = 'Generate a new migration.';
 
     /**
-     * Model generator instance.
-     *
-     * @var \Vsch\Generators\Generators\MigrationGenerator
-     */
-    protected $generator;
-
-    /**
      * Create a new command instance.
      *
-     * @return void
+     * @param MigrationGenerator $generator
      */
     public function __construct(MigrationGenerator $generator)
     {
@@ -74,7 +67,7 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
      */
     protected function getPath()
     {
-        return parent::getSrcPath('/database/migrations', '/' . ucwords($this->argument('name')) . '.php', '/migrations');
+        return parent::getSrcPath(self::PATH_MIGRATIONS, ucwords($this->argument('name')) . '.php');
     }
 
     /**

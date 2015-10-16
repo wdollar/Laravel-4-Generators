@@ -25,16 +25,9 @@ class TranslationsGeneratorCommand extends BaseGeneratorCommand
     protected $description = 'Generate translation files for a model.';
 
     /**
-     * Model generator instance.
-     *
-     * @var \Vsch\Generators\Generators\TranslationsGenerator
-     */
-    protected $generator;
-
-    /**
      * Create a new command instance.
      *
-     * @return void
+     * @param TranslationsGenerator $generator
      */
     public
     function __construct(TranslationsGenerator $generator)
@@ -95,7 +88,7 @@ class TranslationsGeneratorCommand extends BaseGeneratorCommand
     protected
     function getPath($locale = null)
     {
-        return parent::getSrcPath('/lang', ($locale ? '/' . $locale . strtolower(Pluralizer::plural($this->argument('name'))) . '.php' : ''));
+        return parent::getSrcPath(self::PATH_LANG, ($locale ? $locale . strtolower(Pluralizer::plural($this->argument('name'))) . '.php' : ''));
     }
 
     /**

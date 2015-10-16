@@ -405,3 +405,23 @@ if (!function_exists('hasIt'))
     }
 }
 
+if (!function_exists('end_with')) {
+    function end_with($haystack, $ending)
+    {
+        if (!ends_with($haystack, $ending)) {
+            return $haystack . $ending;
+        }
+        return $haystack;
+    }
+}
+
+if (!function_exists('start_with')) {
+    function start_with($haystack, $starting)
+    {
+        if (!starts_with($haystack, $starting)) {
+            return $starting . $haystack;
+        }
+        return $haystack;
+    }
+}
+

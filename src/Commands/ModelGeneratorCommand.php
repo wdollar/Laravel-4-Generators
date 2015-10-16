@@ -24,16 +24,9 @@ class ModelGeneratorCommand extends BaseGeneratorCommand
     protected $description = 'Generate a new model.';
 
     /**
-     * Model generator instance.
-     *
-     * @var \Vsch\Generators\Generators\ModelGenerator
-     */
-    protected $generator;
-
-    /**
      * Create a new command instance.
      *
-     * @return void
+     * @param ModelGenerator $generator
      */
     public
     function __construct(ModelGenerator $generator)
@@ -51,7 +44,7 @@ class ModelGeneratorCommand extends BaseGeneratorCommand
     protected
     function getPath()
     {
-        return parent::getCodePath('/models', '/' . ucwords($this->argument('name')) . '.php', '/Models');
+        return parent::getSrcPath(self::PATH_MODELS, ucwords($this->argument('name')) . '.php');
     }
 
     /**

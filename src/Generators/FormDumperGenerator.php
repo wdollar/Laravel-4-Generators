@@ -17,14 +17,14 @@ class FormDumperGenerator
 
     /**
      * File instance
-     * @var Filesystem
+     * @var File
      */
     protected $file;
 
     /**
      * Mustache instance
      *
-     * @var Mustache_Engine
+     * @var Mustache
      */
     protected $mustache;
 

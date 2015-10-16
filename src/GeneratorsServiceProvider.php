@@ -1,16 +1,26 @@
 <?php namespace Vsch\Generators;
 
-use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Pluralizer;
+use Illuminate\Support\ServiceProvider;
 use Vsch\Generators\Commands;
 use Vsch\Generators\Generators;
-use Vsch\Generators\Cache;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Pluralizer;
 
-require_once(__DIR__ . '/../Support/scopedexplode.php');
+require_once(__DIR__ . '/scopedexplode.php');
 
 class GeneratorsServiceProvider extends ServiceProvider
 {
+    const PACKAGE = 'generators';
+
+    // Laravel 5
+    const LARAVEL_VERSION = '5';
+    const CONTROLLER_PREFIX = '\\';
+    const PUBLIC_PREFIX = '/vendor/';
+
+    // Laravel 4
+    //const LARAVEL_VERSION = '4';
+    //const CONTROLLER_PREFIX = '';
+    //const PUBLIC_PREFIX = '/packages/';
+
     const GENERATOR_ROUTE_TAG = '// Generators:insert new routes here';
 
     /**
@@ -19,6 +29,164 @@ class GeneratorsServiceProvider extends ServiceProvider
      * @var bool
      */
     protected $defer = false;
+
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    public
+    function register()
+    {
+        // Register the config publish path
+        $configPath = __DIR__ . '/../config/' . self::PACKAGE . '.php';
+        $this->mergeConfigFrom($configPath, self::PACKAGE);
+        $this->publishes([$configPath => config_path(self::PACKAGE . '.php')], 'config');
+
+        $this->app[$command = 'command.generate.controller'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\ControllerGenerator($app['files'], $cache);
+
+            return new Commands\ControllerGeneratorCommand($generator);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.form'] = $this->app->share(function ($app) {
+            $gen = new Generators\FormDumperGenerator($app['files'], new \Mustache_Engine);
+
+            return new Commands\FormDumperCommand($gen);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.migration'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\MigrationGenerator($app['files'], $cache);
+
+            return new Commands\MigrationGeneratorCommand($generator);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.model'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\ModelGenerator($app['files'], $cache);
+
+            return new Commands\ModelGeneratorCommand($generator);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.pivot'] = $this->app->share(function ($app) {
+            return new Commands\PivotGeneratorCommand;
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.resource'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\ResourceGenerator($app['files'], $cache);
+
+            return new Commands\ResourceGeneratorCommand($generator, $cache);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.scaffold'] = $this->app->share(function ($app) {
+            $generator = new Generators\ResourceGenerator($app['files']);
+            $cache = new Cache($app['files']);
+
+            return new Commands\ScaffoldGeneratorCommand($generator, $cache);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.seed'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\SeedGenerator($app['files'], $cache);
+
+            return new Commands\SeedGeneratorCommand($generator);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.test'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\TestGenerator($app['files'], $cache);
+
+            return new Commands\TestGeneratorCommand($generator);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.translations'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\TranslationsGenerator($app['files'], $cache);
+
+            return new Commands\TranslationsGeneratorCommand($generator);
+        });
+        $this->commands($command);
+
+        $this->app[$command = 'command.generate.view'] = $this->app->share(function ($app) {
+            $cache = new Cache($app['files']);
+            $generator = new Generators\ViewGenerator($app['files'], $cache);
+
+            return new Commands\ViewGeneratorCommand($generator);
+        });
+        $this->commands($command);
+    }
+
+    public
+    function boot()
+    {
+    }
+
+    /**
+     * @param $srcType
+     * @return mixed
+     */
+    public static
+    function getSrcTypePath($srcType)
+    {
+        $config = \Config::get(GeneratorsServiceProvider::PACKAGE, null);
+
+        if (!$config || !array_key_exists('dir_map', $config)) {
+            assert(false, "dir_map entry is missing from generator.php configuration file.");
+        }
+
+        $dir_map = $config['dir_map'];
+
+        if (!array_key_exists($srcType, $dir_map)) {
+            assert(false, "dir_map is missing entry for '$srcType'");
+        }
+
+        if (!array_key_exists('app', $dir_map[$srcType]) || !array_key_exists('bench', $dir_map[$srcType])) {
+            assert(false, "dir_map['$srcType'] is missing entries for 'app' and 'bench'");
+            return $dir_map;
+        }
+        return $dir_map;
+    }
+
+    private static
+    function vendorPackage($package)
+    {
+        $parts = explode('/', $package, 2);
+        return ucfirst($parts[0]) . '/' . str_replace(' ', '', ucwords(str_replace('-', ' ', $parts[1]))) . '/';
+    }
+
+    public static
+    function getSrcPath($srcType, $package = null)
+    {
+        $dir_map = GeneratorsServiceProvider::getSrcTypePath($srcType);
+
+        if ($package) {
+            $benchDir = $dir_map[$srcType]['bench'];
+            $srcPath = $benchDir;
+            if ($benchDir !== '') {
+                $srcPath = str_replace('{{vendor/package}}', self::vendorPackage($package), $srcPath);
+                $srcPath = str_replace('{{Vendor/Package}}', $package, $srcPath);
+                $srcPath = '/workbench/' . $package . '/' . $srcPath;
+            }
+        } else {
+            $appDir = $dir_map[$srcType]['app'];
+            $srcPath = $appDir;
+        }
+
+        $srcPath = end_with(base_path(), '/') . $srcPath;
+        return $srcPath;
+    }
 
     /**
      * @param mixed  $files partial files path for the template.
@@ -36,12 +204,12 @@ class GeneratorsServiceProvider extends ServiceProvider
     public static
     function getTemplatePath($files = null, $suffix = '')
     {
-        $packagePath = Config::get('generators::generators.templates', '');
+        $packagePath = self::LARAVEL_VERSION === '5' ? \Config::get('generators.templates') : \Config::get('generators::generators.templates', '');
+
         $hardPath = __DIR__ . '/../config/templates/';
         $isDir = $suffix === '/';
 
-        if (($files === null || $files === '') && ($suffix === null || $suffix === ''))
-        {
+        if (($files === null || $files === '') && ($suffix === null || $suffix === '')) {
             $packagePath = str_finish($packagePath, "/");
 
             return $packagePath ? $packagePath[0] : $hardPath;
@@ -52,32 +220,24 @@ class GeneratorsServiceProvider extends ServiceProvider
         if ($packagePath) $searchPath = array_merge($searchPath, $packagePath);
         $searchPath[] = $hardPath;
 
-        foreach ($searchPath as $path)
-        {
+        foreach ($searchPath as $path) {
             if (!is_array($files)) $files = [$files];
-            if ($isDir)
-            {
-                foreach ($files as $file)
-                {
+            if ($isDir) {
+                foreach ($files as $file) {
                     if ($file === '/') $file = '';
                     $trypath = str_finish($path, "/") . ($file !== '' ? str_finish($file, "/") : '');
                     if (!($suffix === null || $suffix === '')) $trypath .= str_finish($suffix, "/");
-                    if (is_dir($trypath))
-                    {
+                    if (is_dir($trypath)) {
                         $path = $trypath;
                         break 2;
                     }
                 }
-            }
-            else
-            {
-                foreach ($files as $file)
-                {
+            } else {
+                foreach ($files as $file) {
                     if ($file === '/') $file = '';
                     $trypath = str_finish($path, "/") . $file;
                     if (!($suffix === null || $suffix === '')) $trypath .= $suffix;
-                    if (file_exists($trypath))
-                    {
+                    if (file_exists($trypath)) {
                         $path = $trypath;
                         break 2;
                     }
@@ -163,8 +323,7 @@ class GeneratorsServiceProvider extends ServiceProvider
     function replaceModelVars($text, $modelVars, $varPrefix = '{{', $varSuffix = '}}')
     {
         $vars = array_keys($modelVars);
-        array_walk($vars, function (&$var) use ($varPrefix, $varSuffix)
-        {
+        array_walk($vars, function (&$var) use ($varPrefix, $varSuffix) {
             $var = $varPrefix . $var . $varSuffix;
         });
 
@@ -175,8 +334,7 @@ class GeneratorsServiceProvider extends ServiceProvider
     public static
     function replaceTemplateLines($template, $fieldKey, \Closure $closure)
     {
-        while (($pos = strpos($template, $fieldKey)) !== false)
-        {
+        while (($pos = strpos($template, $fieldKey)) !== false) {
             // grab the line that contains
             $startPos = strrpos($template, "\n", -(strlen($template) - $pos));
             if ($startPos === false) $startPos = -1;
@@ -219,16 +377,13 @@ class GeneratorsServiceProvider extends ServiceProvider
         if (is_array($fieldsText)) $fieldsText = implode(',', $fieldsText);
 
         $openScopes = null;
-        if ($wantObjArray !== false)
-        {
+        if ($wantObjArray !== false) {
             $fields = scopedExplode([',', ':'], [
                 '(' => ')',
                 '[' => ']',
                 '{' => '}',
             ], $fieldsText, null, SCOPED_EXPLODE_TRIM | ($wantObjArray !== true ? $wantObjArray : SCOPED_EXPLODE_WANT_OBJ_ASSOC), $openScopes);
-        }
-        else
-        {
+        } else {
             $fields = scopedExplode(',', [
                 '(' => ')',
                 '[' => ']',
@@ -271,8 +426,7 @@ class GeneratorsServiceProvider extends ServiceProvider
     function filterFieldHavingOption($fields, $optionName)
     {
         $keep = [];
-        foreach ($fields as $name => $typeText)
-        {
+        foreach ($fields as $name => $typeText) {
             list($type, $options) = self::fieldTypeOptions($typeText);
             $exp = "/\b${optionName}\b/";
             if (preg_match($exp, $options)) continue;
@@ -319,16 +473,13 @@ class GeneratorsServiceProvider extends ServiceProvider
         $ruleType = '';
         list($type, $options) = self::fieldTypeOptions($typeText);
 
-        if (!str_contains($options, ['hidden', 'guarded']))
-        {
+        if (!str_contains($options, ['hidden', 'guarded'])) {
             if (GeneratorsServiceProvider::isFieldBoolean($typeText)) $ruleType = 'boolean';
             elseif (GeneratorsServiceProvider::isFieldNumeric($typeText)) $ruleType = 'numeric';
-            else
-            {
+            else {
                 $ruleTypes = ['date' => 'date'];
 
-                if (array_key_exists($type, $ruleTypes))
-                {
+                if (array_key_exists($type, $ruleTypes)) {
                     $ruleType = $ruleTypes[$type];
                 }
             }
@@ -369,13 +520,10 @@ class GeneratorsServiceProvider extends ServiceProvider
     public static
     function replacePrefixTemplate($prefix, $package, $template)
     {
-        if (!$prefix && !$package)
-        {
+        if (!$prefix && !$package) {
             $template = str_replace(['{{prefixdef}}', '{{prefix}}', '{{use}}'], '', $template);
             return $template;
-        }
-        elseif ($prefix)
-        {
+        } elseif ($prefix) {
             $template = str_replace([
                 '{{prefixdef}}',
                 '{{prefix}}',
@@ -386,9 +534,7 @@ class GeneratorsServiceProvider extends ServiceProvider
                 'use ($prefix) ',
             ], $template);
             return $template;
-        }
-        elseif ($package)
-        {
+        } elseif ($package) {
             $package = explode('/', $package, 2)[1];
 
             $template = str_replace([
@@ -403,217 +549,5 @@ class GeneratorsServiceProvider extends ServiceProvider
             return $template;
         }
         return $template;
-    }
-
-    public
-    function boot()
-    {
-        $this->package('vsch/generators');
-    }
-
-    /**
-     * Register the service provider.
-     *
-     * @return void
-     */
-    public
-    function register()
-    {
-        $this->registerModelGenerator();
-        $this->registerControllerGenerator();
-        $this->registerTestGenerator();
-        $this->registerResourceGenerator();
-        $this->registerScaffoldGenerator();
-        $this->registerViewGenerator();
-        $this->registerTranslationsGenerator();
-        $this->registerMigrationGenerator();
-        $this->registerPivotGenerator();
-        $this->registerSeedGenerator();
-        $this->registerFormDumper();
-
-        $this->commands('generate.model', 'generate.translations', 'generate.controller', 'generate.test', 'generate.scaffold', 'generate.resource', 'generate.view', 'generate.migration', 'generate.seed', 'generate.form', 'generate.pivot');
-    }
-
-    /**
-     * Register generate:model
-     *
-     * @return Commands\ModelGeneratorCommand
-     */
-    protected
-    function registerModelGenerator()
-    {
-        $this->app['generate.model'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\ModelGenerator($app['files'], $cache);
-
-            return new Commands\ModelGeneratorCommand($generator);
-        });
-    }
-
-    /**
-     * Register generate:translations
-     *
-     * @return Commands\ModelGeneratorCommand
-     */
-    protected
-    function registerTranslationsGenerator()
-    {
-        $this->app['generate.translations'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\TranslationsGenerator($app['files'], $cache);
-
-            return new Commands\TranslationsGeneratorCommand($generator);
-        });
-    }
-
-    /**
-     * Register generate:controller
-     *
-     * @return Commands\ControllerGeneratorCommand
-     */
-    protected
-    function registerControllerGenerator()
-    {
-        $this->app['generate.controller'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\ControllerGenerator($app['files'], $cache);
-
-            return new Commands\ControllerGeneratorCommand($generator);
-        });
-    }
-
-    /**
-     * Register generate:test
-     *
-     * @return Commands\TestGeneratorCommand
-     */
-    protected
-    function registerTestGenerator()
-    {
-        $this->app['generate.test'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\TestGenerator($app['files'], $cache);
-
-            return new Commands\TestGeneratorCommand($generator);
-        });
-    }
-
-    /**
-     * Register generate:view
-     *
-     * @return Commands\ViewGeneratorCommand
-     */
-    protected
-    function registerViewGenerator()
-    {
-        $this->app['generate.view'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\ViewGenerator($app['files'], $cache);
-
-            return new Commands\ViewGeneratorCommand($generator);
-        });
-    }
-
-    /**
-     * Register generate:scaffold
-     *
-     * @return Commands\ScaffoldGeneratorCommand
-     */
-    protected
-    function registerScaffoldGenerator()
-    {
-        $this->app['generate.scaffold'] = $this->app->share(function ($app)
-        {
-            $generator = new Generators\ResourceGenerator($app['files']);
-            $cache = new Cache($app['files']);
-
-            return new Commands\ScaffoldGeneratorCommand($generator, $cache);
-        });
-    }
-
-    /**
-     * Register generate:scaffold
-     *
-     * @return Commands\ScaffoldGeneratorCommand
-     */
-    protected
-    function registerResourceGenerator()
-    {
-        $this->app['generate.resource'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\ResourceGenerator($app['files'], $cache);
-
-            return new Commands\ResourceGeneratorCommand($generator, $cache);
-        });
-    }
-
-    /**
-     * Register generate:migration
-     *
-     * @return Commands\MigrationGeneratorCommand
-     */
-    protected
-    function registerMigrationGenerator()
-    {
-        $this->app['generate.migration'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\MigrationGenerator($app['files'], $cache);
-
-            return new Commands\MigrationGeneratorCommand($generator);
-        });
-    }
-
-    /**
-     * Register generate:pivot
-     *
-     * @return Commands\PivotGeneratorCommand
-     */
-    protected
-    function registerPivotGenerator()
-    {
-        $this->app['generate.pivot'] = $this->app->share(function ($app)
-        {
-            return new Commands\PivotGeneratorCommand;
-        });
-    }
-
-    /**
-     * Register generate:seed
-     *
-     * @return Commands\MigrationGeneratorCommand
-     */
-    protected
-    function registerSeedGenerator()
-    {
-        $this->app['generate.seed'] = $this->app->share(function ($app)
-        {
-            $cache = new Cache($app['files']);
-            $generator = new Generators\SeedGenerator($app['files'], $cache);
-
-            return new Commands\SeedGeneratorCommand($generator);
-        });
-    }
-
-    /**
-     * Register generate:migration
-     *
-     * @return Commands\MigrationGeneratorCommand
-     */
-    protected
-    function registerFormDumper()
-    {
-        $this->app['generate.form'] = $this->app->share(function ($app)
-        {
-            $gen = new Generators\FormDumperGenerator($app['files'], new \Mustache_Engine);
-
-            return new Commands\FormDumperCommand($gen);
-        });
     }
 }

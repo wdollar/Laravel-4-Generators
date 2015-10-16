@@ -24,16 +24,9 @@ class SeedGeneratorCommand extends BaseGeneratorCommand
     protected $description = 'Generate a seed file.';
 
     /**
-     * Model generator instance.
-     *
-     * @var \Vsch\Generators\Generators\SeedGenerator
-     */
-    protected $generator;
-
-    /**
      * Create a new command instance.
      *
-     * @return void
+     * @param SeedGenerator $generator
      */
     public
     function __construct(SeedGenerator $generator)
@@ -77,7 +70,7 @@ class SeedGeneratorCommand extends BaseGeneratorCommand
     protected
     function getPath($name = null)
     {
-        return parent::getSrcPath('/database/seeds', ($name ? '/' . ucwords($name) . 'TableSeeder.php' : ''), '/seeds');
+        return parent::getSrcPath(self::PATH_SEEDS, ($name ? ucwords($name) . 'TableSeeder.php' : ''));
     }
 
     /**

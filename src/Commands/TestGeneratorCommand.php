@@ -23,16 +23,9 @@ class TestGeneratorCommand extends BaseGeneratorCommand {
     protected $description = 'Generate a PHPUnit test class.';
 
     /**
-     * Test generator instance.
-     *
-     * @var \Vsch\Generators\Generators\TestGenerator
-     */
-    protected $generator;
-
-    /**
      * Create a new command instance.
      *
-     * @return void
+     * @param TestGenerator $generator
      */
     public function __construct(TestGenerator $generator)
     {
@@ -48,7 +41,7 @@ class TestGeneratorCommand extends BaseGeneratorCommand {
      */
     protected function getPath()
     {
-       return parent::getSrcPath('/tests', '/' . studly_case($this->argument('name')) . '.php', '/../tests');
+       return parent::getSrcPath(self::PATH_TESTS, studly_case($this->argument('name')) . '.php');
     }
 
     /**

@@ -1,7 +1,5 @@
 <?php namespace Vsch\Generators\Commands;
 
-use Illuminate\Console\Command;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
 class PivotGeneratorCommand extends BaseGeneratorCommand
@@ -21,6 +19,12 @@ class PivotGeneratorCommand extends BaseGeneratorCommand
      */
     protected $description = 'Generate a pivot table';
 
+    protected function getPath()
+    {
+        // not used
+        return null;
+    }
+
     public
     function fire()
     {
@@ -29,7 +33,7 @@ class PivotGeneratorCommand extends BaseGeneratorCommand
 
         $this->call(
             'generate:migration',
-            array_merge(parent::commonOption(),
+            array_merge(parent::commonOptions(array()),
                 array(
                     'name' => "pivot_{$tables[0]}_{$tables[1]}_table",
                     '--fields' => implode(', ', array(

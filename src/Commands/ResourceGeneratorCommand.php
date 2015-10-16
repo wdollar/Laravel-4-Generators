@@ -1,11 +1,10 @@
 <?php namespace Vsch\Generators\Commands;
 
-use Vsch\Generators\Generators\ResourceGenerator;
-use Vsch\Generators\Cache;
-use Illuminate\Console\Command;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
 use Illuminate\Support\Pluralizer;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
+use Vsch\Generators\Cache;
+use Vsch\Generators\Generators\ResourceGenerator;
 use Vsch\Generators\GeneratorsServiceProvider;
 
 class MissingFieldsException extends \Exception
@@ -30,12 +29,7 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
      * @var string
      */
     protected $description = 'Generate a resource.';
-    /**
-     * Model generator instance.
-     *
-     * @var \Vsch\Generators\Generators\ResourceGenerator
-     */
-    protected $generator;
+
     /**
      * File cache.
      *
@@ -49,7 +43,8 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
     /**
      * Create a new command instance.
      *
-     * @return void
+     * @param ResourceGenerator $generator
+     * @param Cache             $cache
      */
     public
     function __construct(ResourceGenerator $generator, Cache $cache)
@@ -60,10 +55,17 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
         $this->cache = $cache;
     }
 
+    protected function getPath()
+    {
+        // not used
+        return null;
+    }
+
     /**
      * Execute the console command.
      *
-     * @return void
+     * @throws MissingFieldsException
+     * @throws TemplateNameDoesNotExist
      */
     public
     function fire()
@@ -83,20 +85,17 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
 
         $defaultDirs = $this->getDefaultTemplateSubDirs();
 
-        if ($this->fields === null)
-        {
+        if ($this->fields === null) {
             throw new MissingFieldsException('You must specify the fields option.');
         }
 
-        if (!is_dir(GeneratorsServiceProvider::getTemplatePath($this->templateDirs, '/')))
-        {
+        if (!is_dir(GeneratorsServiceProvider::getTemplatePath($this->templateDirs, '/'))) {
             throw new TemplateNameDoesNotExist('template-name ' . $this->templateDirs . ' is not a sub-directory or templates/.');
         }
 
         $templateDir = str_finish($templateDir, "/");
         $isDefault = false;
-        foreach ($defaultDirs as &$defaultDir)
-        {
+        foreach ($defaultDirs as &$defaultDir) {
             $defaultDir = str_finish($defaultDir, "/");
             if ($templateDir === $defaultDir) $isDefault = true;
         }
@@ -114,26 +113,23 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
         $this->generateViews();
         $this->generateMigration();
 
-        if (!$this->option('bench'))
-        {
+        if (!$this->option('bench')) {
             $this->generateSeed();
         }
 
         $this->generateTranslations();
 
-        if (get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand')
-        {
+        if (get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand') {
             $this->generateTest();
         }
 
-        if (!$this->option('bench'))
-        {
-            if ($this->generator->updateRoutesFile($this->model, $this->getRouteTemplatePath())) $this->info('Updated ' . app_path() . '/routes.php');
-            else $this->info('Did not need to update ' . app_path() . '/routes.php');
-        }
-        else
-        {
-            $this->info('Running --bench option, file needs to be manually updated: ' . app_path() . '/routes.php');
+        $routesFile = parent::getSrcPath(self::PATH_ROUTES, 'routes.php');
+
+        if ($routesFile) {
+            if ($this->generator->updateRoutesFile($routesFile, $this->model, $this->getRouteTemplatePath())) $this->info('Updated ' . $routesFile);
+            else $this->info('Did not need to update ' . $routesFile);
+        } else {
+            $this->info(self::PATH_ROUTES . ' dir_map not set to a value in config, routes need to be manually updated');
         }
 
         // We're all finished, so we
@@ -194,6 +190,17 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
     }
 
     /**
+     * Get the path to the template for a controller.
+     *
+     * @return string
+     */
+    protected
+    function getTestTemplatePath()
+    {
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'controller-test.txt');
+    }
+
+    /**
      * Call generate:model
      *
      * @return void
@@ -247,17 +254,11 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
     protected
     function generateTest()
     {
-        if ($this->option('bench'))
-        {
-            $path = parent::getSrcPath('/../tests');
-            if (!file_exists($path)) mkdir($path);
-            $path = parent::getSrcPath('/../tests/controllers');
-            if (!file_exists($path)) mkdir($path);
-        }
-        else
-        {
-            $path = parent::getSrcPath('/tests/controllers');
-            if (!file_exists($path)) mkdir($path);
+        $path = parent::getSrcPath(self::PATH_TESTS, 'controllers');
+        if (!file_exists($path)) {
+            if (!mkdir($path, 0774, true)) {
+                // TODO: error, directory not created
+            }
         }
 
         $this->call('generate:test', parent::commonOptions(array(
@@ -275,35 +276,30 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
     protected
     function generateViews()
     {
-        $viewsDir = parent::getSrcPath('/views');
+        $viewsDir = parent::getSrcPath(self::PATH_VIEWS);
         $container = $viewsDir . '/' . Pluralizer::plural($this->model);
         $layouts = $viewsDir . '/layouts';
         $adminOnlyView = false;
 
-        if (file_exists($this->getViewTemplatePath('admin')))
-        {
+        if (file_exists($this->getViewTemplatePath('admin'))) {
             // generate only one view for create, edit, show called admin
             $views = array('index', 'admin');
             $adminOnlyView = true;
-        }
-        else
-        {
+        } else {
             $views = array('index', 'show', 'create', 'edit');
         }
 
         $this->generator->folders(array($container));
 
         // If generating a scaffold, we also need views/layouts/scaffold
-        if (!$adminOnlyView && get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand')
-        {
+        if (!$adminOnlyView && get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand') {
             $views[] = 'scaffold';
             $this->generator->folders($layouts);
         }
 
         // Let's filter through all of our needed views
         // and create each one.
-        foreach ($views as $view)
-        {
+        foreach ($views as $view) {
             $path = $view === 'scaffold' ? $layouts : $container;
             $this->generateView($view, $path);
         }

@@ -59,13 +59,13 @@ class ResourceGenerator
      * @return boolean
      */
     public
-    function updateRoutesFile($name, $templatePath)
+    function updateRoutesFile($routesFile, $name, $templatePath)
     {
         $modelVars = GeneratorsServiceProvider::getModelVars($name);
 
-        $routes = file_get_contents(app_path() . '/routes.php');
+        $routes = file_get_contents($routesFile);
 
-        $newRouteDefault = 'Route::resource(\'{{models}}\', \'{{Models}}Controller\');' . "\n";
+        $newRouteDefault = '\Route::resource(\'{{models}}\', \'{{Models}}Controller\');' . "\n";
         if ($this->file->exists($templatePath))
         {
             $newRoute = file_get_contents($templatePath);
@@ -92,12 +92,12 @@ class ResourceGenerator
         {
             if (!str_contains($routes, GeneratorsServiceProvider::GENERATOR_ROUTE_TAG))
             {
-                $this->file->append(app_path() . '/routes.php', "\n$newRoute\n" . GeneratorsServiceProvider::GENERATOR_ROUTE_TAG . "\n\n");
+                $this->file->append($routesFile, "\n$newRoute\n" . GeneratorsServiceProvider::GENERATOR_ROUTE_TAG . "\n\n");
             }
             else
             {
                 $routes = str_replace(GeneratorsServiceProvider::GENERATOR_ROUTE_TAG, $newRoute . GeneratorsServiceProvider::GENERATOR_ROUTE_TAG, $routes);
-                file_put_contents(app_path() . '/routes.php', $routes);
+                file_put_contents($routesFile, $routes);
             }
 
             return true;

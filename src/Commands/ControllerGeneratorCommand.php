@@ -24,16 +24,9 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand
     protected $description = 'Generate a new controller.';
 
     /**
-     * Model generator instance.
-     *
-     * @var \Vsch\Generators\Generators\ControllerGenerator
-     */
-    protected $generator;
-
-    /**
      * Create a new command instance.
      *
-     * @return void
+     * @param ControllerGenerator $generator
      */
     public
     function __construct(ControllerGenerator $generator)
@@ -51,7 +44,7 @@ class ControllerGeneratorCommand extends BaseGeneratorCommand
     protected
     function getPath()
     {
-        return parent::getSrcPath('/controllers', '/' . ucwords($this->argument('name')) . '.php');
+        return parent::getSrcPath(self::PATH_CONTROLLERS, ucwords($this->argument('name')) . '.php');
     }
 
     /**

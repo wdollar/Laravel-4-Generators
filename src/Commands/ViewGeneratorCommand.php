@@ -24,12 +24,8 @@ class ViewGeneratorCommand extends BaseGeneratorCommand
     protected $description = 'Generate a new view.';
 
     /**
-     * Model generator instance.
-     *
-     * @var \Vsch\Generators\Generators\ViewGenerator
+     * @param ViewGenerator $generator
      */
-    protected $generator;
-
     public
     function __construct(ViewGenerator $generator)
     {
@@ -41,7 +37,7 @@ class ViewGeneratorCommand extends BaseGeneratorCommand
     public
     function getPath()
     {
-        return parent::getSrcPath('/views', '/' . strtolower($this->argument('name')) . '.blade.php');
+        return parent::getSrcPath(self::PATH_VIEWS, strtolower($this->argument('name')) . '.blade.php');
     }
 
     /**

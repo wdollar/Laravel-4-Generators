@@ -35,7 +35,7 @@ class FormDumperCommand extends Command
     /**
      * Create a new command instance.
      *
-     * @return void
+     * @param FormDumperGenerator $generator
      */
     public
     function __construct(FormDumperGenerator $generator)

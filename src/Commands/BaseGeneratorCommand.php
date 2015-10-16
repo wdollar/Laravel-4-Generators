@@ -1,13 +1,33 @@
 <?php namespace Vsch\Generators\Commands;
 
-use Illuminate\Support\Pluralizer;
-use Vsch\Generators\Generators\ViewGenerator;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
+use Vsch\Generators\GeneratorsServiceProvider;
 
-class BaseGeneratorCommand extends Command
+abstract class BaseGeneratorCommand extends Command
 {
+    const PATH_CODE = 'code';
+    const PATH_COMMANDS = 'commands';
+    const PATH_CONFIG = 'config';
+    const PATH_CONTROLLERS = 'controllers';
+    const PATH_LANG = 'lang';
+    const PATH_MIGRATIONS = 'migrations';
+    const PATH_MODELS = 'models';
+    const PATH_PUBLIC = 'public';
+    const PATH_ROUTES = 'routes';
+    const PATH_SEEDS = 'seeds';
+    const PATH_TEMPLATES = 'templates';
+    const PATH_TESTS = 'tests';
+    const PATH_VIEWS = 'views';
+
+    abstract protected function getPath();
+
+    /**
+     * Model generator instance.
+     *
+     * @var \Vsch\Generators\Generators\Generator
+     */
+    protected $generator;
 
     /**
      * Execute the console command.
@@ -29,9 +49,8 @@ class BaseGeneratorCommand extends Command
     {
         if ($prefix === null) $prefix = '--';
 
-        foreach (self::getOptions() as $option)
-        {
-            $args[$prefix.$option[0]] = $this->option($option[0]);
+        foreach (self::getOptions() as $option) {
+            $args[$prefix . $option[0]] = $this->option($option[0]);
         }
         return $args;
     }
@@ -40,8 +59,7 @@ class BaseGeneratorCommand extends Command
     function assocOptions(array $options)
     {
         $assoc_options = [];
-        foreach ($options as $option)
-        {
+        foreach ($options as $option) {
             $assoc_options[$option[0]] = $option;
         }
 
@@ -54,10 +72,8 @@ class BaseGeneratorCommand extends Command
         // combine caller's options with ours
         $assoc_options = self::assocOptions($options);
 
-        foreach (self::getOptions() as $option)
-        {
-            if (!array_key_exists($option[0], $assoc_options))
-            {
+        foreach (self::getOptions() as $option) {
+            if (!array_key_exists($option[0], $assoc_options)) {
                 $options[] = $option;
             }
         }
@@ -76,8 +92,7 @@ class BaseGeneratorCommand extends Command
     protected
     function printResult($successful, $path)
     {
-        if ($successful)
-        {
+        if ($successful) {
             $this->info("Created {$path}");
             return;
         }
@@ -85,44 +100,40 @@ class BaseGeneratorCommand extends Command
         $this->error("Could not create file, instead created {$path}.new");
     }
 
-    protected static
-    function benchPath($package)
-    {
-        return base_path() . '/workbench/' . $package . '/src';
-    }
-
-    protected static
-    function benchCodePath($package)
-    {
-        $parts = explode('/', $package, 2);
-        return self::benchPath($package) . '/' . ucfirst($parts[0]) . '/' . str_replace(' ', '', ucwords(str_replace('-', ' ', $parts[1])));
-    }
-
     /**
      * Get the path to the file that should be generated.
      *
+     * @param      $srcType String  name of the directory type
+     *                              code            - directory for code (app or workbench)
+     *                              commands
+     *                              config
+     *                              controllers
+     *                              lang
+     *                              migrations
+     *                              models
+     *                              public
+     *                              routes          - directory for the routes.php file
+     *                              seeds
+     *                              templates
+     *                              tests
+     *                              views
+     *
+     *                              The returned path will be adjusted for bench option to map the directory to the right location
+     *                              in the workbench/vendor/package subdirectory based on laravel version
+     *
+     * @param null $suffix
      * @return string
      */
     protected
-    function getSrcPath($subdir = null, $suffix = null, $benchSubDir = null)
+    function getSrcPath($srcType, $suffix = null)
     {
-        if ($benchSubDir === null) $benchSubDir = $subdir;
-        return ($this->option('path') ?: (($this->option('bench') ? self::benchPath($this->option('bench')) . $benchSubDir : app_path() . $subdir))) . ($suffix ? $suffix : '');
-    }
+        if ($this->option('path')) {
+            $srcPath = $this->option('path');
+        } else {
+            $srcPath = GeneratorsServiceProvider::getSrcPath($srcType, $this->option('bench'));
+        }
 
-    /**
-     * Get the path to the file that should be generated, if it is a bench='' option run then use extended package name (name/package-name/src/Name/PackageName) for the path
-     *
-     * this is needed by model generator
-     *
-     *
-     * @return string
-     */
-    protected
-    function getCodePath($subdir = null, $suffix = null, $benchSubDir = null)
-    {
-        if ($benchSubDir === null) $benchSubDir = $subdir;
-        return ($this->option('path') ?: (($this->option('bench') ? self::benchCodePath($this->option('bench')) . $benchSubDir : app_path() . $subdir))) . ($suffix ? $suffix : '');
+        return end_with($srcPath, '/') . ($suffix ?: '');
     }
 
     protected
@@ -133,4 +144,5 @@ class BaseGeneratorCommand extends Command
             array('prefix', null, InputOption::VALUE_OPTIONAL, 'table prefix for migrations', ''),
         );
     }
+
 }

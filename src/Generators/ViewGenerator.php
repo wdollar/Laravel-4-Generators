@@ -243,6 +243,7 @@ EOT;
         $camelModel = $modelVars['camelModel'];
         $narrowText = " input-narrow";
         $dash_models = $modelVars['dash-models'];
+        $relationModelList = GeneratorsServiceProvider::getRelationsModelVarsList($fields);
 
         foreach ($fields as $name => $values)
         {
@@ -325,22 +326,22 @@ EOT;
 
                 case 'bigInteger':
                 case  'integer':
-                    if (substr($name, strlen($name) - 3) === '_id')
+                    if (array_key_exists($name, $relationModelList))
                     {
                         // assume foreign key
                         $afterElement = "";
 
-                        if (!$foreignTable) $foreignTable = substr($name, 0, strlen($name) - 3);
-                        $foreignModelVars = GeneratorsServiceProvider::getSnakeModelVars($foreignTable);
+                        $foreignModelVars = $relationModelList[$name];
                         $foreignModel = $foreignModelVars['camelModel'];
                         $foreignModels = $foreignModelVars['camelModels'];
                         $foreignmodels = $foreignModelVars['models'];
                         $foreign_model = $foreignModelVars['snake_model'];
                         $foreign_models = $foreignModelVars['snake_models'];
+                        $id = $foreignModelVars['id'];
 
                         $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) !!}";
-                        $element .= "\n{!! Form::text('$foreign_model', $$camelModel ? $$camelModel->${foreign_model}->id : '', ['data-vsch_completion'=>'$foreign_models:id;id:$name','class' => 'form-control', ]) !!}";
-                        $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:id;id:$name','class'=>'form-control', 'placeholder'=>noEditTrans(' $dash_models.$name'), ]) !!}";
+                        $element .= "\n{!! Form::text('$foreign_model', $$camelModel ? $$camelModel->${foreign_model}->${id} : '', ['data-vsch_completion'=>'$foreign_models:${id};id:$name','class' => 'form-control', ]) !!}";
+                        $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:${id};id:$name','class'=>'form-control', 'placeholder'=>noEditTrans(' $dash_models.$name'), ]) !!}";
                         if ($filterRows)
                         {
                             $afterElementFilter .= "\n{!! Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) !!}";

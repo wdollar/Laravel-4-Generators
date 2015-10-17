@@ -249,6 +249,8 @@ class MigrationGenerator extends Generator
         $dropIndices = [];
         $foreignKeys = [];
 
+        $relationsModelList = GeneratorsServiceProvider::getRelationsModelVarsList($fields);
+
         $fieldIndex = 0;
         foreach ($fields as $field) {
             $fieldIndex++;
@@ -272,13 +274,6 @@ class MigrationGenerator extends Generator
                     $this->processIndexOption($keyIndex, $option, $field->name, $fieldIndex);
                 }
 
-                if (starts_with($option, 'table(')) {
-                    $pos = strrpos($option, ')');
-                    if ($pos === false) $pos = strlen($option);
-                    $foreignTable = substr($option, strlen('table('), $pos-strlen('table('));
-                    continue;
-                }
-
                 if (GeneratorsServiceProvider::isFieldHintOption($option)) continue;
 
                 if ($option === 'unsigned' || $option === 'unsigned()') {
@@ -299,25 +294,16 @@ class MigrationGenerator extends Generator
 
             // add foreign keys
             $name = $field->name;
-            if (substr($name, -3) === '_id') {
-                // assume foreign key
-                if ($foreignTable) {
-                    $fnames = $foreignTable;
-                    $fname = Pluralizer::singular($fnames);
-                }
-                else {
-                    $fname = substr($name, 0, -3);
-                    $fnames = Pluralizer::plural($fname);   // posts
-                }
-
+            if (array_key_exists($name, $relationsModelList)) {
+                $table_name = $relationsModelList[$name]['snake_models'];
                 if (!$hadUnsigned) $field->options .= "->unsigned()";
-                $indexName = "ixf_{$this->tableName}_{$name}_{$fnames}_id";
+                $indexName = "ixf_{$this->tableName}_{$name}_{$table_name}_id";
 
                 if (strlen($indexName) > 64) {
                     $indexName = substr($indexName, 0, 64);
                 }
 
-                $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on({{prefix}}'$fnames')";
+                $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on({{prefix}}'$table_name')";
                 $dropIndices[] = "\$table->dropIndex('$indexName')";
             }
 

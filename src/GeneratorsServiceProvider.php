@@ -296,25 +296,34 @@ class GeneratorsServiceProvider extends ServiceProvider
     }
 
     public static
-    function getSnakeModelVars($snake_model) {
-        $camelModel = str_replace(' ', '', ucwords(str_replace('_', ' ', $snake_model)));
-        return self::getModelVars($camelModel);
-    }
-
-    public static
-    function getModelVars($modelName)
+    function getModelVars($originalModelName)
     {
+        // figure out the format of the modelName: has _ then snake, has - then dash, has space then space, else assume CamelCase
+        $modelName = $originalModelName;
+        if (str_contains($modelName, '_')) {
+            $modelName = Pluralizer::singular(str_replace(' ', '', ucwords(str_replace('_', ' ', $modelName))));
+        }
+        else if (str_contains($modelName, '-')) {
+            $modelName = Pluralizer::singular(str_replace(' ', '', ucwords(str_replace('-', ' ', $modelName))));
+        }
+        else if (str_contains($modelName, ' ')) {
+            $modelName = Pluralizer::singular(str_replace(' ', '', ucwords($modelName)));
+        }
+        else {
+            $modelName = Pluralizer::singular($modelName);
+        }
+
         $camelModel = strtolower(substr($modelName, 0, 1)) . substr($modelName, 1);  // blockedEmail
         $camelModels = Pluralizer::plural($camelModel);  // blockedEmails
-        $CamelModel = strtoupper(substr($camelModel, 0, 1)) . substr($camelModel, 1);  // blockedEmail
-        $CamelModels = strtoupper(substr($camelModels, 0, 1)) . substr($camelModels, 1);  // blockedEmail
+        $CamelModel = strtoupper(substr($camelModel, 0, 1)) . substr($camelModel, 1);  // BlockedEmail
+        $CamelModels = strtoupper(substr($camelModels, 0, 1)) . substr($camelModels, 1);  // BlockedEmails
 
-        $model = strtolower($camelModel);                                 // blockedemail
-        $models = strtolower($camelModels);                       // blockedemails
-        $Model = $CamelModel;
-        $Models = $CamelModels;
-        $MODEL = strtoupper($camelModel);                                 // blockedemail
-        $MODELS = strtoupper($camelModels);                       // blockedemails
+        $model = strtolower($camelModel); // blockedemail
+        $models = strtolower($camelModels); // blockedemails
+        $Model = $CamelModel;               // BlockedEmail
+        $Models = $CamelModels;             // BlockedEmails
+        $MODEL = strtoupper($camelModel);   // BLOCKEDEMAIL
+        $MODELS = strtoupper($camelModels); // BLOCKEDEMAILS
 
         $snake_model = snake_case($camelModel);
         $snake_models = snake_case($camelModels);
@@ -384,7 +393,8 @@ class GeneratorsServiceProvider extends ServiceProvider
     }
 
     public static
-    function replaceModel($modelName, $text){
+    function replaceModel($modelName, $text)
+    {
         $modelVars = self::getModelVars($modelName);
         return self::replaceModelVars($text, $modelVars);
     }
@@ -409,6 +419,68 @@ class GeneratorsServiceProvider extends ServiceProvider
         }
 
         return $template;
+    }
+
+    /**
+     * @param $name    string   field name
+     * @param $options array|string field options
+     *
+     * @return array|null   return the foreign model vars or null if not a foreign field reference. If the name ends in _id then
+     *                      will use the part before _id as snake_case singular form of the table being referenced, unless foreign() option
+     *                      is provided in the field, in which case will use the table name from the option.
+     *
+     *                      if foreign() option is of the form foreign(table,id,name) then the id part will be added to foreign model vars
+     *                      under the 'id' key otherwise 'id' is added as the foreign id column and name part under 'name', otherwise 'name' will be
+     *                      used as the foreign display column.
+     */
+    public static
+    function getForeignModelVars($name, $options)
+    {
+        $foreignTable = null;
+        $foreignId = null;
+        $foreignName = null;
+        if (substr($name, -3) === '_id') {
+            // assume foreign key
+            $foreignTable = substr($name, 0, -3);
+        }
+
+        if (!is_array($options)) $options = array($options);
+
+        foreach ($options as $option) {
+            if (starts_with($option, 'foreign(')) {
+                $pos = strrpos($option, ')');
+                if ($pos === false) $pos = strlen($option);
+                $foreignTable = explode(',',substr($option, strlen('foreign('), $pos - strlen('foreign(')));
+                if ((count($foreignTable) > 1)) $foreignId = $foreignTable[1];
+                if ((count($foreignTable) > 2)) $foreignName = $foreignTable[2];
+                $foreignTable = $foreignTable[0];
+                break;
+            }
+        }
+
+        if ($foreignTable) {
+            $foreignModelVars = GeneratorsServiceProvider::getModelVars($foreignTable);
+            $foreignModelVars['id'] = $foreignId ?: 'id';
+            $foreignModelVars['name'] = $foreignName ?: 'name';
+            return $foreignModelVars;
+        }
+
+        return null;
+    }
+
+    public static
+    function getRelationsModelVarsList($fields)
+    {
+        $relationModelList = [];
+        foreach ($fields as $field) {
+            // add foreign keys
+            $name = $field->name;
+            $options = $field->options;
+
+            $foreignModelVars = GeneratorsServiceProvider::getForeignModelVars($name, $options);
+            if ($foreignModelVars) $relationModelList[$name] = $foreignModelVars;
+        }
+        return $relationModelList;
     }
 
     public static

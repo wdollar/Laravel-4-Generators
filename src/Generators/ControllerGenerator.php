@@ -2,7 +2,6 @@
 
 namespace Vsch\Generators\Generators;
 
-use Illuminate\Filesystem\Filesystem as File;
 use Illuminate\Support\Pluralizer;
 use Vsch\Generators\GeneratorsServiceProvider;
 
@@ -13,59 +12,48 @@ class ControllerGenerator extends Generator
     protected
     function replaceLines($template)
     {
+        $relationModelList = GeneratorsServiceProvider::getRelationsModelVarsList(GeneratorsServiceProvider::splitFields($this->cache->getFields(), true));
+
         $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_RECORD | SCOPED_EXPLODE_WANT_TEXT);
 
-        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line}}', function ($line, $fieldVar) use ($fields)
-        {
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line}}', function ($line, $fieldVar) use ($fields) {
             $fieldText = '';
-            foreach ($fields as $field => $type)
-            {
+            foreach ($fields as $field => $type) {
                 $fieldText .= str_replace($fieldVar, $field, $line) . "\n";
             }
             if ($fieldText === '') $fieldText = "''";
             return $fieldText;
         });
 
-        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields)
-        {
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields) {
             $fieldText = '';
-            foreach ($fields as $field => $type)
-            {
-                if (preg_match('/\bboolean\b/', $type))
-                {
+            foreach ($fields as $field => $type) {
+                if (preg_match('/\bboolean\b/', $type)) {
                     $fieldText .= str_replace('{{field:line:bool}}', $field, $line) . "\n";
                 }
             }
             return $fieldText;
         });
 
-        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line:nobool}}', function ($line, $fieldVar) use ($fields)
-        {
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line:nobool}}', function ($line, $fieldVar) use ($fields) {
             $fieldText = '';
-            foreach ($fields as $field => $type)
-            {
-                if (!preg_match('/\bboolean\b/', $type))
-                {
+            foreach ($fields as $field => $type) {
+                if (!preg_match('/\bboolean\b/', $type)) {
                     $fieldText .= str_replace('{{field:line:nobool}}', $field, $line) . "\n";
                 }
             }
             return $fieldText;
         });
 
-        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relations:line}}', function ($line, $fieldVar) use ($fields)
-        {
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relations:line}}', function ($line, $fieldVar) use ($fields, $relationModelList) {
             // we don't need the marker
             $line = str_replace($fieldVar, '', $line);
 
             $fieldText = '';
-            foreach ($fields as $field => $type)
-            {
+            foreach ($fields as $field => $type) {
                 // here we override for foreign keys
-                if (substr($field, strlen($field) - 3) === '_id')
-                {
-                    // assume foreign key
-                    $foreignModel = substr($field, 0, strlen($field) - 3);
-                    $modelVars = GeneratorsServiceProvider::getModelVars($foreignModel);
+                if (array_key_exists($field, $relationModelList)) {
+                    $modelVars = $relationModelList[$field];
 
                     // Replace template vars
                     $fieldText .= GeneratorsServiceProvider::replaceModelVars($line, $modelVars, '{{relations:', '}}') . "\n";
@@ -75,21 +63,12 @@ class ControllerGenerator extends Generator
             return $fieldText;
         });
 
-        $relationModelList = [];
-        if (strpos($this->template, '{{relations') !== false)
-        {
+        if (strpos($this->template, '{{relations') !== false) {
             $relations = '';
             $foreignModel = '';
-            foreach ($fields as $field => $type)
-            {
-                if (substr($field, strlen($field) - 3) === '_id')
-                {
-                    // assume foreign key
-                    // add foreign keys
-                    $foreignModel = substr($field, 0, strlen($field) - 3);
-                    $modelVars = GeneratorsServiceProvider::getModelVars($foreignModel);
-
-                    $relationModelList[] = $foreignModel;
+            foreach ($fields as $field => $type) {
+                if (array_key_exists($field, $relationModelList)) {
+                    $modelVars = $relationModelList[$field];
                     $relations .= <<<PHP
     /**
      * @return array ${modelVars['Model']}
@@ -97,8 +76,10 @@ class ControllerGenerator extends Generator
     public
     function ${modelVars['camelModels']}List(\$id)
     {
-        $${modelVars['camelModels']} = [ ];
         // fill the foreign list for ${modelVars['camelModel']} \$id
+        $${modelVars['camelModels']} = ${modelVars['CamelModel']}::query()->get(['name', 'id']);
+        $${modelVars['camelModels']} = array_combine($${modelVars['camelModels']}->lists('${modelVars['id']}')->all(), $${modelVars['camelModels']}->lists('name')->all());
+        setParam('products',$products);
         return $${modelVars['camelModels']};
     }
 
@@ -107,21 +88,16 @@ PHP;
             }
 
             $template = str_replace('{{relations}}', $relations, $template);
-            if ($foreignModel)
-            {
+            if ($relationModelList) {
                 $relationsVars = [];
-                foreach ($relationModelList as $relationModel)
-                {
+                foreach ($relationModelList as $relationModel) {
                     $relationModelVars = GeneratorsServiceProvider::getModelVars($relationModel);
-                    foreach ($relationModelVars as $relationModel => $relationModelVar)
-                    {
+                    foreach ($relationModelVars as $relationModel => $relationModelVar) {
                         // append
-                        if (array_key_exists($relationModel, $relationsVars))
-                        {
+                        if (array_key_exists($relationModel, $relationsVars)) {
                             $relationsVars[$relationModel] .= ", '$relationModelVar' => $$relationModelVar";
                         }
-                        else
-                        {
+                        else {
                             $relationsVars[$relationModel] = "'$relationModelVar' => $$relationModelVar";
                         }
                     }
@@ -131,16 +107,12 @@ PHP;
             }
         }
 
-        if (strpos($this->template, '{{auto}}') !== false)
-        {
+        if (strpos($this->template, '{{auto}}') !== false) {
             $relations = '';
-            foreach ($fields as $field => $type)
-            {
+            foreach ($fields as $field => $type) {
                 $options = scopedExplode(':', ['(' => ')', '[' => ']', '{' => '}'], $type, null);
-                foreach ($options as $option)
-                {
-                    if (str_starts_with($option, 'auto'))
-                    {
+                foreach ($options as $option) {
+                    if (str_starts_with($option, 'auto')) {
                         $auto = substr($option, 5, -1);
                         $relations .= <<<PHP
         \$input['$field'] = $auto;
@@ -168,8 +140,7 @@ PHP;
         $this->template = $this->file->get($template);
         $resource = strtolower(Pluralizer::plural(str_ireplace('Controller', '', $className)));
 
-        if ($this->needsScaffolding($template))
-        {
+        if ($this->needsScaffolding($template)) {
             $this->template = $this->getScaffoldedController($template, $className);
         }
 

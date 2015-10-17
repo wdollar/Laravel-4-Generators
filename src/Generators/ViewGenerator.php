@@ -32,6 +32,17 @@ class ViewGenerator extends Generator
         return $name;
     }
 
+    protected
+    function adjustBladeWrap($template)
+    {
+        if (GeneratorsServiceProvider::LARAVEL_VERSION === '4') {
+            // TODO: replace by a function that will search for all via regex and not replace unnecessarily, these repeated replacement can have side-effects
+            $adjustedTemplate = str_replace(["{{", "}}", "{!!", "!!}", "{{{--", "--}}}"], ["{{{", "}}}", "{{", "}}", "{{--", "--}}" ], $template);
+            return $adjustedTemplate;
+        }
+        return $template;
+    }
+
     /**
      * Get the scaffolded template for a view
      *
@@ -43,7 +54,6 @@ class ViewGenerator extends Generator
     function getScaffoldedTemplate($name)
     {
         $modelVars = GeneratorsServiceProvider::getModelVars($this->cache->getModelName());
-        $camelModel = $modelVars['camelModel'];
 
         // Replace template vars in view
         $this->template = GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
@@ -122,12 +132,12 @@ class ViewGenerator extends Generator
         {
         }
 
-        list($headings, $fields, $editAndDeleteLinks) = $this->makeTableRows($camelModel, $useLang);
+        list($headings, $fields, $editAndDeleteLinks) = $this->makeTableRows($modelVars, $useLang);
         $this->template = str_replace('{{headings}}', implode(PHP_EOL . "\t\t\t\t", $headings), $this->template);
         $this->template = str_replace('{{fields}}', implode(PHP_EOL . "\t\t\t\t\t", $fields) . PHP_EOL . $editAndDeleteLinks, $this->template);
         $this->template = str_replace('{{fields:nobuttons}}', implode(PHP_EOL . "\t\t\t\t\t", $fields), $this->template);
 
-        return $this->template;
+        return $this->adjustBladeWrap($this->template);
     }
 
     /**
@@ -140,9 +150,11 @@ class ViewGenerator extends Generator
      * @return Array
      */
     protected
-    function makeTableRows($model, $useLang)
+    function makeTableRows($modelVars, $useLang)
     {
-        $models = Pluralizer::plural($model); // posts
+        $models = $modelVars['models'];
+        $dash_models = $modelVars['dash-models'];
+        $camelModel = $modelVars['camelModel'];
 
         $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_RECORD | SCOPED_EXPLODE_WANT_TEXT);
         $fields = GeneratorsServiceProvider::filterFieldHavingOption($fields, 'hidden');
@@ -150,9 +162,9 @@ class ViewGenerator extends Generator
         // First, we build the table headings
         if ($useLang)
         {
-            $headings = array_map(function ($field) use ($models)
+            $headings = array_map(function ($field) use ($dash_models)
             {
-                return '<th>@lang(\'' . strtolower($models) . '.' . $field . '\')</th>';
+                return '<th>@lang(\'' . $dash_models . '.' . $field . '\')</th>';
             }, array_keys($fields));
         }
         else
@@ -164,7 +176,7 @@ class ViewGenerator extends Generator
         }
 
         // And then the rows, themselves
-        $fields = array_map(function ($field) use ($model, $fields)
+        $fields = array_map(function ($field) use ($camelModel, $fields)
         {
             list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($fields[$field]);
             $nullable = (strpos($options, 'nullable') !== false);
@@ -182,24 +194,24 @@ class ViewGenerator extends Generator
                     $foreignModel = substr($field, 0, -3);
                     if ($nullable)
                     {
-                        return "<td>{{{ is_null(\$$model->$field) ? 'null' : \$$model->$field . ':' . \$$model->{$foreignModel}->id }}}</td>";
+                        return "<td>{{ is_null(\$$camelModel->$field) ? 'null' : \$$camelModel->$field . ':' . \$$camelModel->{$foreignModel}->id }}</td>";
                     }
                     else
                     {
-                        return "<td>{{{ \$$model->$field . ':' . \$$model->{$foreignModel}->id }}}</td>";
+                        return "<td>{{ \$$camelModel->$field . ':' . \$$camelModel->{$foreignModel}->id }}</td>";
                     }
                 }
             }
-            return "<td>{{{ \$$model->$field }}}</td>";
+            return "<td>{{ \$$camelModel->$field }}</td>";
         }, array_keys($fields));
 
         // Now, we'll add the edit and delete buttons.
         $editAndDelete = <<<EOT
                     <td>
-                        {{ Form::open(['style' => 'display: inline-block;', 'method' => 'DELETE', 'route' => ['{$models}.destroy', \${$model}->id, ], ]) }}
-                            {{ formSubmit('Delete', ['class' => 'btn btn-danger', ]) }}
-                        {{ Form::close() }}
-                        {{ link_to_route('{$models}.edit', 'Edit', array(\${$model}->id), ['class' => 'btn btn-info',]) }}
+                        {!! Form::open(['style' => 'display: inline-block;', 'method' => 'DELETE', 'route' => ['{$models}.destroy', \${$camelModel}->id, ], ]) !!}
+                            {!! formSubmit('Delete', ['class' => 'btn btn-danger', ]) !!}
+                        {!! Form::close() !!}
+                        {!! link_to_route('{$models}.edit', 'Edit', array(\${$camelModel}->id), ['class' => 'btn btn-info',]) !!}
                     </td>
 EOT;
 
@@ -228,7 +240,9 @@ EOT;
         $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_TYPE_OPTIONS | SCOPED_EXPLODE_WANT_TEXT);
         $models = $modelVars['models'];
         $model = $modelVars['model'];
+        $camelModel = $modelVars['camelModel'];
         $narrowText = " input-narrow";
+        $dash_models = $modelVars['dash-models'];
 
         foreach ($fields as $name => $values)
         {
@@ -282,10 +296,18 @@ EOT;
                 $type = 'text';
             }
 
+            $foreignTable = '';
+            if (preg_match('/\btable\(([^)]+)\)\b/', $options, $matches))
+            {
+                // treat it as text with multiple rows
+                $foreignTable = $matches[1];
+            }
+
             if ($type === 'boolean' && $noBoolean) continue;
             if ($type !== 'boolean' && $onlyBoolean) continue;
 
             $labelName = $name;
+            $labelGroup = $dash_models;
             $afterElement = '';
             $afterElementFilter = '';
             $wrapRow = true;
@@ -297,8 +319,8 @@ EOT;
                 case  'mediumInteger':
                 case  'smallInteger':
                 case  'tinyInteger':
-                    $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
-                    $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                    $element = "{!! Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     break;
 
                 case 'bigInteger':
@@ -308,28 +330,34 @@ EOT;
                         // assume foreign key
                         $afterElement = "";
 
-                        $foreignModel = substr($name, 0, strlen($name) - 3);
-                        $foreignModels = Pluralizer::plural($foreignModel);   // posts
+                        if (!$foreignTable) $foreignTable = substr($name, 0, strlen($name) - 3);
+                        $foreignModelVars = GeneratorsServiceProvider::getSnakeModelVars($foreignTable);
+                        $foreignModel = $foreignModelVars['camelModel'];
+                        $foreignModels = $foreignModelVars['camelModels'];
+                        $foreignmodels = $foreignModelVars['models'];
+                        $foreign_model = $foreignModelVars['snake_model'];
+                        $foreign_models = $foreignModelVars['snake_models'];
 
-                        $element = "{{ Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) }}";
-                        $element .= "\n{{ Form::text('$foreignModel', $$model ? $$model->${foreignModel}->id : '', ['data-vsch_completion'=>'$foreignModels:id;id:$name','class' => 'form-control', ]) }}";
-                        $elementFilter = "{{ Form::text('$foreignModel', Input::get('$foreignModel'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreignModels:id;id:$name','class'=>'form-control', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                        $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) !!}";
+                        $element .= "\n{!! Form::text('$foreign_model', $$camelModel ? $$camelModel->${foreign_model}->id : '', ['data-vsch_completion'=>'$foreign_models:id;id:$name','class' => 'form-control', ]) !!}";
+                        $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:id;id:$name','class'=>'form-control', 'placeholder'=>noEditTrans(' $dash_models.$name'), ]) !!}";
                         if ($filterRows)
                         {
-                            $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) }}";
+                            $afterElementFilter .= "\n{!! Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) !!}";
                         }
                         else
                         {
-                            $afterElementFilter .= "\n{{ Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) }}";
+                            $afterElementFilter .= "\n{!! Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) !!}";
                         }
 
-                        $labelName = $foreignModel;
+                        $labelName = $foreignModelVars['model'];
+                        $labelGroup = $foreignModelVars['dash-models'];
 
                         if ($useOp)
                         {
                             $afterElement .= "\n\t\n@if(\$op === 'create' || \$op === 'edit')";
                         }
-                        $afterElement .= "\n\t<div class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignModels.create')\" @linkAsButton('warning')>@lang('messages.create')</a></div>";
+                        $afterElement .= "\n\t<div class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignmodels.create')\" @linkAsButton('warning')>@lang('messages.create')</a></div>";
                         if ($useOp)
                         {
                             $afterElement .= "\n@endif";
@@ -338,21 +366,21 @@ EOT;
                     }
                     else
                     {
-                        $element = "{{ Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
-                        $elementFilter = "{{ Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                        $element = "{!! Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                        $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     }
                     break;
 
                 case 'text':
                     $limit = empty($limit) ? 256 : $limit;
                     $rowAttr = (int)($limit / 64) ?: 1;
-                    $element = "{{ Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$models.$name'), 'rows'=>'$rowAttr', ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                    $element = "{!! Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$name'), 'rows'=>'$rowAttr', ]) !!}";
+                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     break;
 
                 case 'boolean':
-                    $element = "{{ Form::checkbox('$name', 1, Input::old('$name'), [$disabled]) }}";
-                    $elementFilter = "{{ Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get('$name'), ['form' => 'filter-$models', 'class' => 'form-control', ]) }}";
+                    $element = "{!! Form::checkbox('$name', 1, Input::old('$name'), [$disabled]) !!}";
+                    $elementFilter = "{!! Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get('$name'), ['form' => 'filter-$models', 'class' => 'form-control', ]) !!}";
                     $useShort = true;
                     break;
 
@@ -360,13 +388,13 @@ EOT;
                 case 'dateTime':
                     $element = <<<HTML
 <div class="input-group input-group-sm date">
-    {{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}
+    {!! Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
                     $elementFilter = <<<HTML
 <div class="input-group date">
-    {{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}
+    {!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
@@ -378,8 +406,8 @@ HTML;
                 case 'time':
                 case 'string':
                 default:
-                    $element = "{{ Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
-                    $elementFilter = "{{ Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$models.$name'), ]) }}";
+                    $element = "{!! Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     break;
             }
 
@@ -395,7 +423,7 @@ HTML;
                     $frag = <<<EOT
         <div class="row">
                 <label>
-                      $element @lang('$models.$labelName')
+                      $element @lang('$labelGroup.$labelName')
                       &nbsp;&nbsp;
                 </label>$afterElement
         </div>
@@ -406,7 +434,7 @@ EOT;
                 {
                     $frag = <<<EOT
             <label>
-                  $element @lang('$models.$labelName')
+                  $element @lang('$labelGroup.$labelName')
                   &nbsp;&nbsp;
             </label>$afterElement
 EOT;
@@ -419,7 +447,7 @@ EOT;
                     $frag = <<<EOT
         <div class="row">
             <div class="form-group col-sm-3">
-                {{ Form::label('$name', trans('$models.$labelName') . ':') }}
+                {!! Form::label('$name', trans('$labelGroup.$labelName') . ':') !!}
                   $element$afterElement
             </div>
         </div>
@@ -430,7 +458,7 @@ EOT;
                 {
                     $frag = <<<EOT
         <div class="form-group">
-            {{ Form::label('$name', trans('$models.$labelName') . ':') }}
+            {!! Form::label('$name', trans('$labelGroup.$labelName') . ':') !!}
               $element$afterElement
         </div>
 

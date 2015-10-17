@@ -127,7 +127,7 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
 
         if ($routesFile) {
             if ($this->generator->updateRoutesFile($routesFile, $this->model, $this->getRouteTemplatePath())) $this->info('Updated ' . $routesFile);
-            else $this->info('Did not need to update ' . $routesFile);
+            else $this->warn('Did not need to update ' . $routesFile);
         } else {
             $this->info(self::PATH_ROUTES . ' dir_map not set to a value in config, routes need to be manually updated');
         }
@@ -276,9 +276,8 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
     protected
     function generateViews()
     {
-        $viewsDir = parent::getSrcPath(self::PATH_VIEWS);
-        $container = $viewsDir . '/' . Pluralizer::plural($this->model);
-        $layouts = $viewsDir . '/layouts';
+        $container = parent::getSrcPath(self::PATH_VIEWS, Pluralizer::plural($this->model));
+        $layouts = parent::getSrcPath(self::PATH_VIEWS, 'layouts');
         $adminOnlyView = false;
 
         if (file_exists($this->getViewTemplatePath('admin'))) {

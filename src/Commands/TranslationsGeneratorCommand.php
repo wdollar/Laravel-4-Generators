@@ -54,31 +54,11 @@ class TranslationsGeneratorCommand extends BaseGeneratorCommand
             if ($locale === 'en/')
             {
                 $path = $this->getPath($locale);
-                $this->printResult($this->generator->make($path, $template), $path);
+                $this->printResult($this->generator->make($path, $template, $finalPath), $path, $finalPath);
             }
         }
     }
 
-
-    /**
-     * Provide user feedback, based on success or not.
-     *
-     * @param  boolean $successful
-     * @param  string  $path
-     *
-     * @return void
-     */
-    protected
-    function printResult($successful, $path)
-    {
-        if ($successful)
-        {
-            $this->info("Created {$path}");
-            return;
-        }
-
-        $this->error("Could not create file, instead created {$path}.new");
-    }
 
     /**
      * Get the path to the file that should be generated.
@@ -88,7 +68,7 @@ class TranslationsGeneratorCommand extends BaseGeneratorCommand
     protected
     function getPath($locale = null)
     {
-        return parent::getSrcPath(self::PATH_LANG, ($locale ? $locale . strtolower(Pluralizer::plural($this->argument('name'))) . '.php' : ''));
+        return parent::getSrcPath(self::PATH_LANG, ($locale ? $locale . GeneratorsServiceProvider::replaceModel($this->argument('name'), "{{dash-models}}") . '.php' : ''));
     }
 
     /**

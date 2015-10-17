@@ -4,7 +4,8 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Vsch\Generators\GeneratorsServiceProvider;
 
-abstract class BaseGeneratorCommand extends Command
+abstract
+class BaseGeneratorCommand extends Command
 {
     const PATH_CODE = 'code';
     const PATH_COMMANDS = 'commands';
@@ -20,7 +21,8 @@ abstract class BaseGeneratorCommand extends Command
     const PATH_TESTS = 'tests';
     const PATH_VIEWS = 'views';
 
-    abstract protected function getPath();
+    abstract protected
+    function getPath();
 
     /**
      * Model generator instance.
@@ -41,7 +43,7 @@ abstract class BaseGeneratorCommand extends Command
         $template = $this->option('template');
         $this->generator->setOptions($this->option());
 
-        $this->printResult($this->generator->make($path, $template), $path);
+        $this->printResult($this->generator->make($path, $template, $finalPath), $path, $finalPath);
     }
 
     protected
@@ -90,10 +92,15 @@ abstract class BaseGeneratorCommand extends Command
      * @return void
      */
     protected
-    function printResult($successful, $path)
+    function printResult($successful, $path, $finalPath)
     {
         if ($successful) {
-            $this->info("Created {$path}");
+            if ($path !== $finalPath && ends_with($finalPath, ".new")) {
+                $this->warn("File {$path} exists. Created {$finalPath} instead.");
+            }
+            else {
+                $this->info("Created {$finalPath}");
+            }
             return;
         }
 
@@ -103,7 +110,7 @@ abstract class BaseGeneratorCommand extends Command
     /**
      * Get the path to the file that should be generated.
      *
-     * @param      $srcType String  name of the directory type
+     * @param      $srcType         String  name of the directory type
      *                              code            - directory for code (app or workbench)
      *                              commands
      *                              config
@@ -122,6 +129,7 @@ abstract class BaseGeneratorCommand extends Command
      *                              in the workbench/vendor/package subdirectory based on laravel version
      *
      * @param null $suffix
+     *
      * @return string
      */
     protected
@@ -129,11 +137,12 @@ abstract class BaseGeneratorCommand extends Command
     {
         if ($this->option('path')) {
             $srcPath = $this->option('path');
-        } else {
+        }
+        else {
             $srcPath = GeneratorsServiceProvider::getSrcPath($srcType, $this->option('bench'));
         }
 
-        return end_with($srcPath, '/') . ($suffix ?: '');
+        return $suffix ? end_with($srcPath, '/') . $suffix : $srcPath;
     }
 
     protected
@@ -142,6 +151,7 @@ abstract class BaseGeneratorCommand extends Command
         return array(
             array('bench', null, InputOption::VALUE_OPTIONAL, 'workbench package name for which to generate controller', ''),
             array('prefix', null, InputOption::VALUE_OPTIONAL, 'table prefix for migrations', ''),
+            array('overwrite', null, InputOption::VALUE_NONE, 'overwrite existing files instead of creating ones with .new extension'),
         );
     }
 

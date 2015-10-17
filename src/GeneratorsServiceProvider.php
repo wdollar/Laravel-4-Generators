@@ -15,11 +15,19 @@ class GeneratorsServiceProvider extends ServiceProvider
     const LARAVEL_VERSION = '5';
     const CONTROLLER_PREFIX = '\\';
     const PUBLIC_PREFIX = '/vendor/';
+    const BLADE_WRAP_SAFE_OPEN = '{{';
+    const BLADE_WRAP_SAFE_CLOSE = '}}';
+    const BLADE_WRAP_RAW_OPEN = '{!!';
+    const BLADE_WRAP_RAW_CLOSE = '!!}';
 
     // Laravel 4
     //const LARAVEL_VERSION = '4';
     //const CONTROLLER_PREFIX = '';
     //const PUBLIC_PREFIX = '/packages/';
+    //const BLADE_WRAP_SAFE_OPEN = '{{{';
+    //const BLADE_WRAP_SAFE_CLOSE = '}}}';
+    //const BLADE_WRAP_RAW_OPEN = '{{';
+    //const BLADE_WRAP_RAW_CLOSE = '}}';
 
     const GENERATOR_ROUTE_TAG = '// Generators:insert new routes here';
 
@@ -29,6 +37,41 @@ class GeneratorsServiceProvider extends ServiceProvider
      * @var bool
      */
     protected $defer = false;
+
+    public static
+    function uniquify($filePath)
+    {
+        //$filePath = '/www/sites/vladsch/database/migrations/2015_10_17_030224_*_create_license_agent_versions_table.php';
+        $base_path = dirname($filePath);
+        $filename = substr($filePath, strlen($base_path) + 1);
+
+        $pos = strpos($filename, '*');
+        $name = substr($filename, 0, $pos + 1);
+
+        assert($pos !== false, "pattern '*' must exist in $filePath");
+
+        $maxMatch = 0;
+
+        if ($handle = opendir($base_path)) {
+            while (false !== ($entry = readdir($handle))) {
+                if (fnmatch($name, $entry, FNM_PERIOD)) {
+                    // this one matches, lets extract the stuff matched by *
+                    if (preg_match('/(\d+)/', substr($entry, $pos + 1), $matches)) {
+                        $found = $matches[1];
+                        //print("Found $entry : value $found\n");
+                        if ($maxMatch < $found) {
+                            $maxMatch = intval($found);
+                        }
+                    }
+                }
+            }
+            closedir($handle);
+        }
+
+        $maxMatch = sprintf("%02d", $maxMatch + 1);
+
+        return str_replace('*', $maxMatch, $filePath);
+    }
 
     /**
      * Register the service provider.
@@ -135,6 +178,7 @@ class GeneratorsServiceProvider extends ServiceProvider
 
     /**
      * @param $srcType
+     *
      * @return mixed
      */
     public static
@@ -179,7 +223,8 @@ class GeneratorsServiceProvider extends ServiceProvider
                 $srcPath = str_replace('{{Vendor/Package}}', $package, $srcPath);
                 $srcPath = '/workbench/' . $package . '/' . $srcPath;
             }
-        } else {
+        }
+        else {
             $appDir = $dir_map[$srcType]['app'];
             $srcPath = $appDir;
         }
@@ -189,14 +234,14 @@ class GeneratorsServiceProvider extends ServiceProvider
     }
 
     /**
-     * @param mixed  $files partial files path for the template.
+     * @param mixed  $files   partial files path for the template.
      *                        search for it in the package directory config
      *                        if not found in our template directory. If the files path is an
      *                        empty string then return the base template path in the configuration
      *                        for the package. NOTE: this path may not contain all the template files,
      *                        only the one's the user decided to override.
      *
-     * @param string $suffix text to append to $files or every item in $files if it is an array
+     * @param string $suffix  text to append to $files or every item in $files if it is an array
      *
      * @return string returns the name in the base template path, if not found in the package path.
      *
@@ -232,7 +277,8 @@ class GeneratorsServiceProvider extends ServiceProvider
                         break 2;
                     }
                 }
-            } else {
+            }
+            else {
                 foreach ($files as $file) {
                     if ($file === '/') $file = '';
                     $trypath = str_finish($path, "/") . $file;
@@ -250,9 +296,15 @@ class GeneratorsServiceProvider extends ServiceProvider
     }
 
     public static
+    function getSnakeModelVars($snake_model) {
+        $camelModel = str_replace(' ', '', ucwords(str_replace('_', ' ', $snake_model)));
+        return self::getModelVars($camelModel);
+    }
+
+    public static
     function getModelVars($modelName)
     {
-        $camelModel = $modelName;  // blockedEmail
+        $camelModel = strtolower(substr($modelName, 0, 1)) . substr($modelName, 1);  // blockedEmail
         $camelModels = Pluralizer::plural($camelModel);  // blockedEmails
         $CamelModel = strtoupper(substr($camelModel, 0, 1)) . substr($camelModel, 1);  // blockedEmail
         $CamelModels = strtoupper(substr($camelModels, 0, 1)) . substr($camelModels, 1);  // blockedEmail
@@ -332,6 +384,12 @@ class GeneratorsServiceProvider extends ServiceProvider
     }
 
     public static
+    function replaceModel($modelName, $text){
+        $modelVars = self::getModelVars($modelName);
+        return self::replaceModelVars($text, $modelVars);
+    }
+
+    public static
     function replaceTemplateLines($template, $fieldKey, \Closure $closure)
     {
         while (($pos = strpos($template, $fieldKey)) !== false) {
@@ -366,6 +424,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             'index',
             'keyindex',
             'primary',
+            'table',
             'rule',
             'auto',
         ]) !== false;
@@ -383,7 +442,8 @@ class GeneratorsServiceProvider extends ServiceProvider
                 '[' => ']',
                 '{' => '}',
             ], $fieldsText, null, SCOPED_EXPLODE_TRIM | ($wantObjArray !== true ? $wantObjArray : SCOPED_EXPLODE_WANT_OBJ_ASSOC), $openScopes);
-        } else {
+        }
+        else {
             $fields = scopedExplode(',', [
                 '(' => ')',
                 '[' => ']',
@@ -523,7 +583,8 @@ class GeneratorsServiceProvider extends ServiceProvider
         if (!$prefix && !$package) {
             $template = str_replace(['{{prefixdef}}', '{{prefix}}', '{{use}}'], '', $template);
             return $template;
-        } elseif ($prefix) {
+        }
+        elseif ($prefix) {
             $template = str_replace([
                 '{{prefixdef}}',
                 '{{prefix}}',
@@ -534,7 +595,8 @@ class GeneratorsServiceProvider extends ServiceProvider
                 'use ($prefix) ',
             ], $template);
             return $template;
-        } elseif ($package) {
+        }
+        elseif ($package) {
             $package = explode('/', $package, 2)[1];
 
             $template = str_replace([

@@ -3,9 +3,10 @@
 namespace Vsch\Generators\Generators;
 
 use Illuminate\Filesystem\Filesystem as File;
-use Vsch\Generators\GeneratorsServiceProvider;
-use Vsch\Generators\Cache;
 use Illuminate\Support\Pluralizer;
+use Illuminate\Support\Str;
+use Vsch\Generators\Cache;
+use Vsch\Generators\GeneratorsServiceProvider;
 
 class MigrationGenerator extends Generator
 {
@@ -35,7 +36,7 @@ class MigrationGenerator extends Generator
         $stub = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration.txt'));
 
         // Next, set the migration class name
-        $stub = str_replace('{{name}}', \Str::studly($name), $stub);
+        $stub = str_replace('{{name}}', Str::studly($name), $stub);
 
         // Now, we're going to handle the tricky
         // work of creating the Schema
@@ -121,8 +122,7 @@ class MigrationGenerator extends Generator
     protected
     function getUpStub()
     {
-        switch ($this->action)
-        {
+        switch ($this->action) {
             case 'add':
             case 'insert':
                 $upMethod = $this->file->get(GeneratorsServiceProvider::getTemplatePath(self::$templatesDir, 'migration-up.txt'));
@@ -169,8 +169,7 @@ class MigrationGenerator extends Generator
     protected
     function getDownStub()
     {
-        switch ($this->action)
-        {
+        switch ($this->action) {
             case 'add':
             case 'insert':
                 // then we to remove columns in reverse
@@ -251,8 +250,7 @@ class MigrationGenerator extends Generator
         $foreignKeys = [];
 
         $fieldIndex = 0;
-        foreach ($fields as $field)
-        {
+        foreach ($fields as $field) {
             $fieldIndex++;
 
             // If there is a third key, then
@@ -263,11 +261,10 @@ class MigrationGenerator extends Generator
             $hadUnsigned = false;
             $hadNullable = false;
             $hadDefault = false;
+            $foreignTable = null;
 
-            foreach ($options as $option)
-            {
-                if (($isPrimary = strpos($option, 'primary') === 0) || ($isKey = strpos($option, 'keyindex') === 0) || strpos($option, 'index') === 0)
-                {
+            foreach ($options as $option) {
+                if (($isPrimary = strpos($option, 'primary') === 0) || ($isKey = strpos($option, 'keyindex') === 0) || strpos($option, 'index') === 0) {
                     if ($isPrimary) $keyIndex = &$primaryindices;
                     elseif ($isKey) $keyIndex = &$keyindices;
                     else $keyIndex = &$indices;
@@ -275,20 +272,24 @@ class MigrationGenerator extends Generator
                     $this->processIndexOption($keyIndex, $option, $field->name, $fieldIndex);
                 }
 
+                if (starts_with($option, 'table(')) {
+                    $pos = strrpos($option, ')');
+                    if ($pos === false) $pos = strlen($option);
+                    $foreignTable = substr($option, strlen('table('), $pos-strlen('table('));
+                    continue;
+                }
+
                 if (GeneratorsServiceProvider::isFieldHintOption($option)) continue;
 
-                if ($option === 'unsigned' || $option === 'unsigned()')
-                {
+                if ($option === 'unsigned' || $option === 'unsigned()') {
                     $hadUnsigned = true;
                 }
 
-                if ($option === 'nullable' || $option === 'nullable()')
-                {
+                if ($option === 'nullable' || $option === 'nullable()') {
                     $hadNullable = true;
                 }
 
-                if ($option === 'default' || $option === 'default(')
-                {
+                if ($option === 'default' || starts_with($option, 'default(')) {
                     if ($option === 'default') $option = 'default(null)';
                     $hadDefault = true;
                 }
@@ -298,19 +299,29 @@ class MigrationGenerator extends Generator
 
             // add foreign keys
             $name = $field->name;
-            if (substr($name, -3) === '_id')
-            {
+            if (substr($name, -3) === '_id') {
                 // assume foreign key
-                $fname = substr($name, 0, -3);
-                $fnames = Pluralizer::plural($fname);   // posts
+                if ($foreignTable) {
+                    $fnames = $foreignTable;
+                    $fname = Pluralizer::singular($fnames);
+                }
+                else {
+                    $fname = substr($name, 0, -3);
+                    $fnames = Pluralizer::plural($fname);   // posts
+                }
+
                 if (!$hadUnsigned) $field->options .= "->unsigned()";
                 $indexName = "ixf_{$this->tableName}_{$name}_{$fnames}_id";
+
+                if (strlen($indexName) > 64) {
+                    $indexName = substr($indexName, 0, 64);
+                }
+
                 $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on({{prefix}}'$fnames')";
                 $dropIndices[] = "\$table->dropIndex('$indexName')";
             }
 
-            if ($hadNullable && !$hadDefault && !$field->type === 'text')
-            {
+            if ($hadNullable && !$hadDefault && !$field->type === 'text') {
                 $field->options .= "->default(null)";
             }
         }
@@ -334,14 +345,12 @@ class MigrationGenerator extends Generator
         $sortedKeys = array_keys($indices);
         sort($sortedKeys);
         $indexTexts = [];
-        foreach ($sortedKeys as $sortedKey)
-        {
+        foreach ($sortedKeys as $sortedKey) {
             $sortedFieldKeys = array_keys($indices[$sortedKey]);
             sort($sortedFieldKeys);
             $fields = [];
 
-            foreach ($sortedFieldKeys as $sortedFieldKey)
-            {
+            foreach ($sortedFieldKeys as $sortedFieldKey) {
                 $fields[$indices[$sortedKey][$sortedFieldKey]] = "'" . $indices[$sortedKey][$sortedFieldKey] . "'";
             }
 
@@ -360,20 +369,17 @@ class MigrationGenerator extends Generator
         $i = null;
         $n = '';
         $f = $fieldIndex;
-        if ($params !== '')
-        {
+        if ($params !== '') {
             $params = explode(',', $params);
             $i = (int)$params[0];
             $n = count($params) > 1 ? (int)$params[1] : null;
         }
 
-        if ($i === null)
-        {
+        if ($i === null) {
             // make a new one
             $i = sprintf("%03d", ++$indices[0]) . "_";
         }
-        else
-        {
+        else {
             if ($i > $indices[0]) $indices[0] = $i;
             $i = sprintf("%03d", (int)$i);
         }
@@ -397,13 +403,11 @@ class MigrationGenerator extends Generator
     {
         // Let's see if they're setting
         // a limit, like: string[50]
-        if (is_array($field))
-        {
+        if (is_array($field)) {
             return empty($field[0]) ? '' : implode(";\n\t\t\t", $field[0]) . ';';
         }
 
-        if (str_contains($field->type, '['))
-        {
+        if (str_contains($field->type, '[')) {
             preg_match('/([^\[]+?)\[(\d+(?:\,\d+)?)\]/', $field->type, $matches);
             $field->type = $matches[1]; // string
             $field->limit = $matches[2]; // 50 or 6,2
@@ -417,8 +421,7 @@ class MigrationGenerator extends Generator
             : "('{$field->name}')";
 
         // Take care of any potential indexes or options
-        if (isset($field->options))
-        {
+        if (isset($field->options)) {
             $html .= $field->options;
         }
 
@@ -442,8 +445,7 @@ class MigrationGenerator extends Generator
     function getPath($path)
     {
         $migrationFile = strtolower(basename($path));
-
-        return dirname($path) . '/' . date('Y_m_d_His') . '_' . $migrationFile;
+        return GeneratorsServiceProvider::uniquify(dirname($path) . '/' . date('Y_m_d_His') . '*_' . $migrationFile);
     }
 
 }

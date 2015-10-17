@@ -35,7 +35,7 @@ class ControllerGeneratorTest extends PHPUnit_Framework_TestCase
             ->andReturn([ ]);
 
         $generator = new ControllerGenerator($file, $cache);
-        $generator->make(app_path() . '/controllers/FooController.php', static::$templatesDir . '/controller.txt');
+        $generator->make(app_path() . '/controllers/FooController.php', static::$templatesDir . '/controller.txt',);
     }
 
     public
@@ -58,6 +58,6 @@ class ControllerGeneratorTest extends PHPUnit_Framework_TestCase
             ->andReturn([ ]);
 
         $generator = new ControllerGenerator($file, $cache);
-        $generator->make(app_path() . '/controllers/FoosController.php', static::$templatesDir . '/scaffold/controller.txt');
+        $generator->make(app_path() . '/controllers/FoosController.php', static::$templatesDir . '/scaffold/controller.txt',);
     }
 }

@@ -69,9 +69,10 @@ abstract class Generator {
      *
      * @param  string $path
      * @param  string $template Path to template
-     * @return boolean
+     * @param $finalPath
+     * @return bool
      */
-    public function make($path, $template)
+    public function make($path, $template, &$finalPath)
     {
         $this->name = basename($path, '.php');
         $this->path = $this->getPath($path);
@@ -82,7 +83,7 @@ abstract class Generator {
         $name = strtolower($this->name) . '.php';
         $fileExists = false;
 
-        if ($filename !== $name && str_ends_with($filename, $name) !== false)
+        if ($filename !== $name && str_ends_with($filename, $name))
         {
             // must have a date prefix, we should check if a file by the same name exists and append .new to this one
             if ($handle = opendir($basepath = dirname($path)))
@@ -91,10 +92,15 @@ abstract class Generator {
                 {
                     if (fnmatch('*_'.$name, $entry, FNM_PERIOD))
                     {
-                        $fileExists = true;
+                        if ($this->options('overwrite')) {
+                            // delete the sucker
+                            unlink($basepath . '/' . $entry);
+                        } else {
+                            $fileExists = true;
+                        }
                     }
 
-                    if (fnmatch('*_'.$name.'.new', $entry, FNM_PERIOD))
+                    if (!$this->options('overwrite') && fnmatch('*_'.$name.'.new', $entry, FNM_PERIOD))
                     {
                         // delete the sucker
                         unlink($basepath . '/' . $entry);
@@ -104,15 +110,16 @@ abstract class Generator {
             }
         }
 
-        if (!$fileExists && !$this->file->exists($this->path))
+        if ($this->options('overwrite') || (!$fileExists && !$this->file->exists($this->path)))
         {
+            $finalPath = $this->path;
             return $this->file->put($this->path, $template) !== false;
         }
         else
         {
             // put it as .new, and delete previous .new
-            $this->file->put($this->path . ".new", $template) !== false;
-            return false; // we didn't really create it
+            $finalPath = $this->path . ".new";
+            return $this->file->put($this->path . ".new", $template);
         }
     }
 

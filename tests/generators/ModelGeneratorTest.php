@@ -43,7 +43,7 @@ class ModelGeneratorTest extends PHPUnit_Framework_TestCase {
              ->with(app_path() . '/models/Foo.php', file_get_contents(__DIR__.'/stubs/scaffold/model-no-fields.txt'));
 
         $generator = new ModelGenerator($file, $cache);
-        $generator->make(app_path() . '/models/Foo.php', static::$templatesDir.'/scaffold/model.txt');
+        $generator->make(app_path() . '/models/Foo.php', static::$templatesDir . '/scaffold/model.txt',);
     }
 
     public function testCanGenerateModelUsingCustomTemplateAndFields()
@@ -64,6 +64,6 @@ class ModelGeneratorTest extends PHPUnit_Framework_TestCase {
              ->with(app_path() . '/models/Foo.php', file_get_contents(__DIR__.'/stubs/scaffold/model.txt'));
 
         $generator = new ModelGenerator($file, $cache);
-        $generator->make(app_path() . '/models/Foo.php', static::$templatesDir.'/scaffold/model.txt');
+        $generator->make(app_path() . '/models/Foo.php', static::$templatesDir . '/scaffold/model.txt',);
     }
 }

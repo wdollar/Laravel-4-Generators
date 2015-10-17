@@ -1,9 +1,8 @@
 <?php namespace Vsch\Generators\Commands;
 
-use Vsch\Generators\Generators\SeedGenerator;
-use Illuminate\Console\Command;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
+use Vsch\Generators\Generators\SeedGenerator;
 use Vsch\Generators\GeneratorsServiceProvider;
 
 class SeedGeneratorCommand extends BaseGeneratorCommand
@@ -45,19 +44,17 @@ class SeedGeneratorCommand extends BaseGeneratorCommand
     function fire()
     {
         $this->generator->setOptions($this->option());
-        $path = $this->getPath($this->argument('name'));
+        $path = $this->getPath(ucwords($this->argument('name')) . 'TableSeeder.php');
         $className = basename($path, '.php');
         $template = $this->option('template');
 
-        $this->printResult($this->generator->make($path, $template), $path);
+        $this->printResult($this->generator->make($path, $template, $finalPath), $path, $finalPath);
 
-        $databaseSeederPath = $this->getPath() . '/DatabaseSeeder.php';
-        if ($this->generator->updateDatabaseSeederRunMethod($databaseSeederPath, $className))
-        {
+        $databaseSeederPath = $this->getPath('DatabaseSeeder.php');
+        if ($this->generator->updateDatabaseSeederRunMethod($databaseSeederPath, $className)) {
             $this->info('Updated ' . $databaseSeederPath);
         }
-        else
-        {
+        else {
             $this->comment('Did not need to update ' . $databaseSeederPath);
         }
     }
@@ -70,7 +67,7 @@ class SeedGeneratorCommand extends BaseGeneratorCommand
     protected
     function getPath($name = null)
     {
-        return parent::getSrcPath(self::PATH_SEEDS, ($name ? ucwords($name) . 'TableSeeder.php' : ''));
+        return parent::getSrcPath(self::PATH_SEEDS, $name);
     }
 
     /**

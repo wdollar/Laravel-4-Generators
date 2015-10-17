@@ -2,8 +2,13 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
-
 ### x.3.2
+
+- add a numeric sequence to migration file name after the Hms, when running scaffold creation from a batch file multiple migrations are created within the same second and then the migrations would be applied alphabetically, not in the order of creation. Causing errors when foreign keys were on tables not yet created.
+
+- add table(table_name) field hint to give the table name for an field name that ends in _id, so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix.
+
+- add `--overwrite` option to all generators so that if the file exists then it will be overwritten instead of creating a file with .new extension. Recommended use during initial honing of the templates and generated scaffolds, afterwards you should not use this option to eliminate the possibility of overwriting your files by accident. 
 
 - add `--bench="name/package"` option to all generator commands, generated code will be added to the given name/package in the workbench. A convenient way to scaffold models, controllers and migrations in packages on which you are working in the project workbench directory.
 
@@ -15,21 +20,27 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 lines in model.txt:
 
+```php
     public static $remote_relations = array(
         {{relation:line}}'{{relation:snake_model}}'=>['{{relation:snake_model}}_id', 'id'],
     );
+```
 
 for a model that has two foreign key fields: `sender_id` and `conversation_id` will have the following resulting code: 
 
+```php
     public static $remote_relations = array(
         'sender'=>['sender_id', 'id'],
         'conversation'=>['conversation_id', 'id'],
     );
+```    
 
 for a model that has no foreign key fields the line is omitted:
 
+```php
     public static $remote_relations = array(
     );
+```    
 
 ### 1.3.1
 
@@ -41,8 +52,11 @@ for a model that has no foreign key fields the line is omitted:
 
 - add <a name="IndexHint"></a>index hint: index(indexdef) to create an index and keyindex(indexdef) to create a unique index, in the migration file. indexdef has the format: i,n, where i and n are integers, i is the index id, n is the position of the field in the index. If n is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
 
-
-        user_name:string[24]:keyindex(1,1), city:string[32]:index(2,2), state:string[32]:index(2,1) 
+    ```
+    user_name:string[24]:keyindex(1,1)
+    , city:string[32]:index(2,2)
+    , state:string[32]:index(2,1) 
+    ```
 
     will create a table with two indices: unique index on user_name and a non-unique index on state,city.
 

@@ -66,20 +66,19 @@ class ControllerGenerator extends Generator
         if (strpos($this->template, '{{relations') !== false) {
             $relations = '';
             $foreignModel = '';
+
             foreach ($fields as $field => $type) {
                 if (array_key_exists($field, $relationModelList)) {
                     $modelVars = $relationModelList[$field];
                     $relations .= <<<PHP
     /**
-     * @return array ${modelVars['Model']}
+     * @return array ${modelVars['CamelModel']}
      */
     public
-    function ${modelVars['camelModels']}List(\$id)
+    function ${modelVars['camelModels']}List(\$id = null)
     {
-        // fill the foreign list for ${modelVars['camelModel']} \$id
-        $${modelVars['camelModels']} = ${modelVars['CamelModel']}::query()->get(['name', 'id']);
-        $${modelVars['camelModels']} = array_combine($${modelVars['camelModels']}->lists('${modelVars['id']}')->all(), $${modelVars['camelModels']}->lists('name')->all());
-        setParam('products',$products);
+        // fill the foreign list for ${modelVars['CamelModel']}
+        $${modelVars['camelModels']} = ${modelVars['CamelModel']}::query()->get(['${modelVars['name']}', '${modelVars['id']}'])->lists('${modelVars['name']}', '${modelVars['id']}')->all();
         return $${modelVars['camelModels']};
     }
 
@@ -90,8 +89,7 @@ PHP;
             $template = str_replace('{{relations}}', $relations, $template);
             if ($relationModelList) {
                 $relationsVars = [];
-                foreach ($relationModelList as $relationModel) {
-                    $relationModelVars = GeneratorsServiceProvider::getModelVars($relationModel);
+                foreach ($relationModelList as $fieldName => $relationModelVars) {
                     foreach ($relationModelVars as $relationModel => $relationModelVar) {
                         // append
                         if (array_key_exists($relationModel, $relationsVars)) {
@@ -148,7 +146,7 @@ PHP;
         $template = str_replace('{{collection}}', $resource, $template);
         $template = $this->replaceLines($template);
 
-        return $template;
+        return $this->replaceStandardParams($template);
     }
 
     /**

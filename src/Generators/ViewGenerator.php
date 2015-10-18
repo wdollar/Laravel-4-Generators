@@ -2,7 +2,6 @@
 
 namespace Vsch\Generators\Generators;
 
-use Illuminate\Support\Pluralizer;
 use Vsch\Generators\GeneratorsServiceProvider;
 
 class ViewGenerator extends Generator
@@ -22,14 +21,13 @@ class ViewGenerator extends Generator
     {
         $this->template = $this->file->get($template);
 
-        if ($this->needsScaffolding($template))
-        {
-            return $this->getScaffoldedTemplate($name);
+        if ($this->needsScaffolding($template)) {
+            return $this->replaceStandardParams($this->getScaffoldedTemplate($name));
         }
 
         // Otherwise, just set the file
         // contents to the file name
-        return $name;
+        return $this->replaceStandardParams($name);
     }
 
     protected
@@ -37,7 +35,7 @@ class ViewGenerator extends Generator
     {
         if (GeneratorsServiceProvider::LARAVEL_VERSION === '4') {
             // TODO: replace by a function that will search for all via regex and not replace unnecessarily, these repeated replacement can have side-effects
-            $adjustedTemplate = str_replace(["{{", "}}", "{!!", "!!}", "{{{--", "--}}}"], ["{{{", "}}}", "{{", "}}", "{{--", "--}}" ], $template);
+            $adjustedTemplate = str_replace(["{{", "}}", "{!!", "!!}", "{{{--", "--}}}"], ["{{{", "}}}", "{{", "}}", "{{--", "--}}"], $template);
             return $adjustedTemplate;
         }
         return $template;
@@ -60,76 +58,63 @@ class ViewGenerator extends Generator
 
         $useLang = false;
         // Create and Edit views require form elements
-        if (str_contains($this->template, '{{formElements}}'))
-        {
+        if (str_contains($this->template, '{{formElements}}')) {
             $formElements = $this->makeFormElements($modelVars, false, false, false, false);
             $this->template = str_replace('{{formElements}}', $formElements, $this->template);
         }
 
-        if (str_contains($this->template, '{{formElements:readonly}}'))
-        {
+        if (str_contains($this->template, '{{formElements:readonly}}')) {
             $formElements = $this->makeFormElements($modelVars, true, false, false);
             $this->template = str_replace('{{formElements:readonly}}', $formElements, $this->template);
         }
 
         // no booleans
-        if (str_contains($this->template, '{{formElements:nobool}}'))
-        {
+        if (str_contains($this->template, '{{formElements:nobool}}')) {
             $formElements = $this->makeFormElements($modelVars, false, false, true);
             $this->template = str_replace('{{formElements:nobool}}', $formElements, $this->template);
         }
 
-        if (str_contains($this->template, '{{formElements:nobool:readonly}}'))
-        {
+        if (str_contains($this->template, '{{formElements:nobool:readonly}}')) {
             $formElements = $this->makeFormElements($modelVars, true, false, true);
             $this->template = str_replace('{{formElements:nobool:readonly}}', $formElements, $this->template);
         }
 
         // only booleans
-        if (str_contains($this->template, '{{formElements:bool}}'))
-        {
+        if (str_contains($this->template, '{{formElements:bool}}')) {
             $formElements = $this->makeFormElements($modelVars, false, true, false);
             $this->template = str_replace('{{formElements:bool}}', $formElements, $this->template);
         }
 
-        if (str_contains($this->template, '{{formElements:bool:readonly}}'))
-        {
+        if (str_contains($this->template, '{{formElements:bool:readonly}}')) {
             $formElements = $this->makeFormElements($modelVars, true, true, false);
             $this->template = str_replace('{{formElements:bool:readonly}}', $formElements, $this->template);
         }
 
-        if (str_contains($this->template, '{{formElements:op}}'))
-        {
+        if (str_contains($this->template, '{{formElements:op}}')) {
             $formElements = $this->makeFormElements($modelVars, false, false, false, true);
             $this->template = str_replace('{{formElements:op}}', $formElements, $this->template);
         }
 
-        if (str_contains($this->template, '{{formElements:bool:op}}'))
-        {
+        if (str_contains($this->template, '{{formElements:bool:op}}')) {
             $formElements = $this->makeFormElements($modelVars, false, true, false, true);
             $this->template = str_replace('{{formElements:bool:op}}', $formElements, $this->template);
         }
 
-        if (str_contains($this->template, '{{formElements:nobool:op}}'))
-        {
+        if (str_contains($this->template, '{{formElements:nobool:op}}')) {
             $formElements = $this->makeFormElements($modelVars, false, false, true, true);
             $this->template = str_replace('{{formElements:nobool:op}}', $formElements, $this->template);
         }
 
-        if (str_contains($this->template, '{{formElements:filters}}'))
-        {
+        if (str_contains($this->template, '{{formElements:filters}}')) {
             $formElements = $this->makeFormElements($modelVars, false, false, false, false, true);
             $this->template = str_replace('{{formElements:filters}}', $formElements, $this->template);
         }
 
         // And finally create the table rows
-        if (str_contains($this->template, '{{headings:lang}}'))
-        {
+        if (str_contains($this->template, '{{headings:lang}}')) {
             $useLang = true;
             $this->template = str_replace('{{headings:lang}}', '{{headings}}', $this->template);
-        }
-        else
-        {
+        } else {
         }
 
         list($headings, $fields, $editAndDeleteLinks) = $this->makeTableRows($modelVars, $useLang);
@@ -143,11 +128,11 @@ class ViewGenerator extends Generator
     /**
      * Create the table rows
      *
-     * @param  string $model
+     * @param $modelVars
+     * @param $useLang
      *
-     * @param         $useLang
+     * @return array
      *
-     * @return Array
      */
     protected
     function makeTableRows($modelVars, $useLang)
@@ -160,44 +145,32 @@ class ViewGenerator extends Generator
         $fields = GeneratorsServiceProvider::filterFieldHavingOption($fields, 'hidden');
 
         // First, we build the table headings
-        if ($useLang)
-        {
-            $headings = array_map(function ($field) use ($dash_models)
-            {
+        if ($useLang) {
+            $headings = array_map(function ($field) use ($dash_models) {
                 return '<th>@lang(\'' . $dash_models . '.' . $field . '\')</th>';
             }, array_keys($fields));
-        }
-        else
-        {
-            $headings = array_map(function ($field)
-            {
+        } else {
+            $headings = array_map(function ($field) {
                 return '<th>' . ucwords($field) . '</th>';
             }, array_keys($fields));
         }
 
         // And then the rows, themselves
-        $fields = array_map(function ($field) use ($camelModel, $fields)
-        {
+        $fields = array_map(function ($field) use ($camelModel, $fields) {
             list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($fields[$field]);
             $nullable = (strpos($options, 'nullable') !== false);
 
-            if (strpos($options, 'hidden') !== false)
-            {
+            if (strpos($options, 'hidden') !== false) {
                 unset($fields[$field]);
                 return null;
             }
 
-            if ($type === 'integer')
-            {
-                if (substr($field, strlen($field) - 3) === '_id')
-                {
+            if ($type === 'integer') {
+                if (substr($field, strlen($field) - 3) === '_id') {
                     $foreignModel = substr($field, 0, -3);
-                    if ($nullable)
-                    {
+                    if ($nullable) {
                         return "<td>{{ is_null(\$$camelModel->$field) ? 'null' : \$$camelModel->$field . ':' . \$$camelModel->{$foreignModel}->id }}</td>";
-                    }
-                    else
-                    {
+                    } else {
                         return "<td>{{ \$$camelModel->$field . ':' . \$$camelModel->{$foreignModel}->id }}</td>";
                     }
                 }
@@ -237,44 +210,38 @@ EOT;
     function makeFormElements($modelVars, $disable = false, $onlyBoolean = false, $noBoolean = false, $useOp = false, $filterRows = false)
     {
         $formMethods = [];
+        $relationModelList = GeneratorsServiceProvider::getRelationsModelVarsList(GeneratorsServiceProvider::splitFields($this->cache->getFields(), true));
         $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_TYPE_OPTIONS | SCOPED_EXPLODE_WANT_TEXT);
         $models = $modelVars['models'];
         $model = $modelVars['model'];
         $camelModel = $modelVars['camelModel'];
         $narrowText = " input-narrow";
         $dash_models = $modelVars['dash-models'];
-        $relationModelList = GeneratorsServiceProvider::getRelationsModelVarsList($fields);
 
-        foreach ($fields as $name => $values)
-        {
+        foreach ($fields as $name => $values) {
             $type = $values['type'];
             $options = $values['options'];
 
             if (strpos($options, 'hidden') !== false) continue;
             $nullable = (strpos($options, 'nullable') !== false);
-            if (strpos($options, 'guarded') !== false)
-            {
-                if ($useOp)
-                {
-                    $readonly = true ? "'readonly', " : '';
+            if (strpos($options, 'guarded') !== false) {
+                if ($useOp) {
+                    $readonly = true ? "['readonly', " : '[';
+                    $readonlyClose = ']';
                     $disabled = true ? "'disabled', " : '';
-                }
-                else
-                {
-                    $readonly = $disable ? "'readonly', " : '';
+                } else {
+                    $readonly = $disable ? "['readonly', " : '[';
+                    $readonlyClose = ']';
                     $disabled = $disable ? "'disabled', " : '';
                 }
-            }
-            else
-            {
-                if ($useOp)
-                {
-                    $readonly = 'isViewOp($op) ? \'readonly\' : null,';
+            } else {
+                if ($useOp) {
+                    $readonly = 'array_merge(isViewOp($op) ? [\'readonly\'] : [],[';
+                    $readonlyClose = '])';
                     $disabled = 'isViewOp($op) ? \'disabled\' : null';
-                }
-                else
-                {
-                    $readonly = $disable ? "'readonly', " : '';
+                } else {
+                    $readonly = $disable ? "['readonly', " : '[';
+                    $readonlyClose = ']';
                     $disabled = $disable ? "'disabled', " : '';
                 }
             }
@@ -282,24 +249,20 @@ EOT;
             $limit = null;
             $useShort = false;
 
-            if (str_contains($type, '['))
-            {
-                if (preg_match('/([^\[]+?)\[(\d+)(?:\,\d+)?\]/', $type, $matches))
-                {
+            if (str_contains($type, '[')) {
+                if (preg_match('/([^\[]+?)\[(\d+)(?:\,\d+)?\]/', $type, $matches)) {
                     $type = $matches[1]; // string
                     $limit = $matches[2]; // 50{,...,}
                 }
             }
 
-            if (preg_match('/\btextarea\b/', $options))
-            {
+            if (preg_match('/\btextarea\b/', $options)) {
                 // treat it as text with multiple rows
                 $type = 'text';
             }
 
             $foreignTable = '';
-            if (preg_match('/\btable\(([^)]+)\)\b/', $options, $matches))
-            {
+            if (preg_match('/\btable\(([^)]+)\)\b/', $options, $matches)) {
                 // treat it as text with multiple rows
                 $foreignTable = $matches[1];
             }
@@ -315,19 +278,17 @@ EOT;
 
             $inputNarrow = (GeneratorsServiceProvider::isFieldNumeric($type) || ($type === 'string' && $limit < 32)) ? $narrowText : '';
 
-            switch ($type)
-            {
+            switch ($type) {
                 case  'mediumInteger':
                 case  'smallInteger':
                 case  'tinyInteger':
-                    $element = "{!! Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}";
                     $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     break;
 
                 case 'bigInteger':
                 case  'integer':
-                    if (array_key_exists($name, $relationModelList))
-                    {
+                    if (array_key_exists($name, $relationModelList)) {
                         // assume foreign key
                         $afterElement = "";
 
@@ -339,35 +300,30 @@ EOT;
                         $foreign_models = $foreignModelVars['snake_models'];
                         $id = $foreignModelVars['id'];
 
+                        $plainName = ends_with($name, '_id') ? substr($name, 0, -3) : $name;
+
                         $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) !!}";
-                        $element .= "\n{!! Form::text('$foreign_model', $$camelModel ? $$camelModel->${foreign_model}->${id} : '', ['data-vsch_completion'=>'$foreign_models:${id};id:$name','class' => 'form-control', ]) !!}";
+                        $element .= "\n{!! Form::text('$plainName', $$camelModel ? $$camelModel->${plainName}->${id} : '', ['data-vsch_completion'=>'$foreign_models:${id};id:$name','class' => 'form-control', ]) !!}";
                         $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:${id};id:$name','class'=>'form-control', 'placeholder'=>noEditTrans(' $dash_models.$name'), ]) !!}";
-                        if ($filterRows)
-                        {
+                        if ($filterRows) {
                             $afterElementFilter .= "\n{!! Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) !!}";
-                        }
-                        else
-                        {
+                        } else {
                             $afterElementFilter .= "\n{!! Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) !!}";
                         }
 
-                        $labelName = $foreignModelVars['model'];
-                        $labelGroup = $foreignModelVars['dash-models'];
+                        //$labelName = $foreignModelVars['model'];
+                        //$labelGroup = $foreignModelVars['dash-models'];
 
-                        if ($useOp)
-                        {
+                        if ($useOp) {
                             $afterElement .= "\n\t\n@if(\$op === 'create' || \$op === 'edit')";
                         }
                         $afterElement .= "\n\t<div class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignmodels.create')\" @linkAsButton('warning')>@lang('messages.create')</a></div>";
-                        if ($useOp)
-                        {
+                        if ($useOp) {
                             $afterElement .= "\n@endif";
                         }
                         $afterElement .= $afterElementFilter;
-                    }
-                    else
-                    {
-                        $element = "{!! Form::input('number', '$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    } else {
+                        $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}";
                         $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     }
                     break;
@@ -375,7 +331,7 @@ EOT;
                 case 'text':
                     $limit = empty($limit) ? 256 : $limit;
                     $rowAttr = (int)($limit / 64) ?: 1;
-                    $element = "{!! Form::textarea('$name', Input::old('$name'), [$readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$name'), 'rows'=>'$rowAttr', ]) !!}";
+                    $element = "{!! Form::textarea('$name', Input::old('$name'), $readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$name'), 'rows'=>'$rowAttr', $readonlyClose) !!}";
                     $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     break;
 
@@ -389,7 +345,7 @@ EOT;
                 case 'dateTime':
                     $element = <<<HTML
 <div class="input-group input-group-sm date">
-    {!! Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}
+    {!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
@@ -407,20 +363,16 @@ HTML;
                 case 'time':
                 case 'string':
                 default:
-                    $element = "{!! Form::text('$name', Input::old('$name'), [$readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    $element = "{!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}";
                     $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
                     break;
             }
 
-            if ($filterRows)
-            {
+            if ($filterRows) {
                 $afterElementFilter = $afterElementFilter ? "\n" . $afterElementFilter : $afterElementFilter;
                 $frag = "\t\t\t\t<td>$elementFilter</td>$afterElementFilter";
-            }
-            elseif ($useShort)
-            {
-                if ($wrapRow)
-                {
+            } elseif ($useShort) {
+                if ($wrapRow) {
                     $frag = <<<EOT
         <div class="row">
                 <label>
@@ -430,9 +382,7 @@ HTML;
         </div>
 
 EOT;
-                }
-                else
-                {
+                } else {
                     $frag = <<<EOT
             <label>
                   $element @lang('$labelGroup.$labelName')
@@ -440,11 +390,8 @@ EOT;
             </label>$afterElement
 EOT;
                 }
-            }
-            else
-            {
-                if ($wrapRow)
-                {
+            } else {
+                if ($wrapRow) {
                     $frag = <<<EOT
         <div class="row">
             <div class="form-group col-sm-3">
@@ -454,9 +401,7 @@ EOT;
         </div>
 
 EOT;
-                }
-                else
-                {
+                } else {
                     $frag = <<<EOT
         <div class="form-group">
             {!! Form::label('$name', trans('$labelGroup.$labelName') . ':') !!}

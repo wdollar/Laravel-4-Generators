@@ -118,6 +118,10 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
         }
 
         $this->generateTranslations();
+        if (get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand') {
+            $this->generateLangScaffold();
+        }
+
 
         if (get_called_class() === 'Vsch\\Generators\\Commands\\ScaffoldGeneratorCommand') {
             $this->generateTest();
@@ -159,6 +163,17 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
     {
         //return self::getTemplatePath('model.txt');
         return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'translations.txt');
+    }
+
+    /**
+     * Get the path to the template for a model.
+     *
+     * @return string
+     */
+    protected
+    function getLangScaffoldTemplatePath()
+    {
+        return GeneratorsServiceProvider::getTemplatePath($this->templateDirs, 'scaffold/lang');
     }
 
     protected
@@ -227,6 +242,21 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
         $this->call('generate:translations', parent::commonOptions(array(
             'name' => $this->model,
             '--template' => $this->getTranslationsTemplatePath()
+        )));
+    }
+
+    /**
+     * Call generate:translations
+     *
+     * @return void
+     */
+    protected
+    function generateLangScaffold()
+    {
+        // For now, this is just the regular model template
+        $this->call('generate:translations', parent::commonOptions(array(
+            'name' => $this->model,
+            '--lang' => $this->getLangScaffoldTemplatePath()
         )));
     }
 

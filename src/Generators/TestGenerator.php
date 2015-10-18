@@ -20,7 +20,7 @@ class TestGenerator extends Generator {
         $name = $this->cache->getModelName();
         $modelVars = GeneratorsServiceProvider::getModelVars($name);
         $template = GeneratorsServiceProvider::replaceModelVars($template, $modelVars);
-        return $template;
+        return $this->replaceStandardParams($template);
     }
 
 }

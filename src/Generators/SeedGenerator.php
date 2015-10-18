@@ -27,12 +27,14 @@ class SeedGenerator extends Generator
 
         $this->template = str_replace('{{className}}', $className, $this->template);
 
-        return GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
+        $template = GeneratorsServiceProvider::replaceModelVars($this->template, $modelVars);
+        return $this->replaceStandardParams($template);
     }
 
     /**
      * Updates the DatabaseSeeder file's run method to
      * call this new seed class
+     *
      * @return mixed
      */
     public
@@ -40,8 +42,7 @@ class SeedGenerator extends Generator
     {
         $content = $this->file->get($databaseSeederPath);
 
-        if (!strpos($content, "\$this->call('{$className}');"))
-        {
+        if (!strpos($content, "\$this->call('{$className}');")) {
             $content = preg_replace('/(run\(\).+?)}/us', "$1\t\$this->call('{$className}');\n\t}", $content);
             return $this->file->put($databaseSeederPath, $content);
         }

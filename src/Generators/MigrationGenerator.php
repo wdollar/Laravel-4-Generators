@@ -51,7 +51,7 @@ class MigrationGenerator extends Generator
         $package = $this->options('bench');
         $stub = GeneratorsServiceProvider::replacePrefixTemplate($prefix, $package, $stub);
 
-        return $stub;
+        return $this->replaceStandardParams($stub);
     }
 
     /**

@@ -182,7 +182,7 @@ class GeneratorsServiceProvider extends ServiceProvider
      * @return mixed
      */
     public static
-    function getSrcTypePath($srcType)
+    function getSrcTypePath($srcType = null)
     {
         $config = \Config::get(GeneratorsServiceProvider::PACKAGE, null);
 
@@ -192,6 +192,8 @@ class GeneratorsServiceProvider extends ServiceProvider
 
         $dir_map = $config['dir_map'];
 
+        if ($srcType === null) return $dir_map;
+
         if (!array_key_exists($srcType, $dir_map)) {
             assert(false, "dir_map is missing entry for '$srcType'");
         }
@@ -200,7 +202,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             assert(false, "dir_map['$srcType'] is missing entries for 'app' and 'bench'");
             return $dir_map;
         }
-        return $dir_map;
+        return $dir_map[$srcType];
     }
 
     private static
@@ -213,7 +215,7 @@ class GeneratorsServiceProvider extends ServiceProvider
     public static
     function getSrcPath($srcType, $package = null)
     {
-        $dir_map = GeneratorsServiceProvider::getSrcTypePath($srcType);
+        $dir_map = GeneratorsServiceProvider::getSrcTypePath();
 
         if ($package) {
             $benchDir = $dir_map[$srcType]['bench'];
@@ -221,7 +223,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             if ($benchDir !== '') {
                 $srcPath = str_replace('{{vendor/package}}', self::vendorPackage($package), $srcPath);
                 $srcPath = str_replace('{{Vendor/Package}}', $package, $srcPath);
-                $srcPath = '/workbench/' . $package . '/' . $srcPath;
+                $srcPath = 'workbench/' . $package . '/' . $srcPath;
             }
         }
         else {

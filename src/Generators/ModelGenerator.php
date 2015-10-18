@@ -2,7 +2,6 @@
 
 namespace Vsch\Generators\Generators;
 
-use Illuminate\Support\Pluralizer;
 use Vsch\Generators\GeneratorsServiceProvider;
 
 class ModelGenerator extends Generator
@@ -26,7 +25,8 @@ class ModelGenerator extends Generator
             $this->template = $this->getScaffoldedModel($className);
         }
 
-        return str_replace('{{className}}', $className, $this->template);
+        $template = str_replace('{{className}}', $className, $this->template);
+        return $this->replaceStandardParams($template);
     }
 
     /**
@@ -45,7 +45,7 @@ class ModelGenerator extends Generator
 
         $template = $this->template;
 
-        $template = str_replace('{{__construct}}', <<<'SQL'
+        $template = str_replace('{{__construct}}', <<<'PHP'
     protected $table = '{{snake_models}}';
 
     public function __construct($attributes = [])
@@ -54,7 +54,7 @@ class ModelGenerator extends Generator
         parent::__construct($attributes);
     }
 
-SQL
+PHP
             , $this->template);
 
         $prefix = $this->options('prefix');
@@ -71,25 +71,21 @@ SQL
 
         if (strpos($template, '{{relations') !== false) {
             $relations = '';
-            $fname = '';
             foreach ($fields as $field) {
                 // add foreign keys
                 $name = $field->name;
-                $options = $field->options;
+                $relFuncName = ends_with($name, '_id') ? substr($name, 0, -3) : $name;
 
                 if (array_key_exists($name, $relationModelList)) {
                     $foreignModelVars = $relationModelList[$name];
-                    $fname = $foreignModelVars['snake_model'];
-                    $table_name = $foreignModelVars['snake_models'];
-
                     $relations .= <<<PHP
     /**
      * @return \\Illuminate\\Database\\Eloquent\\Relations\\Relation
      */
     public
-    function $fname()
+    function $relFuncName()
     {
-        return \$this->belongsTo('$table_name', '$name', 'id');
+        return \$this->belongsTo('{{app_namespace}}\\${foreignModelVars['CamelModel']}', '$name', '${foreignModelVars['id']}');
     }
 
 PHP;
@@ -105,8 +101,7 @@ PHP;
                         // append
                         if (array_key_exists($relationModel, $relationsVars)) {
                             $relationsVars[$relationModel] .= ", '$relationModelVar'";
-                        }
-                        else {
+                        } else {
                             $relationsVars[$relationModel] = "'$relationModelVar'";
                         }
                     }
@@ -126,8 +121,7 @@ PHP;
                     }
                     return $fieldText;
                 });
-            }
-            else {
+            } else {
                 $emptyVars = $modelVars;
 
                 array_walk($emptyVars, function (&$val) {
@@ -213,8 +207,7 @@ PHP;
                 if ($default = hasIt($field->options, 'default', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {
                     $default = substr($default, strlen('default('), -1);
                     $defaults[$field->name] = $default;
-                }
-                elseif (hasIt($field->options, 'nullable', HASIT_WANT_PREFIX)) {
+                } elseif (hasIt($field->options, 'nullable', HASIT_WANT_PREFIX)) {
                     $defaults[$field->name] = null;
                 }
 
@@ -238,8 +231,7 @@ PHP;
         foreach ($defaults as $field => $value) {
             if ($value === null || strtolower($value) === 'null') {
                 $value = 'null';
-            }
-            elseif (!(GeneratorsServiceProvider::isFieldNumeric($fields[$field]->type)
+            } elseif (!(GeneratorsServiceProvider::isFieldNumeric($fields[$field]->type)
                 || GeneratorsServiceProvider::isFieldBoolean($fields[$field]->type))
             ) {
                 $value = "'$value'";

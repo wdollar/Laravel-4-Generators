@@ -4,9 +4,39 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 ### x.3.2
 
+- add {{app_namespace}} to all generators to be replaced by the configured \App::getNamespace(), without the trailing \ so usage is {{app_namespace}}/...
+
+- add {{eol}} to all generators to be replaced by \n.
+
+- add --lang=path to generate:translation for scaffold use. Any *.txt files in the template/scaffold/lang/ directory will convert the model vars as per Model Vars Table and add those translation definitions to the corresponding .php file in the lang/en/ directory. Allows to create place-holder translations based on the model generated. 
+    The template once processed should evaluate to a set of array `key=>value` definitions as would be used in translation files. The `return array( ... )` wrapper is added by the code.
+
+    For example, I use the following in `template/lang/page-titles.txt`:
+    
+    ```php
+    'index-{{models}}' => 'Index {{Space Models}}',
+    'create-{{model}}' => 'Create {{Space Model}}',
+    'show-{{model}}' => 'Show {{Space Model}}',
+    'edit-{{model}}' => 'Edit {{Space Model}}',
+    'delete-{{model}}' => 'Delete {{Space Model}}',
+    ```
+    
+    For example, when generating a scaffold for a model named `productVersion` this template has the effect of adding the following translations to `resources/lang/en/page-titles.php`:
+    
+    ```php
+    'create-productversion' => 'Create Product Version',
+    'delete-productversion' => 'Delete Product Version',
+    'edit-productversion'   => 'Edit Product Version',
+    'index-productversions' => 'Index Product Versions',
+    'show-productversion'   => 'Show Product Version',
+    ```
+    Existing translations are not overwritten, unless --overwrite option is used. Comments are preserved and location of keys under particular block comment is also preserved. I use the TranslationFileRewriter class from my laravel-translation-manager package to do surgical insertion of new translations without loosing the comments and position of translations. 
+    
+    This is a convenient way of adding model related translations to existing files.
+
 - add a numeric sequence to migration file name after the Hms, when running scaffold creation from a batch file multiple migrations are created within the same second and then the migrations would be applied alphabetically, not in the order of creation. Causing errors when foreign keys were on tables not yet created.
 
-- add table(table_name) field hint to give the table name for an field name that ends in _id, so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix.
+- add foreign(table_name,id,name) field hint to give the table name for an field name for foreign keys, optional id: foreign id column (default is id), and foreign displayable column to use for UI selections (default name), so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix. For now only integral foreign keys are implemented. A few more iterations of cleanup and other types will be included.
 
 - add `--overwrite` option to all generators so that if the file exists then it will be overwritten instead of creating a file with .new extension. Recommended use during initial honing of the templates and generated scaffolds, afterwards you should not use this option to eliminate the possibility of overwriting your files by accident. 
 

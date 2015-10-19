@@ -4,9 +4,29 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 ### x.3.2
 
+- fix model generator to not add 'required' to rules if `rule(sometimes)` field hint is given.
+
+- doc view generator for scaffolds with foreign fields produces both an input select and an input text with typeahead for entering foreign ids. One of these needs to be commented out depending on the application and the desired input type. Typeahead requires server support for dynamically determining completions.
+
+- fix translation generator not to add duplicated keys.
+
+- fix controller generator not to add duplicated {{relations}}, {{relations:line}} and {{relations:line:with_model}}.
+
 - add {{app_namespace}} to all generators to be replaced by the configured \App::getNamespace(), without the trailing \ so usage is {{app_namespace}}/...
 
 - add {{eol}} to all generators to be replaced by \n.
+
+- add {{relations:line:with_model}} to controller generator to create lines for foreign relationships but also include the self model into the list. Used for creating import statements for related models and own model. For example a line in the templates/scaffold/controller.txt:
+
+        use {{relations:line:with_model}}{{app_namespace}}\{{relations:CamelModel}};
+        
+    once expanded changes to the following, depending on the model field definitions, of course:
+    
+    ```php
+    use app\License;
+    use app\Product;
+    use app\User;
+    ```
 
 - add --lang=path to generate:translation for scaffold use. Any *.txt files in the template/scaffold/lang/ directory will convert the model vars as per Model Vars Table and add those translation definitions to the corresponding .php file in the lang/en/ directory. Allows to create place-holder translations based on the model generated. 
     The template once processed should evaluate to a set of array `key=>value` definitions as would be used in translation files. The `return array( ... )` wrapper is added by the code.
@@ -36,7 +56,9 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 - add a numeric sequence to migration file name after the Hms, when running scaffold creation from a batch file multiple migrations are created within the same second and then the migrations would be applied alphabetically, not in the order of creation. Causing errors when foreign keys were on tables not yet created.
 
-- add foreign(table_name,id,name) field hint to give the table name for an field name for foreign keys, optional id: foreign id column (default is id), and foreign displayable column to use for UI selections (default name), so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix. For now only integral foreign keys are implemented. A few more iterations of cleanup and other types will be included.
+- add foreign(table_name,id,name) field hint to give the table name for an field name for foreign keys, optional id: foreign id column (default is id), and foreign displayable column to use for UI selections (default name), so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix. For now only integer and bigInteger foreign keys are implemented. A few more iterations of cleanup and other types will be included.
+
+- add all generators now recognize foreign keys when the field ends in `_id` or when a `foreign()` field hint is provided. Only integer and bitInteger field types are supported for now.
 
 - add `--overwrite` option to all generators so that if the file exists then it will be overwritten instead of creating a file with .new extension. Recommended use during initial honing of the templates and generated scaffolds, afterwards you should not use this option to eliminate the possibility of overwriting your files by accident. 
 

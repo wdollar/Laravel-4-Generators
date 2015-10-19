@@ -168,7 +168,7 @@ class ViewGenerator extends Generator
 
             if ($type === 'integer' || $type === 'bigInteger') {
                 if (array_key_exists($field, $relationModelList)) {
-                    $relFuncName = ends_with($field, '_id') ? substr($field, 0, -3) : $field;
+                    $relFuncName = strip_suffix($field, '_id');
                     $nameCol = $relationModelList[$field]['name'];
                     if ($nullable) {
                         return "<td>{{ is_null(\$$camelModel->$field) ? '' : \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
@@ -307,12 +307,16 @@ EOT;
                         $foreign_models = $foreignModelVars['snake_models'];
                         $foreign_display = $foreignModelVars['name'];
 
-                        $plainName = ends_with($name, '_id') ? substr($name, 0, -3) : $name;
+                        $plainName = strip_suffix($name, '_id');
                         $labelName = $plainName;
 
-                        $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) !!}";
+                        $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), [$disabled'class' => 'form-control', ]) !!}";
 
-                        $element .= "\n{!! Form::text('$plainName', $$camelModel ? $$camelModel->${plainName}->${foreign_display} : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
+                        if ($nullable) {
+                            $element .= "\n{!! Form::text('$plainName', $$camelModel ? ($$camelModel->${plainName} ? $$camelModel->${plainName}->${foreign_display} : '') : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
+                        } else {
+                            $element .= "\n{!! Form::text('$plainName', $$camelModel ? $$camelModel->${plainName}->${foreign_display} : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
+                        }
 
                         $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
 
@@ -333,7 +337,7 @@ EOT;
                             $afterElement .= "\n@endif";
                         }
 
-                        $element .= "\n\t\t\t".$afterElementFilter;
+                        $element .= "\n\t\t\t" . $afterElementFilter;
                     } else {
                         $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
                         $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";

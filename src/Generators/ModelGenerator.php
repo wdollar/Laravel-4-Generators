@@ -74,7 +74,7 @@ PHP
             foreach ($fields as $field) {
                 // add foreign keys
                 $name = $field->name;
-                $relFuncName = ends_with($name, '_id') ? substr($name, 0, -3) : $name;
+                $relFuncName = strip_suffix($name, '_id');
 
                 if (array_key_exists($name, $relationModelList)) {
                     $foreignModelVars = $relationModelList[$name];
@@ -184,24 +184,24 @@ PHP;
             if (!hasIt($field->options, ['hidden', 'guarded'], HASIT_WANT_PREFIX)) {
                 $ruleBits = [];
 
-                if ($field->name === 'email') array_unshift($ruleBits, 'email');
-                $ruleType = GeneratorsServiceProvider::getFieldRuleType($field->type);
-                if ($ruleType) array_unshift($ruleBits, $ruleType);
+                if ($rule = hasIt($field->options, 'rule', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {
+                    $rule = substr($rule, strlen('rule('), -1);
+                    $ruleBits[] = $rule;
+                }
 
-                if (!GeneratorsServiceProvider::isFieldBoolean($field->type) && !hasIt($field->options, [
+                if (array_search('sometimes', $ruleBits) === false && !GeneratorsServiceProvider::isFieldBoolean($field->type) && !hasIt($field->options, [
                         'nullable',
                         'hidden',
                         'guarded'
                     ], HASIT_WANT_PREFIX)
                 ) $ruleBits[] = 'required';
 
+                if ($field->name === 'email') array_unshift($ruleBits, 'email');
+                $ruleType = GeneratorsServiceProvider::getFieldRuleType($field->type);
+                if ($ruleType) array_unshift($ruleBits, $ruleType);
+
                 if (hasIt($field->options, ['unique'], HASIT_WANT_PREFIX)) {
                     $ruleBits[] = "unique:{$modelVars['snake_models']},$field->name,{{id}}";
-                }
-
-                if ($rule = hasIt($field->options, 'rule', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {
-                    $rule = substr($rule, strlen('rule('), -1);
-                    $ruleBits[] = $rule;
                 }
 
                 if ($default = hasIt($field->options, 'default', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {

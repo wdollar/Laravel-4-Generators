@@ -10,7 +10,7 @@ class ControllerGenerator extends Generator
     protected $template;
 
     protected
-    function replaceLines($template)
+    function replaceLines($template, $modelVars)
     {
         $relationModelList = GeneratorsServiceProvider::getRelationsModelVarsList(GeneratorsServiceProvider::splitFields($this->cache->getFields(), true));
 
@@ -69,25 +69,64 @@ class ControllerGenerator extends Generator
             return $fieldText;
         });
 
+        // add only unique lines
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relations:line:with_model}}', function ($line, $fieldVar) use ($fields, $relationModelList, $modelVars) {
+            // we don't need the marker
+            $line = str_replace($fieldVar, '', $line);
+
+            $fieldText = '';
+            $fieldTexts = [];
+            if ($modelVars) {
+                // add model
+                $text = GeneratorsServiceProvider::replaceModelVars($line, $modelVars, '{{relations:', '}}') . "\n";
+                if (array_search($text, $fieldTexts) === false) {
+                    $fieldText .= $text;
+                    $fieldTexts[] = $text;
+                }
+            }
+            foreach ($fields as $field => $type) {
+                // here we override for foreign keys
+                if (array_key_exists($field, $relationModelList)) {
+                    $relationModelVars = $relationModelList[$field];
+
+                    // Replace template vars
+                    $text = GeneratorsServiceProvider::replaceModelVars($line, $relationModelVars, '{{relations:', '}}') . "\n";
+                    if (array_search($text, $fieldTexts) === false) {
+                        $fieldText .= $text;
+                        $fieldTexts[] = $text;
+                    }
+                }
+            }
+
+            return $fieldText;
+        });
+
         if (strpos($this->template, '{{relations') !== false) {
             $relations = '';
             $foreignModel = '';
             $foreignModels = [];
             foreach ($fields as $field => $type) {
                 if (array_key_exists($field, $relationModelList)) {
-                    $modelVars = $relationModelList[$field];
-                    if (array_search($modelVars['camelModels'], $foreignModels) === false) {
-                        $foreignModels[] = $modelVars['camelModels'];
+                    $relationModelVars= $relationModelList[$field];
+                    if (array_search($relationModelVars['camelModels'], $foreignModels) === false) {
+                        $foreignField = strip_suffix($field, "_id");
+                        $foreignModels[] = $relationModelVars['camelModels'];
+                        $foreignFieldList = "'${relationModelVars['name']}', '${relationModelVars['id']}'";
+
                         $relations .= <<<PHP
     /**
-     * @return array ${modelVars['CamelModel']}
+     * @return array ${relationModelVars['CamelModel']}
      */
     public
-    function ${modelVars['camelModels']}List(\$id = null)
+    function ${relationModelVars['camelModels']}List($${modelVars['camelModel']} = null)
     {
-        // fill the foreign list for ${modelVars['CamelModel']}
-        $${modelVars['camelModels']} = ${modelVars['CamelModel']}::query()->get(['${modelVars['name']}', '${modelVars['id']}'])->lists('${modelVars['name']}', '${modelVars['id']}')->all();
-        return $${modelVars['camelModels']};
+        // fill the foreign list for ${relationModelVars['CamelModel']}
+        if ($${modelVars['camelModel']} !== null) {
+            $${relationModelVars['camelModels']} = !$${modelVars['camelModel']}->$foreignField ? [] : [ $${modelVars['camelModel']}->$foreignField->${relationModelVars['id']} => $${modelVars['camelModel']}->$foreignField->${relationModelVars['name']} ];
+        } else {
+            $${relationModelVars['camelModels']} = ${relationModelVars['CamelModel']}::query()->get([{$foreignFieldList}])->lists({$foreignFieldList})->all();
+        }
+        return $${relationModelVars['camelModels']};
     }
 
 PHP;
@@ -152,7 +191,7 @@ PHP;
 
         $template = str_replace('{{className}}', $className, $this->template);
         $template = str_replace('{{collection}}', $resource, $template);
-        $template = $this->replaceLines($template);
+        $template = $this->replaceLines($template, []);
 
         return $this->replaceStandardParams($template);
     }
@@ -173,7 +212,7 @@ PHP;
 
         // Replace template vars
         $template = GeneratorsServiceProvider::replaceModelVars($template, $modelVars);
-        $template = $this->replaceLines($template);
+        $template = $this->replaceLines($template, $modelVars);
 
         return $template;
     }

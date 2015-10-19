@@ -498,7 +498,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             'index',
             'keyindex',
             'primary',
-            'table',
+            'foreign',
             'rule',
             'auto',
         ]) !== false;

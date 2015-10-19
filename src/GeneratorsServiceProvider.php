@@ -432,7 +432,7 @@ class GeneratorsServiceProvider extends ServiceProvider
      *                      is provided in the field, in which case will use the table name from the option.
      *
      *                      if foreign() option is of the form foreign(table,id,name) then the id part will be added to foreign model vars
-     *                      under the 'id' key otherwise 'id' is added as the foreign id column and name part under 'name', otherwise 'name' will be
+     *                      under the 'id' key otherwise 'id' is added as the foreign id column and name part under 'name', otherwise 'id' will be
      *                      used as the foreign display column.
      */
     public static
@@ -463,7 +463,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         if ($foreignTable) {
             $foreignModelVars = GeneratorsServiceProvider::getModelVars($foreignTable);
             $foreignModelVars['id'] = $foreignId ?: 'id';
-            $foreignModelVars['name'] = $foreignName ?: 'name';
+            $foreignModelVars['name'] = $foreignName ?: 'id';
             return $foreignModelVars;
         }
 

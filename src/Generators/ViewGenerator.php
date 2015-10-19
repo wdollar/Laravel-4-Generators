@@ -141,6 +141,7 @@ class ViewGenerator extends Generator
         $dash_models = $modelVars['dash-models'];
         $camelModel = $modelVars['camelModel'];
 
+        $relationModelList = GeneratorsServiceProvider::getRelationsModelVarsList(GeneratorsServiceProvider::splitFields($this->cache->getFields(), true));
         $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_RECORD | SCOPED_EXPLODE_WANT_TEXT);
         $fields = GeneratorsServiceProvider::filterFieldHavingOption($fields, 'hidden');
 
@@ -156,7 +157,7 @@ class ViewGenerator extends Generator
         }
 
         // And then the rows, themselves
-        $fields = array_map(function ($field) use ($camelModel, $fields) {
+        $fields = array_map(function ($field) use ($camelModel, $fields, $relationModelList) {
             list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($fields[$field]);
             $nullable = (strpos($options, 'nullable') !== false);
 
@@ -165,13 +166,14 @@ class ViewGenerator extends Generator
                 return null;
             }
 
-            if ($type === 'integer') {
-                if (substr($field, strlen($field) - 3) === '_id') {
-                    $foreignModel = substr($field, 0, -3);
+            if ($type === 'integer' || $type === 'bigInteger') {
+                if (array_key_exists($field, $relationModelList)) {
+                    $relFuncName = ends_with($field, '_id') ? substr($field, 0, -3) : $field;
+                    $nameCol = $relationModelList[$field]['name'];
                     if ($nullable) {
-                        return "<td>{{ is_null(\$$camelModel->$field) ? 'null' : \$$camelModel->$field . ':' . \$$camelModel->{$foreignModel}->id }}</td>";
+                        return "<td>{{ is_null(\$$camelModel->$field) ? '' : \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
                     } else {
-                        return "<td>{{ \$$camelModel->$field . ':' . \$$camelModel->{$foreignModel}->id }}</td>";
+                        return "<td>{{ \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
                     }
                 }
             }
@@ -221,26 +223,31 @@ EOT;
         foreach ($fields as $name => $values) {
             $type = $values['type'];
             $options = $values['options'];
+            $nameModelVars = GeneratorsServiceProvider::getModelVars($name);
 
             if (strpos($options, 'hidden') !== false) continue;
             $nullable = (strpos($options, 'nullable') !== false);
             if (strpos($options, 'guarded') !== false) {
                 if ($useOp) {
                     $readonly = true ? "['readonly', " : '[';
+                    $readonlyHalf = '[true ? \'readonly\' : ';
                     $readonlyClose = ']';
                     $disabled = true ? "'disabled', " : '';
                 } else {
                     $readonly = $disable ? "['readonly', " : '[';
+                    $readonlyHalf = "[$disable ? 'readonly' : ";
                     $readonlyClose = ']';
                     $disabled = $disable ? "'disabled', " : '';
                 }
             } else {
                 if ($useOp) {
-                    $readonly = 'array_merge(isViewOp($op) ? [\'readonly\'] : [],[';
-                    $readonlyClose = '])';
-                    $disabled = 'isViewOp($op) ? \'disabled\' : null';
+                    $readonly = '[isViewOp($op) ? \'readonly\' : \'\',';
+                    $readonlyHalf = '[isViewOp($op) ? \'readonly\' : ';
+                    $readonlyClose = ']';
+                    $disabled = 'isViewOp($op) ? \'disabled\' : \'\',';
                 } else {
                     $readonly = $disable ? "['readonly', " : '[';
+                    $readonlyHalf = "[$disable ? 'readonly' : ";
                     $readonlyClose = ']';
                     $disabled = $disable ? "'disabled', " : '';
                 }
@@ -270,7 +277,8 @@ EOT;
             if ($type === 'boolean' && $noBoolean) continue;
             if ($type !== 'boolean' && $onlyBoolean) continue;
 
-            $labelName = $name;
+            $trans_name = $name;
+            $labelName = $trans_name;
             $labelGroup = $dash_models;
             $afterElement = '';
             $afterElementFilter = '';
@@ -282,8 +290,8 @@ EOT;
                 case  'mediumInteger':
                 case  'smallInteger':
                 case  'tinyInteger':
-                    $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}";
-                    $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
+                    $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
                     break;
 
                 case 'bigInteger':
@@ -293,22 +301,25 @@ EOT;
                         $afterElement = "";
 
                         $foreignModelVars = $relationModelList[$name];
-                        $foreignModel = $foreignModelVars['camelModel'];
                         $foreignModels = $foreignModelVars['camelModels'];
                         $foreignmodels = $foreignModelVars['models'];
                         $foreign_model = $foreignModelVars['snake_model'];
                         $foreign_models = $foreignModelVars['snake_models'];
-                        $id = $foreignModelVars['id'];
+                        $foreign_display = $foreignModelVars['name'];
 
                         $plainName = ends_with($name, '_id') ? substr($name, 0, -3) : $name;
+                        $labelName = $plainName;
 
                         $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), ['class' => 'form-control', ]) !!}";
-                        $element .= "\n{!! Form::text('$plainName', $$camelModel ? $$camelModel->${plainName}->${id} : '', ['data-vsch_completion'=>'$foreign_models:${id};id:$name','class' => 'form-control', ]) !!}";
-                        $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:${id};id:$name','class'=>'form-control', 'placeholder'=>noEditTrans(' $dash_models.$name'), ]) !!}";
+
+                        $element .= "\n{!! Form::text('$plainName', $$camelModel ? $$camelModel->${plainName}->${foreign_display} : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
+
+                        $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
+
                         if ($filterRows) {
-                            $afterElementFilter .= "\n{!! Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) !!}";
+                            $afterElementFilter .= "{!! Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) !!}";
                         } else {
-                            $afterElementFilter .= "\n{!! Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) !!}";
+                            $afterElementFilter .= "{!! Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) !!}";
                         }
 
                         //$labelName = $foreignModelVars['model'];
@@ -317,22 +328,23 @@ EOT;
                         if ($useOp) {
                             $afterElement .= "\n\t\n@if(\$op === 'create' || \$op === 'edit')";
                         }
-                        $afterElement .= "\n\t<div class='form-group col-sm-2'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br><a href=\"@route('$foreignmodels.create')\" @linkAsButton('warning')>@lang('messages.create')</a></div>";
+                        $afterElement .= "\n\t<div class='form-group col-sm-1'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br>\n\t\t\t<a href=\"@route('$foreignmodels.create')\" @linkAsButton('warning')>@lang('messages.create')</a>\n</div>";
                         if ($useOp) {
                             $afterElement .= "\n@endif";
                         }
-                        $afterElement .= $afterElementFilter;
+
+                        $element .= "\n\t\t\t".$afterElementFilter;
                     } else {
-                        $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}";
-                        $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                        $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
+                        $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
                     }
                     break;
 
                 case 'text':
                     $limit = empty($limit) ? 256 : $limit;
                     $rowAttr = (int)($limit / 64) ?: 1;
-                    $element = "{!! Form::textarea('$name', Input::old('$name'), $readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$name'), 'rows'=>'$rowAttr', $readonlyClose) !!}";
-                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    $element = "{!! Form::textarea('$name', Input::old('$name'), $readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), 'rows'=>'$rowAttr', $readonlyClose) !!}";
+                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
                     break;
 
                 case 'boolean':
@@ -345,13 +357,13 @@ EOT;
                 case 'dateTime':
                     $element = <<<HTML
 <div class="input-group input-group-sm date">
-    {!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}
+    {!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
                     $elementFilter = <<<HTML
 <div class="input-group date">
-    {!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}
+    {!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
@@ -363,14 +375,14 @@ HTML;
                 case 'time':
                 case 'string':
                 default:
-                    $element = "{!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), $readonlyClose) !!}";
-                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$name'), ]) !!}";
+                    $element = "{!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
+                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
                     break;
             }
 
             if ($filterRows) {
-                $afterElementFilter = $afterElementFilter ? "\n" . $afterElementFilter : $afterElementFilter;
-                $frag = "\t\t\t\t<td>$elementFilter</td>$afterElementFilter";
+                $afterElementFilter = $afterElementFilter ? "\n\t\t\t\t" . $afterElementFilter : $afterElementFilter;
+                $frag = "\t\t\t\t<td>$elementFilter$afterElementFilter</td>";
             } elseif ($useShort) {
                 if ($wrapRow) {
                     $frag = <<<EOT
@@ -395,16 +407,16 @@ EOT;
                     $frag = <<<EOT
         <div class="row">
             <div class="form-group col-sm-3">
-                {!! Form::label('$name', trans('$labelGroup.$labelName') . ':') !!}
-                  $element$afterElement
+                <label for="$name">@lang('$labelGroup.$labelName'):</label>
+                  $element
             </div>
         </div>
-
+        $afterElement
 EOT;
                 } else {
                     $frag = <<<EOT
         <div class="form-group">
-            {!! Form::label('$name', trans('$labelGroup.$labelName') . ':') !!}
+            <label for="$name">@lang('$labelGroup.$labelName'):</label>
               $element$afterElement
         </div>
 

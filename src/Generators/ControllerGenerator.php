@@ -45,18 +45,24 @@ class ControllerGenerator extends Generator
             return $fieldText;
         });
 
+        // add only unique lines
         $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relations:line}}', function ($line, $fieldVar) use ($fields, $relationModelList) {
             // we don't need the marker
             $line = str_replace($fieldVar, '', $line);
 
             $fieldText = '';
+            $fieldTexts = [];
             foreach ($fields as $field => $type) {
                 // here we override for foreign keys
                 if (array_key_exists($field, $relationModelList)) {
                     $modelVars = $relationModelList[$field];
 
                     // Replace template vars
-                    $fieldText .= GeneratorsServiceProvider::replaceModelVars($line, $modelVars, '{{relations:', '}}') . "\n";
+                    $text = GeneratorsServiceProvider::replaceModelVars($line, $modelVars, '{{relations:', '}}') . "\n";
+                    if (array_search($text, $fieldTexts) === false) {
+                        $fieldText .= $text;
+                        $fieldTexts[] = $text;
+                    }
                 }
             }
 
@@ -66,11 +72,13 @@ class ControllerGenerator extends Generator
         if (strpos($this->template, '{{relations') !== false) {
             $relations = '';
             $foreignModel = '';
-
+            $foreignModels = [];
             foreach ($fields as $field => $type) {
                 if (array_key_exists($field, $relationModelList)) {
                     $modelVars = $relationModelList[$field];
-                    $relations .= <<<PHP
+                    if (array_search($modelVars['camelModels'], $foreignModels) === false) {
+                        $foreignModels[] = $modelVars['camelModels'];
+                        $relations .= <<<PHP
     /**
      * @return array ${modelVars['CamelModel']}
      */
@@ -83,6 +91,7 @@ class ControllerGenerator extends Generator
     }
 
 PHP;
+                    }
                 }
             }
 
@@ -94,8 +103,7 @@ PHP;
                         // append
                         if (array_key_exists($relationModel, $relationsVars)) {
                             $relationsVars[$relationModel] .= ", '$relationModelVar' => $$relationModelVar";
-                        }
-                        else {
+                        } else {
                             $relationsVars[$relationModel] = "'$relationModelVar' => $$relationModelVar";
                         }
                     }

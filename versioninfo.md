@@ -10,25 +10,26 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 - fix translation generator not to add duplicated keys.
 
-- fix controller generator not to add duplicated {{relations}}, {{relations:line}} and {{relations:line:with_model}}.
+- fix controller generator not to add duplicated `{{relations}}`, `{{relations:line}}` and `{{relations:line:with_model}}`.
 
-- add {{app_namespace}} to all generators to be replaced by the configured \App::getNamespace(), without the trailing \ so usage is {{app_namespace}}/...
+- add `{{app_namespace}}` to all generators to be replaced by the configured `\App::getNamespace()`, without the trailing `\` so usage is `{{app_namespace}}/...`
 
-- add {{eol}} to all generators to be replaced by \n.
+- add `{{eol}}` to all generators to be replaced by `\n`.
 
-- add {{relations:line:with_model}} to controller generator to create lines for foreign relationships but also include the self model into the list. Used for creating import statements for related models and own model. For example a line in the templates/scaffold/controller.txt:
+- add `{{relations:line:with_model}}` to controller generator to create lines for foreign relationships but also include the self model into the list. Used for creating import statements for related models and own model. For example a line in the `templates/scaffold/controller.txt`:
 
-        use {{relations:line:with_model}}{{app_namespace}}\{{relations:CamelModel}};
-        
-    once expanded changes to the following, depending on the model field definitions, of course:
-    
-    ```php
-    use app\License;
-    use app\Product;
-    use app\User;
-    ```
+		use {{relations:line:with_model}}{{app_namespace}}\{{relations:CamelModel}};
+		
+	once expanded changes to the following, depending on the model field definitions, of course:
+	
+	```php
+	use app\License;
+	use app\Product;
+	use app\User;
+	```
 
-- add --lang=path to generate:translation for scaffold use. Any *.txt files in the template/scaffold/lang/ directory will convert the model vars as per Model Vars Table and add those translation definitions to the corresponding .php file in the lang/en/ directory. Allows to create place-holder translations based on the model generated. 
+- add `--lang=path` to `generate:translation` for scaffold use. Any *.txt files in the `template/scaffold/lang/` directory will convert the model vars as per Model Vars Table and add those translation definitions to the corresponding .php file in the `lang/en/` directory. Allows to create place-holder translations based on the model generated. 
+
     The template once processed should evaluate to a set of array `key=>value` definitions as would be used in translation files. The `return array( ... )` wrapper is added by the code.
 
     For example, I use the following in `template/lang/page-titles.txt`:
@@ -51,12 +52,12 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     'show-productversion'   => 'Show Product Version',
     ```
     Existing translations are not overwritten, unless --overwrite option is used. Comments are preserved and location of keys under particular block comment is also preserved. I use the TranslationFileRewriter class from my laravel-translation-manager package to do surgical insertion of new translations without loosing the comments and position of translations. 
-    
+
     This is a convenient way of adding model related translations to existing files.
 
 - add a numeric sequence to migration file name after the Hms, when running scaffold creation from a batch file multiple migrations are created within the same second and then the migrations would be applied alphabetically, not in the order of creation. Causing errors when foreign keys were on tables not yet created.
 
-- add foreign(table_name,id,name) field hint to give the table name for an field name for foreign keys, optional id: foreign id column (default is id), and foreign displayable column to use for UI selections (default name), so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix. For now only integer and bigInteger foreign keys are implemented. A few more iterations of cleanup and other types will be included.
+- add `foreign(table_name,id,name)` field hint to give the table name for an field name for foreign keys, optional id: foreign id column (default is id), and foreign displayable column to use for UI selections (default name), so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix. For now only integer and bigInteger foreign keys are implemented. A few more iterations of cleanup and other types will be included.
 
 - add all generators now recognize foreign keys when the field ends in `_id` or when a `foreign()` field hint is provided. Only integer and bitInteger field types are supported for now.
 
@@ -64,7 +65,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 - add `--bench="name/package"` option to all generator commands, generated code will be added to the given name/package in the workbench. A convenient way to scaffold models, controllers and migrations in packages on which you are working in the project workbench directory.
 
-- add `--prefix="prefix_"` option to migration and model generator commands, generated code will add a prefix to the table names of the model. Additionally, with --bench option the prefix will be taken from the package's `config.table_prefix` configuration via `\Config::get('package::config.table_prefix','')`. `--prefix` option has precedence over `--bench`. If non-empty `--prefix` is specified then it will be used instead of the package config setting, for both the model and the migration files.
+- add `--prefix="prefix_"` option to migration and model generator commands, generated code will add a prefix to the table names of the model. Additionally, with `--bench` option the prefix will be taken from the package's `config.table_prefix` configuration via `\Config::get('package::config.table_prefix','')`. `--prefix` option has precedence over `--bench`. If non-empty `--prefix` is specified then it will be used instead of the package config setting, for both the model and the migration files.
 
 - add `primary(n,m)` field definition. This is the same as `index(n,m)` and `keyindex(n,m)` but will create a primary index for the fields. See: [index hint](#IndexHint)
 
@@ -73,36 +74,36 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 lines in model.txt:
 
 ```php
-    public static $remote_relations = array(
-        {{relation:line}}'{{relation:snake_model}}'=>['{{relation:snake_model}}_id', 'id'],
-    );
+public static $remote_relations = array(
+    {{relation:line}}'{{relation:snake_model}}'=>['{{relation:snake_model}}_id', 'id'],
+);
 ```
 
 for a model that has two foreign key fields: `sender_id` and `conversation_id` will have the following resulting code: 
 
 ```php
-    public static $remote_relations = array(
-        'sender'=>['sender_id', 'id'],
-        'conversation'=>['conversation_id', 'id'],
-    );
+public static $remote_relations = array(
+    'sender'=>['sender_id', 'id'],
+    'conversation'=>['conversation_id', 'id'],
+);
 ```    
 
 for a model that has no foreign key fields the line is omitted:
 
 ```php
-    public static $remote_relations = array(
-    );
+public static $remote_relations = array(
+);
 ```    
 
 ### 1.3.1
 
 - rewrote field string parsing to handle nested (),[] and {}. Now field options can have comma separated parameters. 
 
-- add default(..) hint now adds to the `{{defaults}}` placeholder. Use in the model.txt template to create an associative array of field name to default value. This can be used to provide defaults to the form when creating and also to fill in default values and replace empty strings by nulls for numeric and date/datetime fields. More docs on the subject are in the future.
+- add `default(..)` hint now adds to the `{{defaults}}` placeholder. Use in the model.txt template to create an associative array of field name to default value. This can be used to provide defaults to the form when creating and also to fill in default values and replace empty strings by nulls for numeric and date/datetime fields. More docs on the subject are in the future.
 
-- add rule(....) hint. Adds the stuff between parentheses to the field's rules. Some rules are added automatically. Numeric fields get `numeric`, if the field is not nullable then it gets `required`. email will get `email|unique|table:email,id,{id}` added, the `{id}` placeholder should be changed to the id of the model when it is being saved to prevent triggering a unique e-mail validation failure.
+- add `rule(....)` hint. Adds the stuff between parentheses to the field's rules. Some rules are added automatically. Numeric fields get `numeric`, if the field is not nullable then it gets `required`. email will get `email|unique|table:email,id,{id}` added, the `{id}` placeholder should be changed to the id of the model when it is being saved to prevent triggering a unique e-mail validation failure.
 
-- add <a name="IndexHint"></a>index hint: index(indexdef) to create an index and keyindex(indexdef) to create a unique index, in the migration file. indexdef has the format: i,n, where i and n are integers, i is the index id, n is the position of the field in the index. If n is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
+- add <a name="IndexHint"></a>index hint: `index(indexdef)` to create an index and `keyindex(indexdef)` to create a unique index, in the migration file. `indexdef` has the format: `i,n`, where `i` and `n` are integers, `i` is the index id, `n` is the position of the field in the index. If `n` is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
 
     ```
     user_name:string[24]:keyindex(1,1)
@@ -114,21 +115,21 @@ for a model that has no foreign key fields the line is omitted:
 
 - doc forgot to document new field types being handled in version 1.3.0 and added hints to model fields. Hints are used by the generators but stripped out of the migration file.
 
-    hints are added as options after the field type with additional `:` separating them. Any options that do not have a `(` get () added on. This was pre-existing functionality. 
-    
+    hints are added as options after the field type with additional `:` separating them. Any options that do not have a `(` get `()` added on. This was pre-existing functionality. 
+
     Additionally, the generators recognize and use standard options: nullable, default to affect the generated code. Some shortcut names are added to reduce typing
 
-| shortcut type | laravel type |
+| shortcut type | Laravel type |
 | :---- |:------ |
-| int		| integer |
-| tinyint	| tinyInteger |
-| smallint	| smallInteger |
-| medint	| mediumInteger |
-| mediumint	| mediumInteger |
-| bigint	| bigInteger |
-| bool		| boolean |
-| datetime	| dateTime |
-| decimal	| decimal, except specify the parameter as n.m instead of n,m, ie. `decimal(6,2)` should be given as decimal\[6.2\] |
+| int       | integer |
+| tinyint   | tinyInteger |
+| smallint  | smallInteger |
+| medint    | mediumInteger |
+| mediumint | mediumInteger |
+| bigint    | bigInteger |
+| bool      | boolean |
+| datetime  | dateTime |
+| decimal   | decimal, except specify the parameter as n.m instead of n,m, ie. `decimal(6,2)` should be given as decimal\[6.2\] |
 [**Field Shortcut Types to Laravel Type mappings**]
 
 | type(s) | effect in code |
@@ -190,22 +191,22 @@ This applies to `{{relations:modelVar}}` where modelVar is one of the fields bel
 for a model named `camelCaseModel` the model vars given by the field entry will be replaced with as per table.
 
 
-| field | replaced with | field | replaced with |
-| :---- |:------ | :---- |:------ |
-| {{camelModel}}    |      camelCaseModel    | {{CamelModel}}    |      CamelCaseModel    | 
-| {{camelModels}}   |      camelCaseModels   | {{CamelModels}}   |      CamelCaseModels   | 
-| {{model}}         |      camelcasemodel    | {{dash-model}}    |      camel-case-model  |
-| {{models}}        |      camelcasemodels   | {{dash-models}}   |      camel-case-models |
-| {{Model}}         |      CamelCaseModel    | {{Dash-Model}}    |      Camel-Case-Model  |
-| {{Models}}        |      CamelCaseModels   | {{Dash-Models}}   |      Camel-Case-Models |
-| {{MODEL}}         |      CAMELCASEMODEL    | {{DASH-MODEL}}    |      CAMEL-CASE-MODEL  |
-| {{MODELS}}        |      CAMELCASEMODELS   | {{DASH-MODELS}}   |      CAMEL-CASE-MODELS |
-| {{snake_model}}   |      camel_case_model  | {{space model}}   |      camel case model  |
-| {{snake_models}}  |      camel_case_models | {{space models}}  |      camel case models |
-| {{Snake_Model}}   |      Camel_Case_Model  | {{Space Model}}   |      Camel Case Model  |
-| {{Snake_Models}}  |      Camel_Case_Models | {{Space Models}}  |      Camel Case Models |
-| {{SNAKE_MODEL}}   |      CAMEL_CASE_MODEL  | {{SPACE MODEL}}   |      CAMEL CASE MODEL  |
-| {{SNAKE_MODELS}}  |      CAMEL_CASE_MODELS | {{SPACE MODELS}}  |      CAMEL CASE MODELS |
+| field               | replaced with        | field                | replaced with         |
+|:--------------------|:---------------------|:---------------------|:----------------------|
+| `{{camelModel}}`    |  `camelCaseModel`    |  `{{CamelModel}}`    |  `CamelCaseModel`     | 
+| `{{camelModels}}`   |  `camelCaseModels`   |  `{{CamelModels}}`   |  `CamelCaseModels`    | 
+| `{{model}}`         |  `camelcasemodel`    |  `{{dash-model}}`    |  `camel-case-model`   |
+| `{{models}}`        |  `camelcasemodels`   |  `{{dash-models}}`   |  `camel-case-models`  |
+| `{{Model}}`         |  `CamelCaseModel`    |  `{{Dash-Model}}`    |  `Camel-Case-Model`   |
+| `{{Models}}`        |  `CamelCaseModels`   |  `{{Dash-Models}}`   |  `Camel-Case-Models`  |
+| `{{MODEL}}`         |  `CAMELCASEMODEL`    |  `{{DASH-MODEL}}`    |  `CAMEL-CASE-MODEL`   |
+| `{{MODELS}}`        |  `CAMELCASEMODELS`   |  `{{DASH-MODELS}}`   |  `CAMEL-CASE-MODELS`  |
+| `{{snake_model}}`   |  `camel_case_model`  |  `{{space model}}`   |  `camel case model`   |
+| `{{snake_models}}`  |  `camel_case_models` |  `{{space models}}`  |  `camel case models`  |
+| `{{Snake_Model}}`   |  `Camel_Case_Model`  |  `{{Space Model}}`   |  `Camel Case Model`   |
+| `{{Snake_Models}}`  |  `Camel_Case_Models` |  `{{Space Models}}`  |  `Camel Case Models`  |
+| `{{SNAKE_MODEL}}`   |  `CAMEL_CASE_MODEL`  |  `{{SPACE MODEL}}`   |  `CAMEL CASE MODEL`   |
+| `{{SNAKE_MODELS}}`  |  `CAMEL_CASE_MODELS` |  `{{SPACE MODELS}}`  |  `CAMEL CASE MODELS`  |
 
 ### 1.2.6
 
@@ -219,9 +220,9 @@ for a model named `camelCaseModel` the model vars given by the field entry will 
 - if a migration file exists that matches generated name except for the date prefix then .new is appended to the name instead of creating a new migration. multiple runs don't create multiple migrations that create the same table.
 - auto recognized foreign keys will have `->unsigned()` added to column creation line, and a foreign index on the foreign model.
 
-    `$table->foreign('{{field}}')->references('id')->on('{{fnames}}')`
+        $table->foreign('{{field}}')->references('id')->on('{{fnames}}')
 
-with `{{fnames}}` being the foreign model name (lowercase, plural) and `{{field}}` is the original field name. For a field named user_id it will look like:
+    with `{{fnames}}` being the foreign model name (lowercase, plural) and `{{field}}` is the original field name. For a field named user_id it will look like:
 
     $table->foreign('user_id')->references('id')->on('users')
 
@@ -234,6 +235,7 @@ with `{{fnames}}` being the foreign model name (lowercase, plural) and `{{field}
 #### Model Generator
 
 - add autocorrect on field types:
+
     int => integer
     bool => boolean
   
@@ -300,11 +302,10 @@ with `{{fnames}}` being the foreign model name (lowercase, plural) and `{{field}
 - Now you can:
 
     `php artisan config:publish vsch/generators`
-    
+
 To have the `config/` and `config/templates/` directories added under your project's `app/config/packages/vsch/generators` directory. 
 For your very own copy of the templates that will not be overwritten by a package update. 
 You do not need to modify the `config/generators.php` file unless you want your templates directory somewhere other than the default location.
 
 You only need to keep the template files that you want to modify. Any files not found in your app's `config/packages/.../template` 
 directory will fallback to using the package versions.
-

@@ -12,7 +12,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 - fix controller generator not to add duplicated `{{relations}}`, `{{relations:line}}` and `{{relations:line:with_model}}`.
 
-- add `{{app_namespace}}` to all generators to be replaced by the configured `\App::getNamespace()`, without the trailing `\` so usage is `{{app_namespace}}/...`
+- add `{{app_namespace}}` to all generators to be replaced by the configured `\App::getNamespace()`, without the trailing `\` so usage is `{{app_namespace}}\...`
 
 - add `{{eol}}` to all generators to be replaced by `\n`.
 

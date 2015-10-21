@@ -19,7 +19,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 - add `{{relations:line:with_model}}` to controller generator to create lines for foreign relationships but also include the self model into the list. Used for creating import statements for related models and own model. For example a line in the `templates/scaffold/controller.txt`:
 
         use {{relations:line:with_model}}{{app_namespace}}\{{relations:CamelModel}};
-        
+
     once expanded changes to the following, depending on the model field definitions of course:
     
     ```php
@@ -41,7 +41,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     'edit-{{model}}' => 'Edit {{Space Model}}',
     'delete-{{model}}' => 'Delete {{Space Model}}',
     ```
-    
+
     For example, when generating a scaffold for a model named `productVersion` this template has the effect of adding the following translations to `resources/lang/en/page-titles.php`:
     
     ```php
@@ -51,7 +51,8 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     'index-productversions' => 'Index Product Versions',
     'show-productversion'   => 'Show Product Version',
     ```
-    Existing translations are not overwritten, unless --overwrite option is used. Comments are preserved and location of keys under particular block comment is also preserved. I use the TranslationFileRewriter class from my laravel-translation-manager package to do surgical insertion of new translations without loosing the comments and position of translations. 
+
+    Existing translations are not overwritten, unless `--overwrite` option is used. Comments are preserved and location of keys under particular block comment is also preserved. I use the `TranslationFileRewriter` class from my laravel-translation-manager package to do surgical insertion of new translations without loosing the comments and position of translations. 
 
     This is a convenient way of adding model related translations to existing files.
 

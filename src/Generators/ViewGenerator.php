@@ -168,7 +168,7 @@ class ViewGenerator extends Generator
 
             if ($type === 'integer' || $type === 'bigInteger') {
                 if (array_key_exists($field, $relationModelList)) {
-                    $relFuncName = strip_suffix($field, '_id');
+                    $relFuncName = trim_suffix($field, '_id');
                     $nameCol = $relationModelList[$field]['name'];
                     if ($nullable) {
                         return "<td>{{ is_null(\$$camelModel->$field) ? '' : \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
@@ -307,7 +307,7 @@ EOT;
                         $foreign_models = $foreignModelVars['snake_models'];
                         $foreign_display = $foreignModelVars['name'];
 
-                        $plainName = strip_suffix($name, '_id');
+                        $plainName = trim_suffix($name, '_id');
                         $labelName = $plainName;
 
                         $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), [$disabled'class' => 'form-control', ]) !!}";

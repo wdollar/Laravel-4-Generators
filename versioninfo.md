@@ -4,7 +4,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 ### x.3.2
 
-- fix model generator to not add 'required' to rules if `rule(sometimes)` field hint is given.
+- fix model generator to not add 'required' to rules if `rule(sometimes)` or `default(...)` field hints are present.
 
 - doc view generator for scaffolds with foreign fields produces both an input select and an input text with typeahead for entering foreign ids. One of these needs to be commented out depending on the application and the desired input type. Typeahead requires server support for dynamically determining completions.
 
@@ -18,15 +18,15 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 - add `{{relations:line:with_model}}` to controller generator to create lines for foreign relationships but also include the self model into the list. Used for creating import statements for related models and own model. For example a line in the `templates/scaffold/controller.txt`:
 
-		use {{relations:line:with_model}}{{app_namespace}}\{{relations:CamelModel}};
-		
-	once expanded changes to the following, depending on the model field definitions, of course:
-	
-	```php
-	use app\License;
-	use app\Product;
-	use app\User;
-	```
+        use {{relations:line:with_model}}{{app_namespace}}\{{relations:CamelModel}};
+        
+    once expanded changes to the following, depending on the model field definitions of course:
+    
+    ```php
+    use app\License;
+    use app\Product;
+    use app\User;
+    ```
 
 - add `--lang=path` to `generate:translation` for scaffold use. Any *.txt files in the `template/scaffold/lang/` directory will convert the model vars as per Model Vars Table and add those translation definitions to the corresponding .php file in the `lang/en/` directory. Allows to create place-holder translations based on the model generated. 
 

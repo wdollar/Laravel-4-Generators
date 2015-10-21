@@ -72,7 +72,7 @@ class Generator
     protected
     function replaceStandardParams($template)
     {
-        $template = str_replace("{{app_namespace}}", strip_suffix(\App::getNamespace(), '\\'), $template);
+        $template = str_replace("{{app_namespace}}", trim_suffix(\App::getNamespace(), '\\'), $template);
         $template = str_replace("{{eol}}", "\n", $template);
         return $template;
     }

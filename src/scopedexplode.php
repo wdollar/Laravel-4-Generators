@@ -408,7 +408,7 @@ if (!function_exists('hasIt'))
 if (!function_exists('end_with')) {
     function end_with($haystack, $ending)
     {
-        if (!ends_with($haystack, $ending)) {
+        if ($haystack && !ends_with($haystack, $ending)) {
             return $haystack . $ending;
         }
         return $haystack;
@@ -418,20 +418,20 @@ if (!function_exists('end_with')) {
 if (!function_exists('start_with')) {
     function start_with($haystack, $starting)
     {
-        if (!starts_with($haystack, $starting)) {
+        if ($haystack && !starts_with($haystack, $starting)) {
             return $starting . $haystack;
         }
         return $haystack;
     }
 }
 
-if (!function_exists('strip_prefix')) {
+if (!function_exists('trim_prefix')) {
     /**
      * @param $text string
      * @param $prefix array|string
      * @return string
      */
-    function strip_prefix($text, $prefix)
+    function trim_prefix($text, $prefix)
     {
         if (!is_array($prefix)) $prefix = array($prefix);
         foreach ($prefix as $pre) {
@@ -444,13 +444,13 @@ if (!function_exists('strip_prefix')) {
     }
 }
 
-if (!function_exists('strip_suffix')) {
+if (!function_exists('trim_suffix')) {
     /**
      * @param $text string
      * @param $suffix array|string
      * @return string
      */
-    function strip_suffix($text, $suffix)
+    function trim_suffix($text, $suffix)
     {
         if (!is_array($suffix)) $suffix = array($suffix);
         $textLen = strlen($text);

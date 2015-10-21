@@ -41,8 +41,8 @@ class TranslationsGenerator extends Generator
                     $foreignNameText = $relationModelList[$field]['Space Model'];
                     $fieldTexts[] = str_replace($fieldVar, "'$foreignName' => '$foreignNameText',", $line);
 
-                    if (strip_suffix($field, "_id") !== $foreignName) {
-                        $foreignName = strip_suffix($field, "_id");
+                    if (trim_suffix($field, "_id") !== $foreignName) {
+                        $foreignName = trim_suffix($field, "_id");
                         $foreignNameText = GeneratorsServiceProvider::getModelVars($foreignName)['Space Model'];
                         $fieldTexts[] = str_replace($fieldVar, "'$foreignName' => '$foreignNameText',", $line);
                     }

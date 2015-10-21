@@ -74,7 +74,7 @@ PHP
             foreach ($fields as $field) {
                 // add foreign keys
                 $name = $field->name;
-                $relFuncName = strip_suffix($name, '_id');
+                $relFuncName = trim_suffix($name, '_id');
 
                 if (array_key_exists($name, $relationModelList)) {
                     $foreignModelVars = $relationModelList[$name];
@@ -189,7 +189,14 @@ PHP;
                     $ruleBits[] = $rule;
                 }
 
-                if (array_search('sometimes', $ruleBits) === false && !GeneratorsServiceProvider::isFieldBoolean($field->type) && !hasIt($field->options, [
+                if ($default = hasIt($field->options, 'default', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {
+                    $default = substr($default, strlen('default('), -1);
+                    $defaults[$field->name] = $default;
+                } elseif (hasIt($field->options, 'nullable', HASIT_WANT_PREFIX)) {
+                    $defaults[$field->name] = null;
+                }
+
+                if (array_search('sometimes', $ruleBits) === false && !array_key_exists($field->name, $defaults) && !GeneratorsServiceProvider::isFieldBoolean($field->type) && !hasIt($field->options, [
                         'nullable',
                         'hidden',
                         'guarded'
@@ -202,13 +209,6 @@ PHP;
 
                 if (hasIt($field->options, ['unique'], HASIT_WANT_PREFIX)) {
                     $ruleBits[] = "unique:{$modelVars['snake_models']},$field->name,{{id}}";
-                }
-
-                if ($default = hasIt($field->options, 'default', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {
-                    $default = substr($default, strlen('default('), -1);
-                    $defaults[$field->name] = $default;
-                } elseif (hasIt($field->options, 'nullable', HASIT_WANT_PREFIX)) {
-                    $defaults[$field->name] = null;
                 }
 
                 // here we override for foreign keys

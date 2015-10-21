@@ -109,7 +109,7 @@ class ControllerGenerator extends Generator
                 if (array_key_exists($field, $relationModelList)) {
                     $relationModelVars= $relationModelList[$field];
                     if (array_search($relationModelVars['camelModels'], $foreignModels) === false) {
-                        $foreignField = strip_suffix($field, "_id");
+                        $foreignField = trim_suffix($field, "_id");
                         $foreignModels[] = $relationModelVars['camelModels'];
                         $foreignFieldList = "'${relationModelVars['name']}', '${relationModelVars['id']}'";
 

@@ -263,6 +263,7 @@ class MigrationGenerator extends Generator
             $hadUnsigned = false;
             $hadNullable = false;
             $hadDefault = false;
+            $hadOnDelete = false;
             $foreignTable = null;
 
             foreach ($options as $option) {
@@ -271,7 +272,12 @@ class MigrationGenerator extends Generator
                     elseif ($isKey) $keyIndex = &$keyindices;
                     else $keyIndex = &$indices;
 
-                    $this->processIndexOption($keyIndex, $option, $field->name, $fieldIndex);
+                    self::processIndexOption($keyIndex, $option, $field->name, $fieldIndex);
+                }
+
+
+                if ($option === 'ondelete' || $option === 'ondelete') {
+                    $hadOnDelete = true;
                 }
 
                 if (GeneratorsServiceProvider::isFieldHintOption($option)) continue;
@@ -303,7 +309,8 @@ class MigrationGenerator extends Generator
                     $indexName = substr($indexName, 0, 64);
                 }
 
-                $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on({{prefix}}'$table_name')";
+                $onDeleteCascade = $hadOnDelete ? "->onDelete('cascade')" :'';
+                $foreignKeys[] = "\$table->foreign('$name','$indexName')->references('id')->on({{prefix}}'$table_name')$onDeleteCascade";
                 $dropIndices[] = "\$table->dropIndex('$indexName')";
             }
 
@@ -348,7 +355,7 @@ class MigrationGenerator extends Generator
         return $indexTexts;
     }
 
-    private
+    public static
     function processIndexOption(&$indices, $option, $field, $fieldIndex)
     {
         $params = preg_match('/\((.*)\)/', $option, $matches) ? $matches[1] : '';

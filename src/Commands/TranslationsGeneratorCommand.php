@@ -2,6 +2,7 @@
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Debug\Exception\FatalErrorException;
 use Vsch\Generators\Generators\TranslationsGenerator;
 use Vsch\Generators\GeneratorsServiceProvider;
 use Vsch\Generators\TranslationFileRewriter;
@@ -85,32 +86,31 @@ return array(
 $translationModsText
 );
 PHP;
-                            $newTranslations = eval($translationMods);
+                            try {
 
-                            if ($newTranslations) {
-                                $translations = file_exists($path) ? require($path) : [];
-                                $overwrite = $this->option('overwrite');
-                                $needUpdate = false;
-                                foreach ($newTranslations as $key => $value) {
-                                    if ($overwrite || !array_key_exists($key, $translations)) {
-                                        $translations[$key] = $value;
-                                        $needUpdate = true;
-                                    }
-                                }
+                                $newTranslations = eval($translationMods);
 
-                                if ($needUpdate) {
-                                    $configRewriter->parseSource(file_exists($path) ? file_get_contents($path) : '');
-                                    $output = $configRewriter->formatForExport($translations, $exportOptions);
-                                    if (file_put_contents($path, $output) !== false) {
-                                        $this->info("Updated translations from template/lang/$file in $path");
+                                if ($newTranslations) {
+                                    $translations = file_exists($path) ? require($path) : [];
+                                    $overwrite = $this->option('overwrite');
+                                    $needUpdate = merge_translations($translations, $newTranslations, $overwrite);
+
+                                    if ($needUpdate) {
+                                        $configRewriter->parseSource(file_exists($path) ? file_get_contents($path) : '');
+                                        $output = $configRewriter->formatForExport($translations, $exportOptions);
+                                        if (file_put_contents($path, $output) !== false) {
+                                            $this->info("Updated translations from template/lang/$file in $path");
+                                        } else {
+                                            $this->error("Failed to update translations from template/lang/$file in $path");
+                                        }
                                     } else {
-                                        $this->error("Failed to update translations from template/lang/$file in $path");
+                                        $this->info("Did not need to update changes from template/lang/$file in $path");
                                     }
                                 } else {
-                                    $this->info("Did not need to update changes from template/lang/$file in $path");
+                                    $this->error("failed to evaluate changes from template/lang/$file for $path");
                                 }
-                            } else {
-                                $this->error("failed to evaluate changes from template/lang/$file for $path");
+                            } catch (FatalErrorException $e) {
+                                $this->error("failed to evaluate changes from template/lang/$file, exception " . $e->getMessage());
                             }
                         }
                     }

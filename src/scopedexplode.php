@@ -464,3 +464,21 @@ if (!function_exists('trim_suffix')) {
         return $text;
     }
 }
+
+if (!function_exists('merge_translations')) {
+    function merge_translations(&$array1, $array2, $overwrite)
+    {
+        $hadChanges = false;
+        foreach ($array2 as $key => $value) {
+            if ($overwrite || !array_key_exists($key, $array1)) {
+                $array1[$key] = $value;
+                $hadChanges = true;
+            } else if (is_array($value) && is_array($array1[$key])) {
+                if (merge_translations($array1[$key], $value, $overwrite)) {
+                    $hadChanges = true;
+                }
+            }
+        }
+        return $hadChanges;
+    }
+}

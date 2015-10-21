@@ -137,13 +137,37 @@ PHP;
 
         if (strpos($template, '{{field:unique}}') !== false) {
             $uniqueField = '';
+            $keyindices = [0]; // first element is last used index number, keys are _i where i is passed from the parameters, or auto generated, _i => _n_f where n is from params and f index of the field in the fields list
+
+            $fieldIndex = 0;
             foreach ($fields as $field) {
-                if (hasIt($field->options, 'unique', HASIT_WANT_PREFIX)) {
-                    $uniqueField = $field->name;
-                    break;
+                $fieldIndex++;
+                foreach ($field->options as $option) {
+                    if (($isKey = strpos($option, 'keyindex') === 0)) {
+                        MigrationGenerator::processIndexOption($keyindices, $option, $field->name, $fieldIndex);
+                    }
                 }
             }
-            if ($uniqueField === '') $uniqueField = 'id';
+
+            // we now have the key indices, we can take the first one
+            if (count($keyindices) >= 1) {
+                // skip the auto counter
+                array_shift($keyindices);
+                $indexValues = array_values($keyindices);
+                if ($indexValues) {
+                    $anyIndex = $indexValues[0];
+                    $uniqueField = "'" . implode("','", array_values($anyIndex)) . "'";
+                }
+            } else {
+                foreach ($fields as $field) {
+                    if (hasIt($field->options, 'unique', HASIT_WANT_PREFIX)) {
+                        $uniqueField = "'" . $field->name . "'";
+                        break;
+                    }
+                }
+            }
+
+            if ($uniqueField === '') $uniqueField = "'id'";
 
             $template = str_replace('{{field:unique}}', $uniqueField, $template);
         }

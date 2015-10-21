@@ -4,6 +4,10 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 ### x.3.2
 
+- fix `{{field:unique}}` to make the field list from the first unique index defined for the model.
+
+- add `ondelete` field hint in MigrationGenerator for foreign keys to add `onDelete('cascade')` to foreign key declaration.
+
 - fix model generator to not add 'required' to rules if `rule(sometimes)` or `default(...)` field hints are present.
 
 - doc view generator for scaffolds with foreign fields produces both an input select and an input text with typeahead for entering foreign ids. One of these needs to be commented out depending on the application and the desired input type. Typeahead requires server support for dynamically determining completions.

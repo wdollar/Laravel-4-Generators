@@ -14,8 +14,8 @@
 
  I will be making a lot of changes in the near future. I am only adding L5 support because I need it ASAP for an L4 project migrated to L5.1 that used these generators and I desperately need them to make some mods and additions. 
 
-At this point I feel that the generators are in desperate need of a rewrite to simplify and harmonize the template syntax, add more control to how code is generated. This is on a todo list.
-I am adding cludges just to get the functionality I need for the project I am working on. It is not the best way but the only way on a limited time budget.
+At this point I feel that the generators are in desperate need of a rewrite to simplify and harmonize the template syntax, add more control to how code is generated. This is on a todo list. 
+I am adding kludges just to get the functionality I need for the project I am working on. It is not the best way but the only way on a limited time budget. Under the hood clean-up is already in progress. Slowly but surely it will all get cleaned up.
 
 # Development caveats: 
 - I am currently working on this package in my project's workbench directory and not as a full fledged package. 

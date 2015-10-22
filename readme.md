@@ -24,5 +24,4 @@ I am adding kludges just to get the functionality I need for the project I am wo
 
 # Package docs
 
-This package updates the views provided by Jeffrey Way's original works to Bootstrap 3. The original documentation from Way's works follows. The instructions have been updated to reflect any changes within this package.
-
+This package updates the views provided by Jeffrey Way's original works to Bootstrap 3.

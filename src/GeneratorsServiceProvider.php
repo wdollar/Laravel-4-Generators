@@ -464,6 +464,8 @@ class GeneratorsServiceProvider extends ServiceProvider
             $foreignModelVars = GeneratorsServiceProvider::getModelVars($foreignTable);
             $foreignModelVars['id'] = $foreignId ?: 'id';
             $foreignModelVars['name'] = $foreignName ?: 'id';
+            $foreignModelVars['table'] = $foreignTable;
+            $foreignModelVars['field'] = $name;
             return $foreignModelVars;
         }
 

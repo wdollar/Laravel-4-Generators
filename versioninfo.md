@@ -4,6 +4,8 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 ### x.3.2
 
+- add `table`, `field` to foreign relations map which represent the table name, if given in foreign() hint, and field name that refers to this foreign key, respectively.
+
 - fix `{{field:unique}}` to make the field list from the first unique index defined for the model.
 
 - add `ondelete` field hint in MigrationGenerator for foreign keys to add `onDelete('cascade')` to foreign key declaration.

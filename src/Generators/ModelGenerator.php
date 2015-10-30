@@ -196,6 +196,7 @@ PHP;
         $hidden = [];
         $notrail = [];
         $notrailonly = [];
+        $dates = [];
         $defaults = [];
         $fieldText = '';
 
@@ -203,6 +204,10 @@ PHP;
             if ($field->name !== 'id') {
                 if ($fieldText) $fieldText .= ', ';
                 $fieldText .= $field->name . ":" . implode(':', $field->options);
+            }
+
+            if (GeneratorsServiceProvider::isFieldDateTimeType($field->type)) {
+                $dates[] = "'$field->name'";
             }
 
             if (!hasIt($field->options, ['hidden', 'guarded'], HASIT_WANT_PREFIX)) {
@@ -267,6 +272,7 @@ PHP;
         $template = str_replace('{{rules}}', $this->implodeOneLineExpansion($rules), $template);
         $template = str_replace('{{hidden}}', $this->implodeOneLineExpansion($hidden), $template);
         $template = str_replace('{{guarded}}', $this->implodeOneLineExpansion($guarded), $template);
+        $template = str_replace('{{dates}}', $this->implodeOneLineExpansion($dates), $template);
         $template = str_replace('{{notrail}}', $this->implodeOneLineExpansion($notrail), $template);
         $template = str_replace('{{notrailonly}}', $this->implodeOneLineExpansion($notrailonly), $template);
         $template = str_replace('{{defaults}}', $this->implodeOneLineExpansion($defaultValues), $template);

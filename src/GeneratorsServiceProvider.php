@@ -441,9 +441,11 @@ class GeneratorsServiceProvider extends ServiceProvider
         $foreignTable = null;
         $foreignId = null;
         $foreignName = null;
+        $sansId = null;
         if (substr($name, -3) === '_id') {
             // assume foreign key
             $foreignTable = substr($name, 0, -3);
+            $sansId = $foreignTable;
         }
 
         if (!is_array($options)) $options = array($options);
@@ -456,6 +458,7 @@ class GeneratorsServiceProvider extends ServiceProvider
                 if ((count($foreignTable) > 1)) $foreignId = $foreignTable[1];
                 if ((count($foreignTable) > 2)) $foreignName = $foreignTable[2];
                 $foreignTable = $foreignTable[0];
+                if ($sansId === null) $sansId = $foreignTable;
                 break;
             }
         }
@@ -466,6 +469,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             $foreignModelVars['name'] = $foreignName ?: 'id';
             $foreignModelVars['table'] = $foreignTable;
             $foreignModelVars['field'] = $name;
+            $foreignModelVars['field_no_id'] = $sansId;
             return $foreignModelVars;
         }
 

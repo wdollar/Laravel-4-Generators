@@ -74,7 +74,6 @@ PHP
             foreach ($fields as $field) {
                 // add foreign keys
                 $name = $field->name;
-                $relFuncName = trim_suffix($name, '_id');
 
                 if (array_key_exists($name, $relationModelList)) {
                     $foreignModelVars = $relationModelList[$name];
@@ -83,10 +82,11 @@ PHP
      * @return \\Illuminate\\Database\\Eloquent\\Relations\\Relation
      */
     public
-    function $relFuncName()
+    function ${foreignModelVars['field_no_id']}()
     {
         return \$this->belongsTo('{{app_namespace}}\\${foreignModelVars['CamelModel']}', '$name', '${foreignModelVars['id']}');
     }
+
 
 PHP;
                 }

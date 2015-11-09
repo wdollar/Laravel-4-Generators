@@ -140,6 +140,7 @@ class ViewGenerator extends Generator
         $models = $modelVars['models'];
         $dash_models = $modelVars['dash-models'];
         $camelModel = $modelVars['camelModel'];
+        $CamelModel = $modelVars['CamelModel'];
 
         $relationModelList = GeneratorsServiceProvider::getRelationsModelVarsList(GeneratorsServiceProvider::splitFields($this->cache->getFields(), true));
         $fields = GeneratorsServiceProvider::splitFields($this->cache->getFields(), SCOPED_EXPLODE_WANT_ID_RECORD | SCOPED_EXPLODE_WANT_TEXT);
@@ -147,19 +148,41 @@ class ViewGenerator extends Generator
 
         // First, we build the table headings
         if ($useLang) {
-            $headings = array_map(function ($field) use ($dash_models) {
-                return '<th>@lang(\'' . $dash_models . '.' . $field . '\')</th>';
+            $headings = array_map(function ($field) use ($dash_models, $fields, $models, $CamelModel) {
+                $type = $fields[$field];
+                if (str_starts_with($type, 'bitset')) {
+                    return <<<PHP
+@foreach({{app_namespace}}\\$CamelModel::\$$field as \$type => \$flag)
+                <th>@lang('$models.'.\$type)</th>
+                @endforeach
+PHP;
+                } else {
+                    return '<th>@lang(\'' . $dash_models . '.' . $field . '\')</th>';
+                }
             }, array_keys($fields));
         } else {
-            $headings = array_map(function ($field) {
-                return '<th>' . ucwords($field) . '</th>';
+            $headings = array_map(function ($field) use ($CamelModel, $fields) {
+                $type = $fields[$field];
+                if (str_starts_with($type, 'bitset')) {
+                    $Type = ucwords($type);
+                    return <<<PHP
+@foreach({{app_namespace}}\\$CamelModel::\$$field as \$type => \$flag)
+                <th>{$Type}</th>
+                @endforeach
+PHP;
+                } else {
+                    return '<th>' . ucwords($field) . '</th>';
+                }
             }, array_keys($fields));
         }
 
         // And then the rows, themselves
-        $fields = array_map(function ($field) use ($camelModel, $fields, $relationModelList) {
+        $nextIndent = '';
+        $fields = array_map(function ($field) use ($camelModel, $fields, $relationModelList, $CamelModel, &$nextIndent) {
             list($type, $options) = GeneratorsServiceProvider::fieldTypeOptions($fields[$field]);
             $nullable = (strpos($options, 'nullable') !== false);
+            $indent = $nextIndent;
+            $nextIndent = "\t";
 
             if (strpos($options, 'hidden') !== false) {
                 unset($fields[$field]);
@@ -171,13 +194,23 @@ class ViewGenerator extends Generator
                     $relFuncName = trim_suffix($field, '_id');
                     $nameCol = $relationModelList[$field]['name'];
                     if ($nullable) {
-                        return "<td>{{ is_null(\$$camelModel->$field) ? '' : \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
+                        return "$indent<td>{{ is_null(\$$camelModel->$field) ? '' : \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
                     } else {
-                        return "<td>{{ \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
+                        return "$indent<td>{{ \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
                     }
                 }
+            } else if (str_starts_with($type, 'bitset')) {
+                $params = preg_match('/bitset\((.*)\)/', $type, $matches) ? $matches[1] : '';
+                if ($params === '') $params = $field;
+                $params = explode(',', $params);
+                return <<<PHP
+    @foreach({{app_namespace}}\\$CamelModel::\$$field as \$type => \$flag)
+                        <td>{{ \$$camelModel->\$type }}</td>;
+                        @endforeach
+PHP;
             }
-            return "<td>{{ \$$camelModel->$field }}</td>";
+
+            return "$indent<td>{{ \$$camelModel->$field }}</td>";
         }, array_keys($fields));
 
         // Now, we'll add the edit and delete buttons.
@@ -217,6 +250,7 @@ EOT;
         $models = $modelVars['models'];
         $model = $modelVars['model'];
         $camelModel = $modelVars['camelModel'];
+        $CamelModel = $modelVars['CamelModel'];
         $narrowText = " input-narrow";
         $dash_models = $modelVars['dash-models'];
 
@@ -274,141 +308,170 @@ EOT;
                 $foreignTable = $matches[1];
             }
 
-            if ($type === 'boolean' && $noBoolean) continue;
-            if ($type !== 'boolean' && $onlyBoolean) continue;
+            if (($type === 'boolean' || str_starts_with($type, 'bitset')) && $noBoolean) continue;
+            if (($type !== 'boolean' && !str_starts_with($type, 'bitset')) && $onlyBoolean) continue;
 
             $trans_name = $name;
             $labelName = $trans_name;
             $labelGroup = $dash_models;
             $afterElement = '';
             $afterElementFilter = '';
-            $wrapRow = true;
+            $wrapRow = !$onlyBoolean;
 
             $inputNarrow = (GeneratorsServiceProvider::isFieldNumeric($type) || ($type === 'string' && $limit < 32)) ? $narrowText : '';
 
-            switch ($type) {
-                case  'mediumInteger':
-                case  'smallInteger':
-                case  'tinyInteger':
-                    $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
-                    $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
-                    break;
-
-                case 'bigInteger':
-                case  'integer':
-                    if (array_key_exists($name, $relationModelList)) {
-                        // assume foreign key
-                        $afterElement = "";
-
-                        $foreignModelVars = $relationModelList[$name];
-                        $foreignModels = $foreignModelVars['camelModels'];
-                        $foreignmodels = $foreignModelVars['models'];
-                        $foreign_model = $foreignModelVars['snake_model'];
-                        $foreign_models = $foreignModelVars['snake_models'];
-                        $foreign_display = $foreignModelVars['name'];
-
-                        $plainName = trim_suffix($name, '_id');
-                        $labelName = $plainName;
-
-                        $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), [$disabled'class' => 'form-control', ]) !!}";
-
-                        if ($nullable) {
-                            $element .= "\n{!! Form::text('$plainName', $$camelModel ? ($$camelModel->${plainName} ? $$camelModel->${plainName}->${foreign_display} : '') : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
-                        } else {
-                            $element .= "\n{!! Form::text('$plainName', $$camelModel ? $$camelModel->${plainName}->${foreign_display} : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
-                        }
-
-                        $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
-
-                        if ($filterRows) {
-                            $afterElementFilter .= "{!! Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) !!}";
-                        } else {
-                            $afterElementFilter .= "{!! Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) !!}";
-                        }
-
-                        //$labelName = $foreignModelVars['model'];
-                        //$labelGroup = $foreignModelVars['dash-models'];
-
-                        if ($useOp) {
-                            $afterElement .= "\n\t\n@if(\$op === 'create' || \$op === 'edit')";
-                        }
-                        $afterElement .= "\n\t<div class='form-group col-sm-1'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br>\n\t\t\t<a href=\"@route('$foreignmodels.create')\" @linkAsButton('warning')>@lang('messages.create')</a>\n</div>";
-                        if ($useOp) {
-                            $afterElement .= "\n@endif";
-                        }
-
-                        $element .= "\n\t\t\t" . $afterElementFilter;
+            if (str_starts_with($type, 'bitset')) {
+                if ($filterRows) {
+                    $formMethods[] = <<<PHP
+                @foreach({{app_namespace}}\\$CamelModel::\$$name as \$type => \$flag)
+                <td>{!! \Form::select(\$type, ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get(\$type), ['form' => 'filter-$models', 'class' => 'form-control', ]) !!}</td>
+                @endforeach
+PHP;
+                } else {
+                    if ($wrapRow) {
+                        $formMethods[] = <<<PHP
+@foreach({{app_namespace}}\\$CamelModel::\$$name as \$type => \$flag)
+            <div class="row">
+                <label>
+                    {!! Form::checkbox(\$type, 1, Input::old(\$type), [$disabled]) !!} @lang('$labelGroup.$labelName')&nbsp;&nbsp;
+                </label>
+            </div>
+                @endforeach
+PHP;
                     } else {
+                        $formMethods[] = <<<PHP
+@foreach({{app_namespace}}\\$CamelModel::\$$name as \$type => \$flag)
+                <label>
+                    {!! Form::checkbox(\$type, 1, Input::old(\$type), [$disabled]) !!} @lang('$labelGroup.$labelName')&nbsp;&nbsp;
+                </label>
+                @endforeach
+PHP;
+                    }
+                }
+            } else {
+                switch ($type) {
+                    case  'mediumInteger':
+                    case  'smallInteger':
+                    case  'tinyInteger':
                         $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
                         $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
-                    }
-                    break;
+                        break;
 
-                case 'text':
-                    $limit = empty($limit) ? 256 : $limit;
-                    $rowAttr = (int)($limit / 64) ?: 1;
-                    $element = "{!! Form::textarea('$name', Input::old('$name'), $readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), 'rows'=>'$rowAttr', $readonlyClose) !!}";
-                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
-                    break;
+                    case 'bigInteger':
+                    case  'integer':
+                        if (array_key_exists($name, $relationModelList)) {
+                            // assume foreign key
+                            $afterElement = "";
 
-                case 'boolean':
-                    $element = "{!! Form::checkbox('$name', 1, Input::old('$name'), [$disabled]) !!}";
-                    $elementFilter = "{!! Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get('$name'), ['form' => 'filter-$models', 'class' => 'form-control', ]) !!}";
-                    $useShort = true;
-                    break;
+                            $foreignModelVars = $relationModelList[$name];
+                            $foreignModels = $foreignModelVars['camelModels'];
+                            $foreignmodels = $foreignModelVars['models'];
+                            $foreign_model = $foreignModelVars['snake_model'];
+                            $foreign_models = $foreignModelVars['snake_models'];
+                            $foreign_display = $foreignModelVars['name'];
 
-                case 'date':
-                case 'dateTime':
-                    $element = <<<HTML
+                            $plainName = trim_suffix($name, '_id');
+                            $labelName = $plainName;
+
+                            $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), [$disabled'class' => 'form-control', ]) !!}";
+
+                            if ($nullable) {
+                                $element .= "\n{!! Form::text('$plainName', $$camelModel ? ($$camelModel->${plainName} ? $$camelModel->${plainName}->${foreign_display} : '') : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
+                            } else {
+                                $element .= "\n{!! Form::text('$plainName', $$camelModel ? $$camelModel->${plainName}->${foreign_display} : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";
+                            }
+
+                            $elementFilter = "{!! Form::text('$foreign_model', Input::get('$foreign_model'), ['form' => 'filter-$models', 'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
+
+                            if ($filterRows) {
+                                $afterElementFilter .= "{!! Form::hidden('$name', Input::old('$name'), ['form' => 'filter-$models', 'id'=>'$name']) !!}";
+                            } else {
+                                $afterElementFilter .= "{!! Form::hidden('$name', Input::old('$name'), ['id'=>'$name']) !!}";
+                            }
+
+                            //$labelName = $foreignModelVars['model'];
+                            //$labelGroup = $foreignModelVars['dash-models'];
+
+                            if ($useOp) {
+                                $afterElement .= "\n\t\n@if(\$op === 'create' || \$op === 'edit')";
+                            }
+                            $afterElement .= "\n\t<div class='form-group col-sm-1'>\n\t\t\t<label>&nbsp;</label>\n\t\t\t<br>\n\t\t\t<a href=\"@route('$foreignmodels.create')\" @linkAsButton('warning')>@lang('messages.create')</a>\n</div>";
+                            if ($useOp) {
+                                $afterElement .= "\n@endif";
+                            }
+
+                            $element .= "\n\t\t\t" . $afterElementFilter;
+                        } else {
+                            $element = "{!! Form::input('number', '$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
+                            $elementFilter = "{!! Form::input('number', '$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
+                        }
+                        break;
+
+                    case 'text':
+                        $limit = empty($limit) ? 256 : $limit;
+                        $rowAttr = (int)($limit / 64) ?: 1;
+                        $element = "{!! Form::textarea('$name', Input::old('$name'), $readonly'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), 'rows'=>'$rowAttr', $readonlyClose) !!}";
+                        $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
+                        break;
+
+                    case 'boolean':
+                        $element = "{!! Form::checkbox('$name', 1, Input::old('$name'), [$disabled]) !!}";
+                        $elementFilter = "{!! Form::select('$name', ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get('$name'), ['form' => 'filter-$models', 'class' => 'form-control', ]) !!}";
+                        $useShort = true;
+                        break;
+
+                    case 'date':
+                    case 'dateTime':
+                        $element = <<<HTML
 <div class="input-group input-group-sm date">
     {!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
-                    $elementFilter = <<<HTML
+                        $elementFilter = <<<HTML
 <div class="input-group date">
     {!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}
     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span></span>
 </div>
 HTML;
-                    break;
+                        break;
 
-                case  'decimal':
-                case  'double':
-                case  'float':
-                case 'time':
-                case 'string':
-                default:
-                    $element = "{!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
-                    $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
-                    break;
-            }
+                    case  'decimal':
+                    case  'double':
+                    case  'float':
+                    case 'time':
+                    case 'string':
+                    default:
+                        $element = "{!! Form::text('$name', Input::old('$name'), $readonly'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), $readonlyClose) !!}";
+                        $elementFilter = "{!! Form::text('$name', Input::get('$name'), ['form' => 'filter-$models', 'class'=>'form-control$inputNarrow', 'placeholder'=>noEditTrans('$dash_models.$trans_name'), ]) !!}";
+                        break;
+                }
 
-            if ($filterRows) {
-                $afterElementFilter = $afterElementFilter ? "\n\t\t\t\t" . $afterElementFilter : $afterElementFilter;
-                $frag = "\t\t\t\t<td>$elementFilter$afterElementFilter</td>";
-            } elseif ($useShort) {
-                if ($wrapRow) {
-                    $frag = <<<EOT
+                if ($filterRows) {
+                    $afterElementFilter = $afterElementFilter ? "\n\t\t\t\t" . $afterElementFilter : $afterElementFilter;
+                    $frag = "\t\t\t\t<td>$elementFilter$afterElementFilter</td>";
+                } elseif ($useShort) {
+                    if ($wrapRow) {
+                        $frag = <<<EOT
         <div class="row">
-                <label>
-                      $element @lang('$labelGroup.$labelName')
-                      &nbsp;&nbsp;
-                </label>$afterElement
+            <label>
+                  $element @lang('$labelGroup.$labelName')
+                  &nbsp;&nbsp;
+            </label>$afterElement
         </div>
 
 EOT;
-                } else {
-                    $frag = <<<EOT
+                    } else {
+                        $frag = <<<EOT
             <label>
                   $element @lang('$labelGroup.$labelName')
                   &nbsp;&nbsp;
             </label>$afterElement
 EOT;
-                }
-            } else {
-                if ($wrapRow) {
-                    $frag = <<<EOT
+                    }
+                } else {
+                    if ($wrapRow) {
+                        $frag = <<<EOT
         <div class="row">
             <div class="form-group col-sm-3">
                 <label for="$name">@lang('$labelGroup.$labelName'):</label>
@@ -417,18 +480,19 @@ EOT;
         </div>
         $afterElement
 EOT;
-                } else {
-                    $frag = <<<EOT
+                    } else {
+                        $frag = <<<EOT
         <div class="form-group">
             <label for="$name">@lang('$labelGroup.$labelName'):</label>
               $element$afterElement
         </div>
 
 EOT;
+                    }
                 }
-            }
 
-            $formMethods[] = $frag;
+                $formMethods[] = $frag;
+            }
         }
 
         return implode(PHP_EOL, $formMethods);

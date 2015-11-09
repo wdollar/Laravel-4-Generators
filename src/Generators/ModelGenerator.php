@@ -2,6 +2,7 @@
 
 namespace Vsch\Generators\Generators;
 
+use Doctrine\DBAL\Platforms\SQLAnywhere11Platform;
 use Vsch\Generators\GeneratorsServiceProvider;
 
 class ModelGenerator extends Generator
@@ -322,25 +323,55 @@ PHP;
             $bitsetData = '';
             $bitsetFields = [];
             $bitsetMaps = [];
+            $bitsetAttributes = '';
 
             foreach ($bitsets as $bitset => $bits) {
+
                 $bitsetName = strtoupper($bitset);
-                $bitsetData .= "\tconst ${bitsetName}_NONE = ''\n";
+                $bitsetData .= "const ${bitsetName}_NONE = '';\n";
                 foreach ($bits as $bit => $bitMask) {
                     $bitName = strtoupper($bit);
                     $bitsetData .= "\tconst ${bitsetName}_${bitName} = '$bit';\n";
+
+                    $bitModelVars = GeneratorsServiceProvider::getModelVars($bit);
+                    $bitAttribute = $bitModelVars['CamelModel'];
+                    $bitsetAttributes .= <<<PHP
+    /**
+     * @return boolean
+     */
+    public
+    function get${bitAttribute}Attribute()
+    {
+        return !!(\$this->${bitset} & self::${bitsetName}_${bitName});
+    }
+
+    /**
+     * @param boolean \$value
+     */
+    public
+    function set${bitAttribute}Attribute(\$value)
+    {
+        if (\$value) {
+            \$this->${bitset} |= self::${bitsetName}_${bitName};
+        } else {
+            \$this->${bitset} &= ~self::${bitsetName}_${bitName};
+        }
+    }
+
+PHP;
+
                 }
 
-                $bitsetData .= "\n\tconst ${bitsetName}_MASK_NONE = 0\n";
+                $bitsetData .= "\n\tconst ${bitsetName}_MASK_NONE = 0;\n";
                 foreach ($bits as $bit => $bitMask) {
                     $bitName = strtoupper($bit);
                     $bitsetData .= "\tconst ${bitsetName}_MASK_${bitName} = $bitMask;\n";
                 }
 
-                $bitsetData .= "\n\tpublic static ${bitset}_types = [\n";
+                $bitsetData .= "\n\tpublic static \$${bitset}_types = [\n";
                 foreach ($bits as $bit => $bitMask) {
                     $bitName = strtoupper($bit);
-                    $bitsetData .= "\t\t${bitsetName}_${bitName} => ${bitsetName}_MASK_${bitName},\n";
+                    $bitsetData .= "\t\tself::${bitsetName}_${bitName} => self::${bitsetName}_MASK_${bitName},\n";
                 }
                 $bitsetData .= "\t];\n";
 
@@ -351,6 +382,7 @@ PHP;
             $template = str_replace('{{bitset:data}}', $bitsetData, $template);
             $template = str_replace('{{bitset:fields}}', implode(',', $bitsetFields), $template);
             $template = str_replace('{{bitset:maps}}', implode(',', $bitsetMaps), $template);
+            $template = str_replace('{{bitset:attributes}}', $bitsetAttributes, $template);
         }
 
         $template = str_replace('{{fields}}', $fieldRawText, $template);

@@ -48,6 +48,16 @@ class TranslationsGenerator extends Generator
                     }
                 }
 
+                if (is_array($type) && ($bitset = hasIt($type, 'bitset', HASIT_WANT_PREFIX | HASIT_WANT_VALUE))) {
+                    $params = preg_match('/bitset\((.*)\)/', $bitset, $matches) ? $matches[1] : '';
+                    if ($params === '') $params = $field;
+                    $params = explode(',', $params);
+                    foreach ($params as $param) {
+                        $bitFieldNameText = GeneratorsServiceProvider::getModelVars($param)['Space Model'];
+                        $fieldTexts[] = str_replace($fieldVar, "'$param' => '$bitFieldNameText',", $line);
+                    }
+                }
+
                 $modelVars = GeneratorsServiceProvider::getModelVars($field);
                 $fieldNameTrans = ($field !== Pluralizer::plural($field)) ? $modelVars['Space Model'] : $modelVars['Space Models'];
                 $fieldTexts[] = str_replace($fieldVar, "'$field' => '$fieldNameTrans',", $line);

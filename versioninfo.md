@@ -4,6 +4,86 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 ### x.3.2
 
+- add `bitset(bitName1,bitName2,...)` type. Converted to integer field in the database with getter/setter methods for individual bitNames and in forms as checkbox elements using the model's bit name to bit mask type to iterate over the bits. That way you can easily add fields to the bit set after creating the scaffold. 
+
+    For example a field type: `flags:bitset(is_published,one_per_user)` has the following macro expansions:
+ 
+    #### ModelGenerator 
+    
+    `{{bitset:fields}}` : a comma separated list of bitset fields in the model, in this example expands to `'flags'`. so `[{{bitset:fields}}]` will define an array of names of bitset fields in the model.
+    
+    `{{bitset:maps}}` : an assoc array entry for bitset field names to the array that maps their bit names to bit masks in the model, in this example expands to `'flags' => self::flags_types`. so `[{{bitset:maps}}]` will define an array of bitset field to bit name/mask map in the model. Use in conjunction with `{{bitset:data}}`.
+    
+    `{{bitset:data}}` : expands to define bit masks, bit names and a map from name to mask. 
+    
+    ```php
+    const FLAGS_NONE = '';
+    const FLAGS_IS_PUBLISHED = 'is_published';
+    const FLAGS_ONE_PER_USER = 'one_per_user';
+    
+    const FLAGS_MASK_NONE = 0;
+    const FLAGS_MASK_IS_PUBLISHED = 1;
+    const FLAGS_MASK_ONE_PER_USER = 2;
+    
+    public static $flags_types = [
+        self::FLAGS_IS_PUBLISHED => self::FLAGS_MASK_IS_PUBLISHED,
+        self::FLAGS_ONE_PER_USER => self::FLAGS_MASK_ONE_PER_USER,
+    ];
+    ```
+
+    `{{bitset:attributes}}` : expands to define getter/setter attributes for these bit fields.
+    
+    ```php
+    /**
+     * @return boolean
+     */
+    public
+    function getIsPublishedAttribute()
+    {
+        return !!($this->flags & self::FLAGS_IS_PUBLISHED);
+    }
+
+    /**
+     * @param boolean $value
+     */
+    public
+    function setIsPublishedAttribute($value)
+    {
+        if ($value) {
+            $this->flags |= self::FLAGS_IS_PUBLISHED;
+        } else {
+            $this->flags &= ~self::FLAGS_IS_PUBLISHED;
+        }
+    }
+
+    /**
+     * @return boolean
+     */
+    public
+    function getOnePerUserAttribute()
+    {
+        return !!($this->flags & self::FLAGS_ONE_PER_USER);
+    }
+
+    /**
+     * @param boolean $value
+     */
+    public
+    function setOnePerUserAttribute($value)
+    {
+        if ($value) {
+            $this->flags |= self::FLAGS_ONE_PER_USER;
+        } else {
+            $this->flags &= ~self::FLAGS_ONE_PER_USER;
+        }
+    }
+
+    ```
+    
+    #### TranslationsGenerator
+    
+    Individual bit names are treated as if they were declared as boolean fields. So an entry for `'snake_case_bit_name' => 'Snake Case Bit Name'`,
+
 - add `table`, `field` to foreign relations map which represent the table name, if given in foreign() hint, and field name that refers to this foreign key, respectively.
 
 - fix `{{field:unique}}` to make the field list from the first unique index defined for the model.

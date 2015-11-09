@@ -407,18 +407,22 @@ class MigrationGenerator extends Generator
         }
 
         // We'll start building the appropriate Schema method
-        $html = "\$table->{$field->type}";
+        if (str_starts_with($field->type, 'bitset')) {
+            $php = "\$table->integer";
+        } else {
+            $php = "\$table->{$field->type}";
+        }
 
-        $html .= isset($field->limit)
+        $php .= isset($field->limit)
             ? "('{$field->name}', {$field->limit})"
             : "('{$field->name}')";
 
         // Take care of any potential indexes or options
         if (isset($field->options)) {
-            $html .= $field->options;
+            $php .= $field->options;
         }
 
-        return $html . ';';
+        return $php . ';';
     }
 
     /**

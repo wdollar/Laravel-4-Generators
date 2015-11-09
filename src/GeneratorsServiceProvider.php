@@ -638,7 +638,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         //$table->smallInteger('votes')
         //$table->tinyInteger('numbers')
         list($type, $options) = self::fieldTypeOptions($typeText);
-        return array_search($type, ['bigInteger', 'integer', 'mediumInteger', 'smallInteger', 'tinyInteger']) !== false;
+        return array_search($type, ['bigInteger', 'integer', 'mediumInteger', 'smallInteger', 'tinyInteger', 'bitset']) !== false;
     }
 
     public static

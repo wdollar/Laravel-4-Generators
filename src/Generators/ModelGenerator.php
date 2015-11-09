@@ -46,7 +46,7 @@ class ModelGenerator extends Generator
         $template = $this->template;
 
         $template = str_replace('{{__construct}}', <<<'PHP'
-    protected $table = '{{snake_models}}';
+protected $table = '{{snake_models}}';
 
     public function __construct($attributes = [])
     {
@@ -61,7 +61,8 @@ PHP
         $package = $this->options('bench');
         $template = GeneratorsServiceProvider::replacePrefixTemplate($prefix, $package, $template);
 
-        $fields = GeneratorsServiceProvider::splitFields(implode(',', $fields), true);
+        $fieldRawText = implode(',', $fields);
+        $fields = GeneratorsServiceProvider::splitFields($fieldRawText, true);
         $modelVars = GeneratorsServiceProvider::getModelVars($this->cache->getModelName());
 
         // Replace template vars
@@ -181,6 +182,38 @@ PHP;
             return $fieldText;
         });
 
+        // add only unique lines
+        $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{relations:line:with_model}}', function ($line, $fieldVar) use ($fields, $relationModelList, $modelVars) {
+            // we don't need the marker
+            $line = str_replace($fieldVar, '', $line);
+
+            $fieldText = '';
+            $fieldTexts = [];
+            if ($modelVars) {
+                // add model
+                $text = GeneratorsServiceProvider::replaceModelVars($line, $modelVars, '{{relations:', '}}') . "\n";
+                if (array_search($text, $fieldTexts) === false) {
+                    $fieldText .= $text;
+                    $fieldTexts[] = $text;
+                }
+            }
+            foreach ($fields as $field => $type) {
+                // here we override for foreign keys
+                if (array_key_exists($field, $relationModelList)) {
+                    $relationModelVars = $relationModelList[$field];
+
+                    // Replace template vars
+                    $text = GeneratorsServiceProvider::replaceModelVars($line, $relationModelVars, '{{relations:', '}}') . "\n";
+                    if (array_search($text, $fieldTexts) === false) {
+                        $fieldText .= $text;
+                        $fieldTexts[] = $text;
+                    }
+                }
+            }
+
+            return $fieldText;
+        });
+
         $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{field:line:bool}}', function ($line, $fieldVar) use ($fields, $modelVars) {
             $fieldText = '';
             foreach ($fields as $field) {
@@ -199,6 +232,7 @@ PHP;
         $dates = [];
         $defaults = [];
         $fieldText = '';
+        $bitsets = [];
 
         foreach ($fields as $field) {
             if ($field->name !== 'id') {
@@ -250,6 +284,18 @@ PHP;
                 $rules[$field->name] = "'{$field->name}' => '" . implode('|', $ruleBits) . "'";
             }
 
+            if (str_starts_with($field->type, 'bitset')) {
+                $bitsets[$field->name] = [];
+                $params = preg_match('/bitset\((.*)\)/', $field->type, $matches) ? $matches[1] : '';
+                if ($params === '') $params = $field->name;
+                $params = explode(',', $params);
+                $bitMask = 1;
+                foreach ($params as $param) {
+                    $bitsets[$field->name][trim($param)] = $bitMask;
+                    $bitMask <<= 1;
+                }
+            }
+
             if (hasIt($field->options, 'notrail', HASIT_WANT_PREFIX)) $notrail[] = "'{$field->name}'";
             if (hasIt($field->options, 'hidden', HASIT_WANT_PREFIX)) $hidden[] = "'{$field->name}'";
             if (hasIt($field->options, 'guarded', HASIT_WANT_PREFIX)) $guarded[] = "'{$field->name}'";
@@ -263,12 +309,51 @@ PHP;
             } elseif (!(GeneratorsServiceProvider::isFieldNumeric($fields[$field]->type)
                 || GeneratorsServiceProvider::isFieldBoolean($fields[$field]->type))
             ) {
-                $value = "'$value'";
+                if (!(str_starts_with($value, "'") && str_ends_with($value, "'") || str_starts_with($value, '"') && str_ends_with($value, '"'))) {
+                    $value = str_replace("'", "\\'", $value);
+                    $value = "'$value'";
+                }
             }
             $defaultValues[] = "'$field' => $value";
         }
 
-        $template = str_replace('{{fields}}', $fieldText, $template);
+        if (strpos($template, '{{bitset:') !== false) {
+            // create the data for processing bitsets
+            $bitsetData = '';
+            $bitsetFields = [];
+            $bitsetMaps = [];
+
+            foreach ($bitsets as $bitset => $bits) {
+                $bitsetName = strtoupper($bitset);
+                $bitsetData .= "\tconst ${bitsetName}_NONE = ''\n";
+                foreach ($bits as $bit => $bitMask) {
+                    $bitName = strtoupper($bit);
+                    $bitsetData .= "\tconst ${bitsetName}_${bitName} = '$bit';\n";
+                }
+
+                $bitsetData .= "\n\tconst ${bitsetName}_MASK_NONE = 0\n";
+                foreach ($bits as $bit => $bitMask) {
+                    $bitName = strtoupper($bit);
+                    $bitsetData .= "\tconst ${bitsetName}_MASK_${bitName} = $bitMask;\n";
+                }
+
+                $bitsetData .= "\n\tpublic static ${bitset}_types = [\n";
+                foreach ($bits as $bit => $bitMask) {
+                    $bitName = strtoupper($bit);
+                    $bitsetData .= "\t\t${bitsetName}_${bitName} => ${bitsetName}_MASK_${bitName},\n";
+                }
+                $bitsetData .= "\t];\n";
+
+                $bitsetFields[] = "'$bitset'";
+                $bitsetMaps[] = "'$bitset' => self::\$${bitset}_types";
+            }
+
+            $template = str_replace('{{bitset:data}}', $bitsetData, $template);
+            $template = str_replace('{{bitset:fields}}', implode(',', $bitsetFields), $template);
+            $template = str_replace('{{bitset:maps}}', implode(',', $bitsetMaps), $template);
+        }
+
+        $template = str_replace('{{fields}}', $fieldRawText, $template);
         $template = str_replace('{{rules}}', $this->implodeOneLineExpansion($rules), $template);
         $template = str_replace('{{hidden}}', $this->implodeOneLineExpansion($hidden), $template);
         $template = str_replace('{{guarded}}', $this->implodeOneLineExpansion($guarded), $template);

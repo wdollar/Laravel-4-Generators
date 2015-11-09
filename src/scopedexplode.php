@@ -482,3 +482,30 @@ if (!function_exists('merge_translations')) {
         return $hadChanges;
     }
 }
+
+if (!function_exists('str_ends_with')) {
+    function str_ends_with($haystack, $needles)
+    {
+        if (!is_array($needles)) $needles = array($needles);
+        $haystackLen = strlen($haystack);
+        foreach ((array)$needles as $needle) {
+            $needleLen = strlen($needle);
+            if ($needle != '' && $haystackLen >= $needleLen && strrpos($haystack, $needle) === $haystackLen - $needleLen) return true;
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needles)
+    {
+        if (!is_array($needles)) $needles = array($needles);
+        foreach ((array)$needles as $needle) {
+            if ($needle != '' && strpos($haystack, $needle) === 0) return true;
+        }
+
+        return false;
+    }
+}
+

@@ -150,9 +150,9 @@ class ViewGenerator extends Generator
         if ($useLang) {
             $headings = array_map(function ($field) use ($dash_models, $fields, $models, $CamelModel) {
                 $type = $fields[$field];
-                if (str_starts_with($type, 'bitset')) {
+                if (preg_match('/\bbitset\b/', $type)) {
                     return <<<PHP
-@foreach({{app_namespace}}\\$CamelModel::\$$field as \$type => \$flag)
+@foreach({{app_namespace}}\\$CamelModel::\${$field}_bitset as \$type => \$flag)
                 <th>@lang('$models.'.\$type)</th>
                 @endforeach
 PHP;
@@ -163,11 +163,11 @@ PHP;
         } else {
             $headings = array_map(function ($field) use ($CamelModel, $fields) {
                 $type = $fields[$field];
-                if (str_starts_with($type, 'bitset')) {
+                if (preg_match('/\bbitset\b/', $type)) {
                     $Type = ucwords($type);
                     return <<<PHP
-@foreach({{app_namespace}}\\$CamelModel::\$$field as \$type => \$flag)
-                <th>{$Type}</th>
+@foreach({{app_namespace}}\\$CamelModel::\${$field}_bitset as \$type => \$flag)
+                <th>{{ucwords(str_replace('_', ' ', \$type))}}</th>
                 @endforeach
 PHP;
                 } else {
@@ -189,7 +189,16 @@ PHP;
                 return null;
             }
 
-            if ($type === 'integer' || $type === 'bigInteger') {
+            if (preg_match('/\bbitset\b/', $options)) {
+                $params = preg_match('/bitset\((.*)\)/', $options, $matches) ? $matches[1] : '';
+                if ($params === '') $params = $field;
+                $params = explode(',', $params);
+                return <<<PHP
+    @foreach({{app_namespace}}\\$CamelModel::\${$field}_bitset as \$type => \$flag)
+                        <td>{{ \$$camelModel->\$type }}</td>;
+                        @endforeach
+PHP;
+            } elseif ($type === 'integer' || $type === 'bigInteger') {
                 if (array_key_exists($field, $relationModelList)) {
                     $relFuncName = trim_suffix($field, '_id');
                     $nameCol = $relationModelList[$field]['name'];
@@ -199,15 +208,6 @@ PHP;
                         return "$indent<td>{{ \$$camelModel->$field . ':' . \$$camelModel->{$relFuncName}->$nameCol }}</td>";
                     }
                 }
-            } else if (str_starts_with($type, 'bitset')) {
-                $params = preg_match('/bitset\((.*)\)/', $type, $matches) ? $matches[1] : '';
-                if ($params === '') $params = $field;
-                $params = explode(',', $params);
-                return <<<PHP
-    @foreach({{app_namespace}}\\$CamelModel::\$$field as \$type => \$flag)
-                        <td>{{ \$$camelModel->\$type }}</td>;
-                        @endforeach
-PHP;
             }
 
             return "$indent<td>{{ \$$camelModel->$field }}</td>";
@@ -308,8 +308,10 @@ EOT;
                 $foreignTable = $matches[1];
             }
 
-            if (($type === 'boolean' || str_starts_with($type, 'bitset')) && $noBoolean) continue;
-            if (($type !== 'boolean' && !str_starts_with($type, 'bitset')) && $onlyBoolean) continue;
+            $is_bitset_field = preg_match('/\bbitset\b/', $options);
+
+            if (($type === 'boolean' || $is_bitset_field) && $noBoolean) continue;
+            if (($type !== 'boolean' && !$is_bitset_field) && $onlyBoolean) continue;
 
             $trans_name = $name;
             $labelName = $trans_name;
@@ -320,17 +322,17 @@ EOT;
 
             $inputNarrow = (GeneratorsServiceProvider::isFieldNumeric($type) || ($type === 'string' && $limit < 32)) ? $narrowText : '';
 
-            if (str_starts_with($type, 'bitset')) {
+            if ($is_bitset_field) {
                 if ($filterRows) {
                     $formMethods[] = <<<PHP
-                @foreach({{app_namespace}}\\$CamelModel::\$$name as \$type => \$flag)
+                @foreach({{app_namespace}}\\$CamelModel::\${$name}_bitset as \$type => \$flag)
                 <td>{!! \Form::select(\$type, ['' => '&nbsp;', '0' => '0', '1' => '1', ], Input::get(\$type), ['form' => 'filter-$models', 'class' => 'form-control', ]) !!}</td>
                 @endforeach
 PHP;
                 } else {
                     if ($wrapRow) {
                         $formMethods[] = <<<PHP
-@foreach({{app_namespace}}\\$CamelModel::\$$name as \$type => \$flag)
+@foreach({{app_namespace}}\\$CamelModel::\${$name}_bitset as \$type => \$flag)
             <div class="row">
                 <label>
                     {!! Form::checkbox(\$type, 1, Input::old(\$type), [$disabled]) !!} @lang('$labelGroup.$labelName')&nbsp;&nbsp;
@@ -340,7 +342,7 @@ PHP;
 PHP;
                     } else {
                         $formMethods[] = <<<PHP
-@foreach({{app_namespace}}\\$CamelModel::\$$name as \$type => \$flag)
+@foreach({{app_namespace}}\\$CamelModel::\${$name}_bitset as \$type => \$flag)
                 <label>
                     {!! Form::checkbox(\$type, 1, Input::old(\$type), [$disabled]) !!} @lang('$labelGroup.$labelName')&nbsp;&nbsp;
                 </label>

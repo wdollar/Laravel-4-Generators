@@ -101,13 +101,12 @@ class ControllerGenerator extends Generator
             return $fieldText;
         });
 
-        if (strpos($this->template, '{{relations') !== false) {
+        if (strpos($template, '{{relations') !== false) {
             $relations = '';
-            $foreignModel = '';
             $foreignModels = [];
             foreach ($fields as $field => $type) {
                 if (array_key_exists($field, $relationModelList)) {
-                    $relationModelVars= $relationModelList[$field];
+                    $relationModelVars = $relationModelList[$field];
                     if (array_search($relationModelVars['camelModels'], $foreignModels) === false) {
                         $foreignField = trim_suffix($field, "_id");
                         $foreignModels[] = $relationModelVars['camelModels'];
@@ -115,10 +114,12 @@ class ControllerGenerator extends Generator
 
                         $relations .= <<<PHP
     /**
+     * @param \\{{app_namespace}}\\${modelVars['CamelModel']} \$${modelVars['camelModel']}
+     *
      * @return array ${relationModelVars['CamelModel']}
      */
     public
-    function ${relationModelVars['camelModels']}List($${modelVars['camelModel']} = null)
+    function ${relationModelVars['camelModels']}List(${modelVars['CamelModel']} $${modelVars['camelModel']} = null)
     {
         // fill the foreign list for ${relationModelVars['CamelModel']}
         if ($${modelVars['camelModel']} !== null) {
@@ -152,7 +153,7 @@ PHP;
             }
         }
 
-        if (strpos($this->template, '{{auto}}') !== false) {
+        if (strpos($template, '{{auto}}') !== false) {
             $relations = '';
             foreach ($fields as $field => $type) {
                 $options = scopedExplode(':', ['(' => ')', '[' => ']', '{' => '}'], $type, null);
@@ -168,6 +169,23 @@ PHP;
             }
             $template = str_replace('{{auto}}', $relations, $template);
         }
+
+        if (strpos($template, '{{bitset:line}}') !== false) {
+            $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{bitset:line}}', function ($line, $fieldVar) use ($fields, $modelVars) {
+                $line = str_replace($fieldVar, '', $line);
+                $text = '';
+                foreach ($fields as $field => $type) {
+                    if (preg_match('/\bbitset\b/', $type)) {
+                        $fieldModelVars = GeneratorsServiceProvider::getModelVars($field);
+                        $allVars = array_merge($modelVars, $fieldModelVars);
+                        $allVars['field'] = $field;
+                        $text .= GeneratorsServiceProvider::replaceModelVars($line, $allVars, '{{bitset:', '}}') . "\n";
+                    }
+                }
+                return $text;
+            });
+        }
+
         return $template;
     }
 
@@ -175,9 +193,10 @@ PHP;
      * Fetch the compiled template for a controller
      *
      * @param  string $template Path to template
-     * @param  string $name
+     * @param string  $className
      *
      * @return string Compiled template
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
     protected
     function getTemplate($template, $className)
@@ -200,7 +219,7 @@ PHP;
      * Get template for a scaffold
      *
      * @param  string $template Path to template
-     * @param  string $name
+     * @param         $className
      *
      * @return string
      */

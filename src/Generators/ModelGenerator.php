@@ -285,9 +285,10 @@ PHP;
                 $rules[$field->name] = "'{$field->name}' => '" . implode('|', $ruleBits) . "'";
             }
 
-            if (str_starts_with($field->type, 'bitset')) {
+            // bitset is an option so that the size of the field can be set with normal type
+            if ($bitset = hasIt($field->options, 'bitset', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {
                 $bitsets[$field->name] = [];
-                $params = preg_match('/bitset\((.*)\)/', $field->type, $matches) ? $matches[1] : '';
+                $params = preg_match('/bitset\((.*)\)/', $bitset, $matches) ? $matches[1] : '';
                 if ($params === '') $params = $field->name;
                 $params = explode(',', $params);
                 $bitMask = 1;
@@ -342,7 +343,7 @@ PHP;
     public
     function get${bitAttribute}Attribute()
     {
-        return !!(\$this->${bitset} & self::${bitsetName}_${bitName});
+        return !!(\$this->${bitset} & self::${bitsetName}_${bitName}_MASK);
     }
 
     /**
@@ -352,9 +353,9 @@ PHP;
     function set${bitAttribute}Attribute(\$value)
     {
         if (\$value) {
-            \$this->${bitset} |= self::${bitsetName}_${bitName};
+            \$this->${bitset} |= self::${bitsetName}_${bitName}_MASK;
         } else {
-            \$this->${bitset} &= ~self::${bitsetName}_${bitName};
+            \$this->${bitset} &= ~self::${bitsetName}_${bitName}_MASK;
         }
     }
 
@@ -362,27 +363,43 @@ PHP;
 
                 }
 
-                $bitsetData .= "\n\tconst ${bitsetName}_MASK_NONE = 0;\n";
+                $bitsetData .= "\n\tconst ${bitsetName}_NONE_MASK = 0;\n";
                 foreach ($bits as $bit => $bitMask) {
                     $bitName = strtoupper($bit);
-                    $bitsetData .= "\tconst ${bitsetName}_MASK_${bitName} = $bitMask;\n";
+                    $bitsetData .= "\tconst ${bitsetName}_${bitName}_MASK = $bitMask;\n";
                 }
 
-                $bitsetData .= "\n\tpublic static \$${bitset}_types = [\n";
+                $bitsetData .= "\n\tpublic static \$${bitset}_bitset = [\n";
                 foreach ($bits as $bit => $bitMask) {
                     $bitName = strtoupper($bit);
-                    $bitsetData .= "\t\tself::${bitsetName}_${bitName} => self::${bitsetName}_MASK_${bitName},\n";
+                    $bitsetData .= "\t\tself::${bitsetName}_${bitName} => self::${bitsetName}_${bitName}_MASK,\n";
                 }
                 $bitsetData .= "\t];\n";
 
                 $bitsetFields[] = "'$bitset'";
-                $bitsetMaps[] = "'$bitset' => self::\$${bitset}_types";
+                $bitsetMaps[] = "'$bitset' => self::\$${bitset}_bitset";
             }
 
             $template = str_replace('{{bitset:data}}', $bitsetData, $template);
             $template = str_replace('{{bitset:fields}}', implode(',', $bitsetFields), $template);
             $template = str_replace('{{bitset:maps}}', implode(',', $bitsetMaps), $template);
             $template = str_replace('{{bitset:attributes}}', $bitsetAttributes, $template);
+
+            if (strpos($template, '{{bitset:line}}') !== false) {
+                $template = GeneratorsServiceProvider::replaceTemplateLines($template, '{{bitset:line}}', function ($line, $fieldVar) use ($fields, $modelVars) {
+                    $line = str_replace($fieldVar, '', $line);
+                    $text = '';
+                    foreach ($fields as $field => $type) {
+                        if (hasIt($type->options, 'bitset', HASIT_WANT_PREFIX | HASIT_WANT_VALUE)) {
+                            $fieldModelVars = GeneratorsServiceProvider::getModelVars($field);
+                            $allVars = array_merge($modelVars, $fieldModelVars);
+                            $allVars['field'] = $field;
+                            $text .= GeneratorsServiceProvider::replaceModelVars($line, $allVars, '{{bitset:', '}}') . "\n";
+                        }
+                    }
+                    return $text;
+                });
+            }
         }
 
         $template = str_replace('{{fields}}', $fieldRawText, $template);

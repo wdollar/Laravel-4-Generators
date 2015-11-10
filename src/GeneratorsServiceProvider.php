@@ -498,6 +498,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         return array_search($optionBare, [
             'hidden',
             'guarded',
+            'bitset',
             'notrail',
             'notrailonly',
             'textarea',
@@ -582,6 +583,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         $fields = preg_replace('/,\s+/', ',', $fields);
         $fields = preg_replace('/\bint\b/', 'integer', $fields);
         $fields = preg_replace('/\btinyint\b/', 'tinyInteger', $fields);
+        $fields = preg_replace('/\btiny\b/', 'tinyInteger', $fields);
         $fields = preg_replace('/\bsmallint\b/', 'smallInteger', $fields);
         $fields = preg_replace('/\bmedint\b/', 'mediumInteger', $fields);
         $fields = preg_replace('/\bmediumint\b/', 'mediumInteger', $fields);

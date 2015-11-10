@@ -4,12 +4,12 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 ### x.3.2
 
-- add `bitset(bitName1,bitName2,...)` type. Converted to integer field in the database with getter/setter methods for individual bitNames and in forms as checkbox elements using the model's bit name to bit mask type to iterate over the bits. That way you can easily add fields to the bit set after creating the scaffold. 
+- add `bitset(bitName1,bitName2,...)` field option. Converted integral field in the database to bit fields in the model, with getter/setter methods for individual bitNames and in forms as checkbox elements using the model's, bit name to bit mask type, to iterate over the bits. That way you can easily add fields to the bit set after creating the scaffold. 
 
-    For example a field type: `flags:bitset(is_published,one_per_user)` has the following macro expansions:
- 
-    #### ModelGenerator 
-    
+    For example in `promotion` model a field definition: `flags:bitset(is_published,one_per_user)` has the following macro expansions in corresponding generators:
+
+    ##### ModelGenerator 
+
     `{{bitset:fields}}` : a comma separated list of bitset fields in the model, in this example expands to `'flags'`. so `[{{bitset:fields}}]` will define an array of names of bitset fields in the model.
     
     `{{bitset:maps}}` : an assoc array entry for bitset field names to the array that maps their bit names to bit masks in the model, in this example expands to `'flags' => self::flags_types`. so `[{{bitset:maps}}]` will define an array of bitset field to bit name/mask map in the model. Use in conjunction with `{{bitset:data}}`.
@@ -21,13 +21,13 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     const FLAGS_IS_PUBLISHED = 'is_published';
     const FLAGS_ONE_PER_USER = 'one_per_user';
     
-    const FLAGS_MASK_NONE = 0;
-    const FLAGS_MASK_IS_PUBLISHED = 1;
-    const FLAGS_MASK_ONE_PER_USER = 2;
+    const FLAGS_NONE_MASK = 0;
+    const FLAGS_IS_PUBLISHED_MASK = 1;
+    const FLAGS_ONE_PER_USER_MASK = 2;
     
     public static $flags_types = [
-        self::FLAGS_IS_PUBLISHED => self::FLAGS_MASK_IS_PUBLISHED,
-        self::FLAGS_ONE_PER_USER => self::FLAGS_MASK_ONE_PER_USER,
+        self::FLAGS_IS_PUBLISHED => self::FLAGS_IS_PUBLISHED_MASK,
+        self::FLAGS_ONE_PER_USER => self::FLAGS_ONE_PER_USER_MASK,
     ];
     ```
 
@@ -40,7 +40,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     public
     function getIsPublishedAttribute()
     {
-        return !!($this->flags & self::FLAGS_IS_PUBLISHED);
+        return !!($this->flags & self::FLAGS_IS_PUBLISHED_MASK);
     }
 
     /**
@@ -50,9 +50,9 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     function setIsPublishedAttribute($value)
     {
         if ($value) {
-            $this->flags |= self::FLAGS_IS_PUBLISHED;
+            $this->flags |= self::FLAGS_IS_PUBLISHED_MASK;
         } else {
-            $this->flags &= ~self::FLAGS_IS_PUBLISHED;
+            $this->flags &= ~self::FLAGS_IS_PUBLISHED_MASK;
         }
     }
 
@@ -62,7 +62,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     public
     function getOnePerUserAttribute()
     {
-        return !!($this->flags & self::FLAGS_ONE_PER_USER);
+        return !!($this->flags & self::FLAGS_ONE_PER_USER_MASK);
     }
 
     /**
@@ -72,17 +72,122 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     function setOnePerUserAttribute($value)
     {
         if ($value) {
-            $this->flags |= self::FLAGS_ONE_PER_USER;
+            $this->flags |= self::FLAGS_ONE_PER_USER_MASK;
         } else {
-            $this->flags &= ~self::FLAGS_ONE_PER_USER;
+            $this->flags &= ~self::FLAGS_ONE_PER_USER_MASK;
         }
     }
-
     ```
     
-    #### TranslationsGenerator
+    ##### ControllerGenerator 
     
-    Individual bit names are treated as if they were declared as boolean fields. So an entry for `'snake_case_bit_name' => 'Snake Case Bit Name'`,
+    `{{bitset:line}}` marks a line that is to be repeated for every bit set field in the model, with the marker itself removed during expansion. It can no anywhere in the line. In addition to the `{{modelVars}}` which expand to the various case and plural versions of the model you have `{{bitset:modelVars}}` which will do the same for the bitset field name:
+    
+    since this affect only one line use the `{{eol}}` to mark where the lines are split in the final file. 
+    
+    ```
+    ${{bitset:field}} = 0; {{eol}} foreach ({{CamelModel}}::${{bitset:field}}_bitset as $type => $flag) { {{eol}} if (array_key_exists($type, $input))  { {{eol}} ${{bitset:field}} |= $flag; {{eol}} } {{eol}} } {{eol}} $input['{{bitset:field}}'] = ${{bitset:field}};   {{bitset:line}}
+    ```
+    
+    To make it easier to read I replaced `{{eol}}` with line breaks and removed the `{{bitset:line}}` marker, otherwise it is what the above line has:
+    
+    ```
+    ${{bitset:field}} = 0;  
+    foreach ({{CamelModel}}::${{bitset:field}}_bitset as $type => $flag) {  
+        if (array_key_exists($type, $input))  {  
+            ${{bitset:field}} |= $flag;  
+        }  
+    }  
+    $input['{{bitset:field}}'] = ${{bitset:field}};
+    ```
+
+    will expand to:
+    
+    ```php
+    $flags = 0;
+    foreach (Promotion::$flags_bitset as $type => $flag) {
+        if (array_key_exists($type, $input)) {
+            $flags |= $flag;
+        }
+    }
+    $input['flags'] = $flags;
+    ```
+    
+    You can use this in the controller where form inputs are being processed, prior to validation, with `$input` holding all the inputs of the request. I use simpler code that calls a helper function that does the same thing:
+    
+        processFlags($input, Promotion::$flag_bitset, 'flags');
+        
+    
+    ##### ViewGenerator 
+    
+    `{{headings:lang}}` expands to the table column headers for the bit names using @lang() for the text:
+    
+    ```blade
+    @foreach(app\Promotion::$flags_bitset as $type => $flag)
+    <th>@lang('promotions.'.$type)</th>
+    @endforeach
+    ```
+
+    `{{headings}}` expands to the column headers using the bit names for the text:
+    
+    ```blade
+    @foreach(app\Promotion::$flags_bitset as $type => $flag)
+    <th>{{ucwords(str_replace('_', ' ', $type))}}</th>
+    @endforeach
+    ```
+
+    `{{formElements:filters}}` expands to:
+    
+    ```blade
+    @foreach(app\Promotion::$flags_bitset as $type => $flag)
+    <td>{!! \Form::select($type, ['' => '&nbsp;', '0' => '0', '1' => '1', ], 
+            Input::get($type), 
+            ['form' => 'filter-promotions', 'class' => 'form-control', ]) !!}</td>
+    @endforeach
+    ```
+
+    `{{fields:nobuttons}}` and `{{fields}}` will contain the following for the `flags` field:
+
+    ```blade
+    @foreach(app\Promotion::$flags_bitset as $type => $flag)
+    <td>{{ $promotion->$type }}</td>;
+    @endforeach
+    ```
+
+    `{{formElements:bool:op}}` expands to contain all boolean fields and all bitset field bit names, for `flags` it will be:
+    
+    ```html
+    @foreach(app\Promotion::$flags_bitset as $type => $flag)
+    <label>
+        {!! Form::checkbox($type, 1, Input::old($type), 
+            [isViewOp($op) ? 'disabled' : '',]) !!} @lang('promotions.flags')&nbsp;&nbsp;
+    </label>
+    @endforeach
+    ```
+
+    `{{formElements:bool}}` expands to contain all boolean fields and all bitset field bit names, for `flags` it will be:
+    
+    ```blade
+    @foreach(app\Promotion::$flags_bitset as $type => $flag)
+    <label>
+        {!! Form::checkbox($type, 1, Input::old($type), []) !!} 
+        @lang('promotions.flags')&nbsp;&nbsp;
+    </label>
+    @endforeach
+    ```
+
+
+    ##### TranslationsGenerator
+    
+    Individual bit names are treated as if they were declared as boolean fields. So an entry for `'snake_case_bit_name' => 'Snake Case Bit Name'`, so for the example field above:
+    
+    `{{translations:line}}` will have entries for both the field and its bit fields added:
+    
+    ```php
+    'flags' => 'Flags',
+    'is_published' => 'Is Published',
+    'one_per_user' => 'One Per User',
+    ```
 
 - add `table`, `field` to foreign relations map which represent the table name, if given in foreign() hint, and field name that refers to this foreign key, respectively.
 
@@ -106,7 +211,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
         use {{relations:line:with_model}}{{app_namespace}}\{{relations:CamelModel}};
 
-    once expanded changes to the following, depending on the model field definitions of course:
+    once expanded changes to the following, depending on the model's foreign key fields of course:
     
     ```php
     use app\License;
@@ -121,21 +226,21 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     For example, I use the following in `template/lang/page-titles.txt`:
     
     ```php
-    'index-{{models}}' => 'Index {{Space Models}}',
-    'create-{{model}}' => 'Create {{Space Model}}',
-    'show-{{model}}' => 'Show {{Space Model}}',
-    'edit-{{model}}' => 'Edit {{Space Model}}',
-    'delete-{{model}}' => 'Delete {{Space Model}}',
+    'index-{{dash-models}}' => 'Index {{Space Models}}',
+    'create-{{dash-model}}' => 'Create {{Space Model}}',
+    'show-{{dash-model}}' => 'Show {{Space Model}}',
+    'edit-{{dash-model}}' => 'Edit {{Space Model}}',
+    'delete-{{dash-model}}' => 'Delete {{Space Model}}',
     ```
 
     For example, when generating a scaffold for a model named `productVersion` this template has the effect of adding the following translations to `resources/lang/en/page-titles.php`:
     
     ```php
-    'create-productversion' => 'Create Product Version',
-    'delete-productversion' => 'Delete Product Version',
-    'edit-productversion'   => 'Edit Product Version',
-    'index-productversions' => 'Index Product Versions',
-    'show-productversion'   => 'Show Product Version',
+    'create-product-version' => 'Create Product Version',
+    'delete-product-version' => 'Delete Product Version',
+    'edit-product-version'   => 'Edit Product Version',
+    'index-product-versions' => 'Index Product Versions',
+    'show-product-version'   => 'Show Product Version',
     ```
 
     Existing translations are not overwritten, unless `--overwrite` option is used. Comments are preserved and location of keys under particular block comment is also preserved. I use the `TranslationFileRewriter` class from my laravel-translation-manager package to do surgical insertion of new translations without loosing the comments and position of translations. 
@@ -144,7 +249,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
 - add a numeric sequence to migration file name after the Hms, when running scaffold creation from a batch file multiple migrations are created within the same second and then the migrations would be applied alphabetically, not in the order of creation. Causing errors when foreign keys were on tables not yet created.
 
-- add `foreign(table_name,id,name)` field hint to give the table name for an field name for foreign keys, optional id: foreign id column (default is id), and foreign displayable column to use for UI selections (default name), so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix. For now only integer and bigInteger foreign keys are implemented. A few more iterations of cleanup and other types will be included.
+- add `foreign(table_name,id,name)` field hint to give the table name for an field name for foreign keys, optional id: foreign id column (default is id), and foreign displayable column to use for UI selections (default name), so that the foreign table can be explicitly provided instead of guessing that it is the plural form of the field name without the _id suffix. For now only integer and bigInteger foreign keys are implemented. A few more iterations of cleanup and other types will be included too.
 
 - add all generators now recognize foreign keys when the field ends in `_id` or when a `foreign()` field hint is provided. Only integer and bitInteger field types are supported for now.
 

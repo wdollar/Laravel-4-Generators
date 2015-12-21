@@ -311,36 +311,36 @@ public static $remote_relations = array(
 
     Additionally, the generators recognize and use standard options: nullable, default to affect the generated code. Some shortcut names are added to reduce typing
 
-| shortcut type | Laravel type |
-| :---- |:------ |
-| int       | integer |
-| tinyint   | tinyInteger |
-| smallint  | smallInteger |
-| medint    | mediumInteger |
-| mediumint | mediumInteger |
-| bigint    | bigInteger |
-| bool      | boolean |
-| datetime  | dateTime |
-| decimal   | decimal, except specify the parameter as n.m instead of n,m, ie. `decimal(6,2)` should be given as decimal\[6.2\] |
+| shortcut type | Laravel type                                                                                                      |
+| :----         | :------                                                                                                           |
+| int           | integer                                                                                                           |
+| tinyint       | tinyInteger                                                                                                       |
+| smallint      | smallInteger                                                                                                      |
+| medint        | mediumInteger                                                                                                     |
+| mediumint     | mediumInteger                                                                                                     |
+| bigint        | bigInteger                                                                                                        |
+| bool          | boolean                                                                                                           |
+| datetime      | dateTime                                                                                                          |
+| decimal       | decimal, except specify the parameter as n.m instead of n,m, ie. `decimal(6,2)` should be given as decimal\[6.2\] |
 [**Field Shortcut Types to Laravel Type mappings**]
 
-| type(s) | effect in code |
-| :---- |:------ |
-| date, dateTime    | wraps the field in a div.form-group.date, adds a span.input-group-addon with a calendar glyphicon. If you include bootstrap-datepicker then this gives a pop-up calendar for the field  |
-| all integer types | generates a number field in views, int and bigint are treated as foreign keys if they have an \_id suffix in the field name | 
-| boolean | generates a checkbox field in views, also used for :bool and :nobool expansion placeholders | 
+| type(s)           | effect in code                                                                                                                                                                         |
+| :----             | :------                                                                                                                                                                                |
+| date, dateTime    | wraps the field in a div.form-group.date, adds a span.input-group-addon with a calendar glyphicon. If you include bootstrap-datepicker then this gives a pop-up calendar for the field |
+| all integer types | generates a number field in views, int and bigint are treated as foreign keys if they have an \_id suffix in the field name                                                            |
+| boolean           | generates a checkbox field in views, also used for :bool and :nobool expansion placeholders                                                                                            |
 [**Type's Effect in Code**]
 
 
-| hint | effect |
-| :---- |:------ |
-| hidden     | adds the field name to the `{{hidden}}` fields list placeholder |
-| guarded   | adds the field name to the `{{guarded}}` fields list placeholder |
-| notrail   | adds the field name to the `{{notrail}}` fields list placeholder |
-| notrailonly   | adds the field name to the `{{notrailonly}}` fields list placeholder |
-| textarea  | uses textarea for the field in the view generator instead of text |
+| hint            | effect                                                                                     |
+| :----           | :------                                                                                    |
+| hidden          | adds the field name to the `{{hidden}}` fields list placeholder                            |
+| guarded         | adds the field name to the `{{guarded}}` fields list placeholder                           |
+| notrail         | adds the field name to the `{{notrail}}` fields list placeholder                           |
+| notrailonly     | adds the field name to the `{{notrailonly}}` fields list placeholder                       |
+| textarea        | uses textarea for the field in the view generator instead of text                          |
 | index(indexdef) | creates a non-unique index (index) which includes the field, see notes for indexdef format |
-| keyindex  | creates a unique index which includes the field, see notes for indexdef format |
+| keyindex        | creates a unique index which includes the field, see notes for indexdef format             |
 [**Hint's effect on code generation**]
 
 Usage:  `field_name:int:hidden:guarded`, or `field_name:string[256]:textarea:notrail`

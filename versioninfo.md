@@ -23,7 +23,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     
     const FLAGS_NONE_MASK = 0;
     const FLAGS_IS_PUBLISHED_MASK = 1;
-    const FLAGS_ONE_PER_USER_MASK = 2;
+    const FLAGS_ONE_PER_USER_MASK = 2; 
     
     public static $flags_types = [
         self::FLAGS_IS_PUBLISHED => self::FLAGS_IS_PUBLISHED_MASK,
@@ -80,7 +80,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
     ```
     
     ##### ControllerGenerator 
-    
+
     `{{bitset:line}}` marks a line that is to be repeated for every bit set field in the model, with the marker itself removed during expansion. It can no anywhere in the line. In addition to the `{{modelVars}}` which expand to the various case and plural versions of the model you have `{{bitset:modelVars}}` which will do the same for the bitset field name:
     
     since this affect only one line use the `{{eol}}` to mark where the lines are split in the final file. 
@@ -156,7 +156,7 @@ The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
     `{{formElements:bool:op}}` expands to contain all boolean fields and all bitset field bit names, for `flags` it will be:
     
-    ```html
+    ```blade
     @foreach(app\Promotion::$flags_bitset as $type => $flag)
     <label>
         {!! Form::checkbox($type, 1, Input::old($type), 
@@ -295,7 +295,7 @@ public static $remote_relations = array(
 
 - add `rule(....)` hint. Adds the stuff between parentheses to the field's rules. Some rules are added automatically. Numeric fields get `numeric`, if the field is not nullable then it gets `required`. email will get `email|unique|table:email,id,{id}` added, the `{id}` placeholder should be changed to the id of the model when it is being saved to prevent triggering a unique e-mail validation failure.
 
-- add <a name="IndexHint"></a>index hint: `index(indexdef)` to create an index and `keyindex(indexdef)` to create a unique index, in the migration file. `indexdef` has the format: `i,n`, where `i` and `n` are integers, `i` is the index id, `n` is the position of the field in the index. If `n` is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
+- add <a id="IndexHint"></a>index hint: `index(indexdef)` to create an index and `keyindex(indexdef)` to create a unique index, in the migration file. `indexdef` has the format: `i,n`, where `i` and `n` are integers, `i` is the index id, `n` is the position of the field in the index. If `n` is not given then the position will be the order of the field's appearance. Used to automatically add indices to table creation script in migration file. Multiple fields can specify the same index id and can have multiple index hints with different ids. 
 
     ```
     user_name:string[24]:keyindex(1,1)
@@ -312,7 +312,7 @@ public static $remote_relations = array(
     Additionally, the generators recognize and use standard options: nullable, default to affect the generated code. Some shortcut names are added to reduce typing
 
 | shortcut type | Laravel type                                                                                                      |
-| :----         | :------                                                                                                           |
+| :------------ | :---------------------------------------------------------------------------------------------------------------- |
 | int           | integer                                                                                                           |
 | tinyint       | tinyInteger                                                                                                       |
 | smallint      | smallInteger                                                                                                      |
@@ -325,7 +325,7 @@ public static $remote_relations = array(
 [**Field Shortcut Types to Laravel Type mappings**]
 
 | type(s)           | effect in code                                                                                                                                                                         |
-| :----             | :------                                                                                                                                                                                |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | date, dateTime    | wraps the field in a div.form-group.date, adds a span.input-group-addon with a calendar glyphicon. If you include bootstrap-datepicker then this gives a pop-up calendar for the field |
 | all integer types | generates a number field in views, int and bigint are treated as foreign keys if they have an \_id suffix in the field name                                                            |
 | boolean           | generates a checkbox field in views, also used for :bool and :nobool expansion placeholders                                                                                            |
@@ -333,7 +333,7 @@ public static $remote_relations = array(
 
 
 | hint            | effect                                                                                     |
-| :----           | :------                                                                                    |
+| :-------------- | :----------------------------------------------------------------------------------------- |
 | hidden          | adds the field name to the `{{hidden}}` fields list placeholder                            |
 | guarded         | adds the field name to the `{{guarded}}` fields list placeholder                           |
 | notrail         | adds the field name to the `{{notrail}}` fields list placeholder                           |

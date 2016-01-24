@@ -375,7 +375,7 @@ PHP;
                             $plainName = trim_suffix($name, '_id');
                             $labelName = $plainName;
 
-                            $element = "{!! Form::select('$name', [''] + \$$foreignModels,  Input::old('$name'), [$disabled'class' => 'form-control', ]) !!}";
+                            $element = "{!! Form::select('$name', [0 => ''], \$$foreignModels,  Input::old('$name'), [$disabled'class' => 'form-control', ]) !!}";
 
                             if ($nullable) {
                                 $element .= "\n{!! Form::text('$plainName', $$camelModel ? ($$camelModel->${plainName} ? $$camelModel->${plainName}->${foreign_display} : '') : '', $readonlyHalf'data-vsch_completion'=>'$foreign_models:${foreign_display};id:$name','class' => 'form-control', $readonlyClose) !!}";

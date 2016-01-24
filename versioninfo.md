@@ -2,6 +2,10 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
+### x.3.3
+
+- change view generator for selection of foreign model id to use `[0 => ''] + $modelList` instead of `[''] + $modelList`
+
 ### x.3.2
 
 - add `bitset(bitName1,bitName2,...)` field option. Converted integral field in the database to bit fields in the model, with getter/setter methods for individual bitNames and in forms as checkbox elements using the model's, bit name to bit mask type, to iterate over the bits. That way you can easily add fields to the bit set after creating the scaffold. 

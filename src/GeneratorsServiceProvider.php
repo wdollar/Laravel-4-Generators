@@ -504,6 +504,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             'textarea',
             'index',
             'keyindex',
+            'unique',
             'primary',
             'foreign',
             'ondelete',

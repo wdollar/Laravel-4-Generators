@@ -145,7 +145,9 @@ PHP;
             foreach ($fields as $field) {
                 $fieldIndex++;
                 foreach ($field->options as $option) {
-                    if (($isKey = strpos($option, 'keyindex') === 0)) {
+                    $isKey = null;
+                    $isUnique = null;
+                    if (($isUnique = strpos($option, 'unique') === 0) || ($isKey = strpos($option, 'keyindex') === 0)) {
                         MigrationGenerator::processIndexOption($keyindices, $option, $field->name, $fieldIndex);
                     }
                 }

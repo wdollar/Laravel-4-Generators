@@ -267,9 +267,11 @@ class MigrationGenerator extends Generator
             $foreignTable = null;
 
             foreach ($options as $option) {
-                if (($isPrimary = strpos($option, 'primary') === 0) || ($isKey = strpos($option, 'keyindex') === 0) || strpos($option, 'index') === 0) {
+                $isKey = null;
+                $isUnique = null;
+                if (($isPrimary = strpos($option, 'primary') === 0) || ($isUnique = strpos($option, 'unique') === 0) || ($isKey = strpos($option, 'keyindex') === 0) || strpos($option, 'index') === 0) {
                     if ($isPrimary) $keyIndex = &$primaryindices;
-                    elseif ($isKey) $keyIndex = &$keyindices;
+                    elseif ($isKey || $isUnique) $keyIndex = &$keyindices;
                     else $keyIndex = &$indices;
 
                     self::processIndexOption($keyIndex, $option, $field->name, $fieldIndex);

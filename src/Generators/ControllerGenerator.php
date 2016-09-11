@@ -125,7 +125,7 @@ class ControllerGenerator extends Generator
         if ($${modelVars['camelModel']} !== null) {
             $${relationModelVars['camelModels']} = !$${modelVars['camelModel']}->$foreignField ? [] : [ $${modelVars['camelModel']}->$foreignField->${relationModelVars['id']} => $${modelVars['camelModel']}->$foreignField->${relationModelVars['name']} ];
         } else {
-            $${relationModelVars['camelModels']} = ${relationModelVars['CamelModel']}::query()->get([{$foreignFieldList}])->lists({$foreignFieldList})->all();
+            $${relationModelVars['camelModels']} = ${relationModelVars['CamelModel']}::query()->get([{$foreignFieldList}])->pluck({$foreignFieldList})->all();
         }
         return $${relationModelVars['camelModels']};
     }

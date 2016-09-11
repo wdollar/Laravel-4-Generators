@@ -127,7 +127,7 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
             $this->generateTest();
         }
 
-        $routesFile = parent::getSrcPath(self::PATH_ROUTES, 'routes.php');
+        $routesFile = parent::getSrcPath(self::PATH_ROUTES);
 
         if ($routesFile) {
             if ($this->generator->updateRoutesFile($routesFile, $this->model, $this->getRouteTemplatePath())) $this->info('Updated ' . $routesFile);

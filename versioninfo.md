@@ -2,6 +2,11 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
+### 2.4.0
+
+- add Laravel 5.3 compatibility for validation rules to include `nullable` for nullable
+  attributes.
+
 ### x.3.3
 
 - change view generator for selection of foreign model id to use `[0 => ''] + $modelList` instead of `[''] + $modelList`

@@ -48,7 +48,7 @@ return array(
      * {{vendor/package}} to vendor/package-name
      *
      */
-    // laravel5
+    // laravel5.3
     'dir_map' => [
         'code' => [
             'app' => 'app/',
@@ -83,7 +83,7 @@ return array(
             'bench' => 'public/',
         ],
         'routes' => [
-            'app' => 'app/Http/',
+            'app' => 'routes/web.php',
             'bench' => 'src/',
         ],
         'seeds' => [
@@ -143,7 +143,7 @@ return array(
     //        'bench' => 'src/seeds/',
     //    ],
     //    'routes' => [
-    //        'app' => 'app/',
+    //        'app' => 'app/routes.php',
     //        'bench' => 'src/{{Vendor/Package}}/',
     //    ],
     //    'tests' => [

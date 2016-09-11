@@ -119,7 +119,7 @@ class BaseGeneratorCommand extends Command
      *                              migrations
      *                              models
      *                              public
-     *                              routes          - directory for the routes.php file
+     *                              routes          - directory/file for the routes file
      *                              seeds
      *                              templates
      *                              tests

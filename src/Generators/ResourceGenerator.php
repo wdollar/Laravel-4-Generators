@@ -52,7 +52,7 @@ class ResourceGenerator
     }
 
     /**
-     * Update app/routes.php
+     * Update routes file
      *
      * @param  string $name
      *

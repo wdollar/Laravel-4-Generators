@@ -2,7 +2,6 @@
 
 namespace Vsch\Generators\Generators;
 
-use Doctrine\DBAL\Platforms\SQLAnywhere11Platform;
 use Vsch\Generators\GeneratorsServiceProvider;
 
 class ModelGenerator extends Generator
@@ -284,6 +283,11 @@ PHP;
                     $ruleBits[] = "exists:$table_name,id";
                 }
 
+                // Laravel 5.3 compatibility requirement
+                if ($ruleBits && !array_search('required', $ruleBits) && array_key_exists($field->name, $defaults) && ($defaults[$field->name] === null || strtolower($defaults[$field->name]) === 'null')) {
+                    array_unshift($ruleBits, 'nullable');
+                }
+
                 $rules[$field->name] = "'{$field->name}' => '" . implode('|', $ruleBits) . "'";
             }
 
@@ -362,7 +366,6 @@ PHP;
     }
 
 PHP;
-
                 }
 
                 $bitsetData .= "\n\tconst ${bitsetName}_NONE_MASK = 0;\n";

@@ -86,7 +86,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom($configPath, self::PACKAGE);
         $this->publishes([$configPath => config_path(self::PACKAGE . '.php')], 'config');
 
-        $this->app[$command = 'command.generate.controller'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.controller', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\ControllerGenerator($app['files'], $cache);
 
@@ -94,14 +94,14 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.form'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.form', function ($app) {
             $gen = new Generators\FormDumperGenerator($app['files'], new \Mustache_Engine);
 
             return new Commands\FormDumperCommand($gen);
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.migration'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.migration', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\MigrationGenerator($app['files'], $cache);
 
@@ -109,7 +109,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.model'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.model', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\ModelGenerator($app['files'], $cache);
 
@@ -117,12 +117,12 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.pivot'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.pivot', function ($app) {
             return new Commands\PivotGeneratorCommand;
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.resource'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.resource', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\ResourceGenerator($app['files'], $cache);
 
@@ -130,7 +130,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.scaffold'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.scaffold', function ($app) {
             $generator = new Generators\ResourceGenerator($app['files']);
             $cache = new Cache($app['files']);
 
@@ -138,7 +138,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.seed'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.seed', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\SeedGenerator($app['files'], $cache);
 
@@ -146,7 +146,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.test'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.test', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\TestGenerator($app['files'], $cache);
 
@@ -154,7 +154,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.translations'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.translations', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\TranslationsGenerator($app['files'], $cache);
 
@@ -162,7 +162,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         });
         $this->commands($command);
 
-        $this->app[$command = 'command.generate.view'] = $this->app->share(function ($app) {
+        $this->app->singleton($command = 'command.generate.view', function ($app) {
             $cache = new Cache($app['files']);
             $generator = new Generators\ViewGenerator($app['files'], $cache);
 
@@ -544,7 +544,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             '(' => ')',
             '[' => ']',
             '{' => '}',
-        ], $fieldText, null, SCOPED_EXPLODE_TRIM, $openScopes, $splitOptions ? null : 3);
+        ], $fieldText, null, SCOPED_EXPLODE_TRIM | $splitOptions ? 0 : 3, $openScopes);
         $name = array_shift($options);
         $type = array_shift($options);
         if (!$splitOptions) $options = array_shift($options);
@@ -559,7 +559,7 @@ class GeneratorsServiceProvider extends ServiceProvider
             '(' => ')',
             '[' => ']',
             '{' => '}',
-        ], $typeText, null, SCOPED_EXPLODE_TRIM, $openScopes, $splitOptions ? null : 2);
+        ], $typeText, null, SCOPED_EXPLODE_TRIM | $splitOptions ? 0 : 2, $openScopes);
         $type = array_shift($options);
         if (!$splitOptions) $options = array_shift($options);
         return array($type, $options);
@@ -571,7 +571,7 @@ class GeneratorsServiceProvider extends ServiceProvider
         $keep = [];
         foreach ($fields as $name => $typeText) {
             list($type, $options) = self::fieldTypeOptions($typeText);
-            $exp = "/\b${optionName}\b/";
+            $exp = "/\\b${optionName}\\b/";
             if (preg_match($exp, $options)) continue;
             $keep[$name] = $typeText;
         }
@@ -582,15 +582,15 @@ class GeneratorsServiceProvider extends ServiceProvider
     function mapFieldTypes($fields)
     {
         $fields = preg_replace('/,\s+/', ',', $fields);
-        $fields = preg_replace('/\bint\b/', 'integer', $fields);
-        $fields = preg_replace('/\btinyint\b/', 'tinyInteger', $fields);
-        $fields = preg_replace('/\btiny\b/', 'tinyInteger', $fields);
-        $fields = preg_replace('/\bsmallint\b/', 'smallInteger', $fields);
-        $fields = preg_replace('/\bmedint\b/', 'mediumInteger', $fields);
-        $fields = preg_replace('/\bmediumint\b/', 'mediumInteger', $fields);
-        $fields = preg_replace('/\bbigint\b/', 'bigInteger', $fields);
-        $fields = preg_replace('/\bbool\b/', 'boolean', $fields);
-        $fields = preg_replace('/\bdatetime\b/', 'dateTime', $fields);
+        $fields = preg_replace('/\\bint\\b/', 'integer', $fields);
+        $fields = preg_replace('/\\btinyint\\b/', 'tinyInteger', $fields);
+        $fields = preg_replace('/\\btiny\\b/', 'tinyInteger', $fields);
+        $fields = preg_replace('/\\bsmallint\\b/', 'smallInteger', $fields);
+        $fields = preg_replace('/\\bmedint\\b/', 'mediumInteger', $fields);
+        $fields = preg_replace('/\\bmediumint\\b/', 'mediumInteger', $fields);
+        $fields = preg_replace('/\\bbigint\\b/', 'bigInteger', $fields);
+        $fields = preg_replace('/\\bbool\\b/', 'boolean', $fields);
+        $fields = preg_replace('/\\bdatetime\\b/', 'dateTime', $fields);
         return $fields;
     }
 

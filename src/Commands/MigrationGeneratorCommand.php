@@ -39,7 +39,16 @@ class MigrationGeneratorCommand extends BaseGeneratorCommand
      *
      * @return void
      */
-    public function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $name = $this->argument('name');
         $path = $this->getPath();

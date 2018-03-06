@@ -2,6 +2,10 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
+### 2.6.0
+
+- Fix: Laravel 5.6 compatibility
+
 ### 2.4.0
 
 - add Laravel 5.3 compatibility for validation rules to include `nullable` for nullable

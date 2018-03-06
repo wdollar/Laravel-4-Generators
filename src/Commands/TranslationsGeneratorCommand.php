@@ -42,8 +42,16 @@ class TranslationsGeneratorCommand extends BaseGeneratorCommand
      *
      * @return void
      */
-    public
-    function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $this->generator->setOptions($this->option());
         $langPath = $this->getPath();

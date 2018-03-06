@@ -36,8 +36,16 @@ class BaseGeneratorCommand extends Command
      *
      * @return void
      */
-    public
-    function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $path = $this->getPath();
         $template = $this->option('template');

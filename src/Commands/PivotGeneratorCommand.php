@@ -25,8 +25,21 @@ class PivotGeneratorCommand extends BaseGeneratorCommand
         return null;
     }
 
-    public
-    function fire()
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $this->generator->setOptions($this->option());
         $tables = $this->sortDesiredTables();

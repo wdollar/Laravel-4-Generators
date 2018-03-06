@@ -50,8 +50,18 @@ class FormDumperCommand extends Command
      *
      * @return void
      */
-    public
-    function fire()
+    public 
+    function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public 
+    function handle()
     {
         if (!class_exists($model = $this->argument('model')))
         {

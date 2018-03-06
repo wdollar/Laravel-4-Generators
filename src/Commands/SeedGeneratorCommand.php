@@ -40,8 +40,16 @@ class SeedGeneratorCommand extends BaseGeneratorCommand
      *
      * @return void
      */
-    public
-    function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     */
+    public function handle()
     {
         $this->generator->setOptions($this->option());
         $path = $this->getPath(ucwords($this->argument('name')) . 'TableSeeder.php');

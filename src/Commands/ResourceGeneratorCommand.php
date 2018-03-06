@@ -67,8 +67,18 @@ class ResourceGeneratorCommand extends BaseGeneratorCommand
      * @throws MissingFieldsException
      * @throws TemplateNameDoesNotExist
      */
-    public
-    function fire()
+    public function fire() {
+        $this->handle();
+    }
+
+    /**
+     * Execute the console command.
+     *
+     * @return void
+     * @throws \Vsch\Generators\Commands\MissingFieldsException
+     * @throws \Vsch\Generators\Commands\TemplateNameDoesNotExist
+     */
+    public function handle()
     {
         $this->generator->setOptions($this->option());
         // Scaffolding should always begin with the singular

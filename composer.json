@@ -22,17 +22,17 @@
         }
     ],
     "require": {
-        "php": ">=5.5.9"
+        "php": ">=7.1.3"
     },
     "require-dev": {
         "mustache/mustache": "2.*",
         "mockery/mockery": "0.9.*",
-        "illuminate/support": "5.0.x|5.1.x|5.2.x|5.3.x",
-        "illuminate/console": "5.0.x|5.1.x|5.2.x|5.3.x",
-        "illuminate/filesystem": "5.0.x|5.1.x|5.2.x|5.3.x",
-        "doctrine/dbal": "~2.3",
-        "phpunit/phpunit": "~4",
-        "phpspec/phpspec": "~2.1"
+        "illuminate/support": "5.6.x|5.1.x|5.2.x|5.3.x|5.4.x|5.5.x|5.6.x",
+        "illuminate/console": "5.0.x|5.1.x|5.2.x|5.3.x|5.4.x|5.5.x|5.6.x",
+        "illuminate/filesystem": "5.0.x|5.1.x|5.2.x|5.3.x|5.4.x|5.5.x|5.6.x",
+        "doctrine/dbal": "~2.6",
+        "phpunit/phpunit": "~7",
+        "phpspec/phpspec": "~3.0"
     },
     "autoload": {
         "classmap": [

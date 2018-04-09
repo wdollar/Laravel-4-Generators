@@ -36,7 +36,8 @@ class BaseGeneratorCommand extends Command
      *
      * @return void
      */
-    public function fire() {
+    public function fire()
+    {
         $this->handle();
     }
 
@@ -95,7 +96,7 @@ class BaseGeneratorCommand extends Command
      * Provide user feedback, based on success or not.
      *
      * @param  boolean $successful
-     * @param  string  $path
+     * @param  string $path
      *
      * @return void
      */
@@ -105,8 +106,7 @@ class BaseGeneratorCommand extends Command
         if ($successful) {
             if ($path !== $finalPath && ends_with($finalPath, ".new")) {
                 $this->warn("File {$path} exists. Created {$finalPath} instead.");
-            }
-            else {
+            } else {
                 $this->info("Created {$finalPath}");
             }
             return;
@@ -145,8 +145,15 @@ class BaseGeneratorCommand extends Command
     {
         if ($this->option('path')) {
             $srcPath = $this->option('path');
-        }
-        else {
+        } else {
+            if ($this->option('bench')) {
+                $parts = explode('/', $this->option('bench'));
+                if (count($parts) !== 2) {
+                    // invalid package name
+                    $this->error("--bench option should be vendor/package-name format, not " . $this->option('bench'));
+                    throw new \InvalidArgumentException();
+                }
+            }
             $srcPath = GeneratorsServiceProvider::getSrcPath($srcType, $this->option('bench'));
         }
 
@@ -157,7 +164,7 @@ class BaseGeneratorCommand extends Command
     function getOptions()
     {
         return array(
-            array('bench', null, InputOption::VALUE_OPTIONAL, 'workbench package name for which to generate controller', ''),
+            array('bench', null, InputOption::VALUE_OPTIONAL, 'workbench vendor/package-name for which to generate controller', ''),
             array('prefix', null, InputOption::VALUE_OPTIONAL, 'table prefix for migrations', ''),
             array('overwrite', null, InputOption::VALUE_NONE, 'overwrite existing files instead of creating ones with .new extension'),
         );

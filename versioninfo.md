@@ -2,6 +2,11 @@
 
 The 1.x.x versions are for Laravel 4.2, 2.x.x versions are for Laravel 5.1
 
+### 2.6.2
+
+- Add: validation to `--bench` option and meaningful error message instead of just failing when
+  package name is missing `vendor/` prefix.
+
 ### 2.6.0
 
 - Fix: Laravel 5.6 compatibility
